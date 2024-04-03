@@ -3,6 +3,7 @@ import {
   PublicKey,
   SystemProgram,
   ComputeBudgetProgram,
+  Keypair,
 } from "@solana/web3.js";
 import * as spl from "@solana/spl-token";
 import {
@@ -32,10 +33,10 @@ const main = async () => {
   const remoteDomain = process.env.REMOTE_DOMAIN!;
   const messageHex1 = process.env.MESSAGE_HEX_BRIDGE!;
   const attestationHex1 = process.env.ATTESTATION_HEX_BRIDGE!;
-  //const messageHex2 = process.env.MESSAGE_HEX_SWAP!;
-  //const attestationHex2 = process.env.ATTESTATION_HEX_SWAP!;
-  const messageHex2 = "0x000000000000000000000005000000000003ef66";
-  const attestationHex2 = "";
+  const messageHex2 = process.env.MESSAGE_HEX_SWAP!;
+  const attestationHex2 = process.env.ATTESTATION_HEX_SWAP!;
+  //const messageHex2 = "0x000000000000000000000005000000000003ef66";
+  //const attestationHex2 = "";
   const nonce1 = decodeEventNonceFromMessage(messageHex1);
   const nonce2 = decodeEventNonceFromMessage(messageHex2);
   console.log({
@@ -64,23 +65,63 @@ const main = async () => {
     }
    */
 
+  const relayDataKeypair = Keypair.generate();
+
   // 1. Create RelayData account
-  const swapAndBridgeTx = await valueRouterProgram.methods
-    .swapAndBridge({
-      buyArgs: {
-        buyToken: buyToken,
-        guaranteedBuyAmount: guaranteedBuyAmount,
-      },
-      sellUsdcAmount: sellUSDCAmount,
-      destDomain: 0,
-      recipient: mintRecipient,
-    })
+  /*
+  const createRelayDataTx = await valueRouterProgram.methods
+    .createRelayData()
     // eventAuthority and program accounts are implicitly added by Anchor
-    .accounts(accounts)
+    .accounts({
+      relayData: relayDataKeypair.publicKey,
+      systemProgram: SystemProgram.programId,
+    })
+    .signers([relayDataKeypair])
     // messageSentEventAccountKeypair must be a signer so the MessageTransmitter program can take control of it and write to it.
     // provider.wallet is also an implicit signer
-    .signers([messageSentEventAccountKeypair1, messageSentEventAccountKeypair2])
     .rpc();
+
+  console.log("createRelayDataTx: ", createRelayDataTx);
+  */
+  // relayData: 3dWBitUmPQ9M6vcAeKtCAhBzD7nDawLSmHGthUsSBmLr
+
+  // 2. Post bridge data
+  /*
+  const postBridgeMessageTx = await valueRouterProgram.methods
+    .postBridgeMessage({
+      bridgeMessage: {
+        message: Buffer.from(messageHex1.replace("0x", ""), "hex"),
+        attestation: Buffer.from(attestationHex1.replace("0x", ""), "hex"),
+      },
+    })
+    .accounts({
+      owner: provider.wallet.publicKey,
+      relayData: new PublicKey("3dWBitUmPQ9M6vcAeKtCAhBzD7nDawLSmHGthUsSBmLr"),
+    })
+    .signers([])
+    .rpc();
+
+  console.log("postBridgeMessageTx: ", postBridgeMessageTx);
+  */
+
+  // 3. Post swap data
+  /*
+  const postSwapMessageTx = await valueRouterProgram.methods
+    .postSwapMessage({
+      swapMessage: {
+        message: Buffer.from(messageHex2.replace("0x", ""), "hex"),
+        attestation: Buffer.from(attestationHex2.replace("0x", ""), "hex"),
+      },
+    })
+    .accounts({
+      owner: provider.wallet.publicKey,
+      relayData: new PublicKey("3dWBitUmPQ9M6vcAeKtCAhBzD7nDawLSmHGthUsSBmLr"),
+    })
+    .signers([])
+    .rpc();
+
+  console.log("postSwapMessageTx: ", postSwapMessageTx);
+  */
 
   // Get PDAs
   const pdas = await getRelayPdas(
@@ -138,6 +179,9 @@ const main = async () => {
       receiver: valueRouterProgram.programId,
       systemProgram: SystemProgram.programId,
       messageTransmitterEventAuthority: eventAuthority,
+      relayParams: new PublicKey(
+        "3dWBitUmPQ9M6vcAeKtCAhBzD7nDawLSmHGthUsSBmLr"
+      ),
     })
     .remainingAccounts(accountMetas)
     .transaction();

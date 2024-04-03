@@ -32,3 +32,4 @@ token-messenger-minter = { path = "../token-messenger-minter", features = [
     "no-entrypoint",
     "cpi",
 ] }
+hex = "0.4.3"
