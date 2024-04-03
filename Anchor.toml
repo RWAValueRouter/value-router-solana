@@ -1,0 +1,18 @@
+[features]
+seeds = false
+skip-lint = false
+[programs.devnet]
+# value_router = "EajzKnjgqctLn1LgqeCMUscTT7g2QiEex63hCH7HBzot"
+value_router = "97jJVm6gLtNFa6r2ocKrp8WbF7SzKvtHjWPMFhvVEo1p"
+
+
+[registry]
+url = "https://api.apr.dev"
+
+[provider]
+#cluster = "localnet"
+cluster = "https://devnet.helius-rpc.com/?api-key=04c58328-42b7-4445-afd5-786c039a54b5"
+wallet = "/home/justin/solflare/key.json"
+
+[scripts]
+test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"

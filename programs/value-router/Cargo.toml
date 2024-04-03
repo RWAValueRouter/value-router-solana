@@ -1,0 +1,34 @@
+[package]
+name = "value-router"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "value_router"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+test = []
+
+[dependencies]
+lazy_static = "1.4"
+anchor-lang = { version = "=0.28.0", features = [
+    "init-if-needed",
+    "event-cpi",
+] }
+solana-program = "1.16.9"
+anchor-spl = "=0.28.0"
+message-transmitter = { path = "../message-transmitter", features = [
+    "no-entrypoint",
+    "cpi",
+] }
+token-messenger-minter = { path = "../token-messenger-minter", features = [
+    "no-entrypoint",
+    "cpi",
+] }

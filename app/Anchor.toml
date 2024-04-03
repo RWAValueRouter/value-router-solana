@@ -1,0 +1,16 @@
+[programs.localnet]
+message_transmitter = "CCTPmbSD7gX1bxKPAmg77w8oFzNFpaQiQUWD43TKaecd"
+token_messenger_minter = "CCTPiPYPc6AsJuwueEnWgSgucamXDZwBd53dQ11YiKX3"
+
+[programs.devnet]
+message_transmitter = "CCTPmbSD7gX1bxKPAmg77w8oFzNFpaQiQUWD43TKaecd"
+token_messenger_minter = "CCTPiPYPc6AsJuwueEnWgSgucamXDZwBd53dQ11YiKX3"
+value_router = "97jJVm6gLtNFa6r2ocKrp8WbF7SzKvtHjWPMFhvVEo1p"
+# value_router_hex = "0x7896cf96eca77ede7a59be7cfff06db246f17c8883e05eaa91a1f9b1b765b98f"
+
+[programs.mainnet]
+message_transmitter = "CCTPmbSD7gX1bxKPAmg77w8oFzNFpaQiQUWD43TKaecd"
+token_messenger_minter = "CCTPiPYPc6AsJuwueEnWgSgucamXDZwBd53dQ11YiKX3"
+
+[provider]
+cluster = "Devnet"
