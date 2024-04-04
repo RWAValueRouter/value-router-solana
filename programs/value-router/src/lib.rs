@@ -18,7 +18,7 @@ use {
             instructions::DepositForBurnWithCallerParams,
             state::{RemoteTokenMessenger, TokenMessenger},
         },
-        token_minter::state::{LocalToken, TokenMinter},
+        token_minter::state::{LocalToken, TokenMinter, TokenPair},
     },
 };
 
@@ -512,12 +512,35 @@ pub mod value_router {
         /// CHECK: unsafe
         #[account()]
         pub message_transmitter_event_authority: UncheckedAccount<'info>,
+
+        /// CHECK: unsafe
+        #[account()]
+        pub token_messenger_event_authority: UncheckedAccount<'info>,
         // remaining accounts: additional accounts to be passed to the receiver
         #[account()]
         pub relay_params: Box<Account<'info, RelayData>>,
 
         #[account(mut)]
         pub usdc_vault: Account<'info, TokenAccount>,
+
+        pub token_messenger: Box<Account<'info, TokenMessenger>>,
+
+        pub remote_token_messenger: Box<Account<'info, RemoteTokenMessenger>>,
+
+        pub token_minter: Box<Account<'info, TokenMinter>>,
+
+        #[account(mut)]
+        pub local_token: Box<Account<'info, LocalToken>>,
+
+        pub token_pair: Box<Account<'info, TokenPair>>,
+
+        pub payer_input_ata: Account<'info, TokenAccount>,
+
+        #[account(mut)]
+        pub recipient_token_account: Box<Account<'info, TokenAccount>>,
+
+        #[account(mut)]
+        pub custody_token_account: Box<Account<'info, TokenAccount>>,
     }
 
     pub fn relay(ctx: Context<RelayInstruction>) -> Result<()> {
@@ -582,7 +605,26 @@ pub mod value_router {
             program: ctx.accounts.value_router_program.to_account_info(),
         };
 
-        let cpi_ctx_1 = CpiContext::new(message_transmitter.clone(), accounts_1);
+        let cpi_ctx_1 = CpiContext::new(message_transmitter.clone(), accounts_1)
+            .with_remaining_accounts(
+                [
+                    ctx.accounts.token_messenger.to_account_info(),
+                    ctx.accounts.remote_token_messenger.to_account_info(),
+                    ctx.accounts.token_minter.to_account_info(),
+                    ctx.accounts.local_token.to_account_info(),
+                    ctx.accounts.token_pair.to_account_info(),
+                    ctx.accounts.recipient_token_account.to_account_info(),
+                    ctx.accounts.custody_token_account.to_account_info(),
+                    ctx.accounts.token_program.to_account_info(),
+                    ctx.accounts
+                        .token_messenger_event_authority
+                        .to_account_info(),
+                    ctx.accounts
+                        .token_messenger_minter_program
+                        .to_account_info(),
+                ]
+                .to_vec(),
+            );
 
         message_transmitter::cpi::receive_message(
             cpi_ctx_1,
@@ -593,6 +635,8 @@ pub mod value_router {
         // check usdc balance change of usdc_vault;
 
         // check received
+
+        /*
         let accounts_2 = ReceiveMessageContext {
             payer: ctx.accounts.payer.to_account_info(),
             caller: ctx.accounts.caller.to_account_info(),
@@ -615,6 +659,7 @@ pub mod value_router {
             ctx.accounts.relay_params.swap_message.clone(),
         )?;
         msg!("receive swap msg success");
+        */
 
         // do nothing
         // TODO

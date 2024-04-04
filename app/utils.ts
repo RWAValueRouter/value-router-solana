@@ -312,7 +312,7 @@ export const getRelayPdas = async (
   const authorityPda = findProgramAddress(
     "message_transmitter_authority",
     messageTransmitterProgram.programId,
-    [valueRouterProgram.programId]
+    [tokenMessengerMinterProgram.programId]
   ).publicKey;
   const tokenMessengerEventAuthority = findProgramAddress(
     "__event_authority",
