@@ -1,11 +1,13 @@
 {
-  "name": "solana-cctp-examples",
+  "name": "value-router-ts",
   "version": "1.0.0",
   "description": "",
   "scripts": {
     "swapAndBridge": "tsx swapAndBridge.ts",
     "relay": "tsx relay.ts",
-    "initialize": "tsx initialize.ts"
+    "initialize": "tsx initialize.ts",
+    "receiveMessage": "tsx receiveMessage.ts",
+    "getEvmMessage": "node getEvmMessage.js"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
@@ -13,6 +15,7 @@
     "@solana/web3.js": "^1.90.1",
     "dotenv": "^16.4.5",
     "ethers": "^6.11.1",
-    "tsx": "^4.7.1"
+    "tsx": "^4.7.1",
+    "web3": "^4.7.0"
   }
 }
