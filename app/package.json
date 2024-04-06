@@ -2,6 +2,7 @@
   "name": "value-router-ts",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "scripts": {
     "swapAndBridge": "tsx swapAndBridge.ts",
     "relay": "tsx relay.ts",
@@ -11,6 +12,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
+    "@project-serum/anchor": "^0.26.0",
     "@solana/spl-token": "^0.4.1",
     "@solana/web3.js": "^1.90.1",
     "dotenv": "^16.4.5",
