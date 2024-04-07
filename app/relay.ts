@@ -85,7 +85,6 @@ const main = async () => {
   console.log(pdas);
 
   // 1. Create RelayData account
-  /*
   const createRelayDataTx = await valueRouterProgram.methods
     .createRelayData()
     // eventAuthority and program accounts are implicitly added by Anchor
@@ -99,10 +98,8 @@ const main = async () => {
     .rpc();
 
   console.log("createRelayDataTx: ", createRelayDataTx);
-  */
 
   // 2. Post bridge data
-  /*
   const postBridgeMessageTx = await valueRouterProgram.methods
     .postBridgeMessage({
       bridgeMessage: {
@@ -118,7 +115,6 @@ const main = async () => {
     .rpc();
 
   console.log("postBridgeMessageTx: ", postBridgeMessageTx);
-  */
 
   // 3. Post swap data
   /*
@@ -225,10 +221,10 @@ const main = async () => {
       usedNonces: pdas.usedNonces1,
       systemProgram: SystemProgram.programId,
       messageTransmitterEventAuthority: eventAuthority,
-      //relayParams: relayDataKeypair.publicKey,
-      relayParams: new PublicKey(
+      relayParams: relayDataKeypair.publicKey,
+      /*relayParams: new PublicKey(
         "Ee7jv9pPPWWzKRnqf5Kw1d1Lp7vtApTGmcbTu4WnDYVP"
-      ),
+      ),*/
       tokenMessengerMinterProgram: tokenMessengerMinterProgram.programId,
       tokenProgram: TOKEN_PROGRAM_ID,
       usdcVault: userTokenAccount,

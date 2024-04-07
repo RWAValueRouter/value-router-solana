@@ -27,20 +27,19 @@ import {
   getReceiveMessagePdas,
 } from "./utils";
 
-const main = async () => {
+export const solReceiveMessage = async (
+  usdcAddress: PublicKey,
+  userTokenAccount: PublicKey,
+  remoteTokenAddressHex: string,
+  remoteDomain: string,
+  messageHex: string,
+  attestationHex: string,
+  nonce: string
+) => {
   const provider = getAnchorConnection();
 
   const { messageTransmitterProgram, tokenMessengerMinterProgram } =
     getPrograms(provider);
-
-  // Init needed variables
-  const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
-  const userTokenAccount = new PublicKey(process.env.USER_TOKEN_ACCOUNT);
-  const remoteTokenAddressHex = process.env.REMOTE_TOKEN_HEX!;
-  const remoteDomain = process.env.REMOTE_DOMAIN!;
-  const messageHex = process.env.MESSAGE_HEX_BRIDGE!;
-  const attestationHex = process.env.ATTESTATION_HEX_BRIDGE!;
-  const nonce = decodeEventNonceFromMessage(messageHex);
 
   // Get PDAs
   const pdas = await getReceiveMessagePdas(
@@ -123,5 +122,3 @@ const main = async () => {
 
   console.log("\n\nreceiveMessage Tx: ", receiveMessageTx);
 };
-
-main();

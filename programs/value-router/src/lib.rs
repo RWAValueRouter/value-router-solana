@@ -321,11 +321,18 @@ pub mod value_router {
 
         // solidity: bytes32 bridgeNonceHash = keccak256(abi.encodePacked(5, bridgeNonce))
         let localdomain: u32 = 5;
-        let mut encoded_data = Vec::with_capacity(36);
-        encoded_data.extend_from_slice(&localdomain.to_le_bytes());
-        encoded_data.extend_from_slice(&nonce.to_le_bytes());
+        let localdomain_bytes = localdomain.to_be_bytes();
+        let nonce_bytes = nonce.to_be_bytes();
+
+        let mut encoded_data = vec![0; 12];
+        encoded_data[..4].copy_from_slice(&localdomain_bytes);
+        encoded_data[4..].copy_from_slice(&nonce_bytes);
+        msg!("encoded_data: {:?}", encoded_data);
+        // 00 00 00 05 00 00 00 00 00 00 00 01
+        // [00, 00, 00, 05, 00, 00, 00, 00, 00, 00, 00, 01]
         let bridge_nonce_hash: [u8; 32] =
             anchor_lang::solana_program::keccak::hash(encoded_data.as_slice()).to_bytes();
+        msg!("bridge_nonce_hash: {:?}", bridge_nonce_hash);
 
         // build swap message
         msg!("swap_and_bridge: build message_body");
@@ -357,7 +364,7 @@ pub mod value_router {
 
         let send_message_params = SendMessageWithCallerParams {
             destination_domain: params.dest_domain,
-            recipient: params.recipient,
+            recipient: *ctx.accounts.remote_value_router.to_account_info().key,
             message_body: message_body,
             destination_caller: *ctx.accounts.remote_value_router.to_account_info().key,
         };
@@ -543,7 +550,7 @@ pub mod value_router {
         pub custody_token_account: Box<Account<'info, TokenAccount>>,
     }
 
-    pub fn relay(ctx: Context<RelayInstruction>) -> Result<()> {
+    pub fn relay<'a>(ctx: Context<'_, '_, '_, 'a, RelayInstruction<'a>>) -> Result<()> {
         /// 注意
         /// relay_params 账户此时已经保存了 bridge message 和 swap message
         /// 这个函数会通过 cpi 调用 messager transmitter program 的 receive_message 指令
@@ -605,26 +612,47 @@ pub mod value_router {
             program: ctx.accounts.value_router_program.to_account_info(),
         };
 
+        let mut remaining: Vec<AccountInfo> = [
+            ctx.accounts.token_messenger.to_account_info(),
+            ctx.accounts.remote_token_messenger.to_account_info(),
+            ctx.accounts.token_minter.to_account_info(),
+            ctx.accounts.local_token.to_account_info(),
+            ctx.accounts.token_pair.to_account_info(),
+            ctx.accounts.recipient_token_account.to_account_info(),
+            ctx.accounts.custody_token_account.to_account_info(),
+            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts
+                .token_messenger_event_authority
+                .to_account_info(),
+            ctx.accounts
+                .token_messenger_minter_program
+                .to_account_info(),
+        ]
+        .to_vec();
+        /*[
+            ctx.accounts.token_messenger.to_account_info(),
+            ctx.accounts.remote_token_messenger.to_account_info(),
+            ctx.accounts.token_minter.to_account_info(),
+            ctx.accounts.local_token.to_account_info(),
+            ctx.accounts.token_pair.to_account_info(),
+            ctx.accounts.recipient_token_account.to_account_info(),
+            ctx.accounts.custody_token_account.to_account_info(),
+            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts
+                .token_messenger_event_authority
+                .to_account_info(),
+            ctx.accounts
+                .token_messenger_minter_program
+                .to_account_info(),
+        ]
+        .to_vec();*/
+
+        for acc in ctx.remaining_accounts {
+            remaining.push(acc.clone());
+        }
+
         let cpi_ctx_1 = CpiContext::new(message_transmitter.clone(), accounts_1)
-            .with_remaining_accounts(
-                [
-                    ctx.accounts.token_messenger.to_account_info(),
-                    ctx.accounts.remote_token_messenger.to_account_info(),
-                    ctx.accounts.token_minter.to_account_info(),
-                    ctx.accounts.local_token.to_account_info(),
-                    ctx.accounts.token_pair.to_account_info(),
-                    ctx.accounts.recipient_token_account.to_account_info(),
-                    ctx.accounts.custody_token_account.to_account_info(),
-                    ctx.accounts.token_program.to_account_info(),
-                    ctx.accounts
-                        .token_messenger_event_authority
-                        .to_account_info(),
-                    ctx.accounts
-                        .token_messenger_minter_program
-                        .to_account_info(),
-                ]
-                .to_vec(),
-            );
+            .with_remaining_accounts(remaining);
 
         message_transmitter::cpi::receive_message(
             cpi_ctx_1,

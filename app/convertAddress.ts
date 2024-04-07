@@ -5,7 +5,7 @@ const solanaAddressToHex = (solanaAddress) =>
   hexlify(bs58.decode(solanaAddress));
 const solanaAddressToArray = (solanaAddress) => bs58.decode(solanaAddress);
 
-let solanaAddress = "CRZ4sCHF4eP4fyjdPCbu15kXNmLbENvNJnb41Ga9ZJCP"; // devnet usdc ata
+let solanaAddress = "97jJVm6gLtNFa6r2ocKrp8WbF7SzKvtHjWPMFhvVEo1p"; // devnet usdc ata
 
 console.log(solanaAddressToHex(solanaAddress));
 console.log(solanaAddressToArray(solanaAddress));
