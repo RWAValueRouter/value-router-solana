@@ -6,17 +6,18 @@ import * as abi from "./abi.json";
 import { BN } from "bn.js";
 
 const relaySol2Evm = async () => {
+  const privateKey = "0x你的私钥";
+
+  const txid =
+    "5LHa3HMx3jFN1qA8NGYtjsnzSusBmjTgzy13Pk17VcDLp9VyXg2sJs9egR8nS5bbKizHBzsB9Xwuwihn8jKduFsQ";
+
   const web3 = new Web3(process.env.EVM_PROVIDER_URL!);
 
   const contractAddress = process.env.REMOTE_VALUE_ROUTER!;
   console.log(contractAddress);
 
-  const messages = await findSolMessage(
-    "5LHa3HMx3jFN1qA8NGYtjsnzSusBmjTgzy13Pk17VcDLp9VyXg2sJs9egR8nS5bbKizHBzsB9Xwuwihn8jKduFsQ"
-  );
+  const messages = await findSolMessage(txid);
   console.log("messages: ", messages);
-
-  const privateKey = "0x你的私钥";
 
   const walletAccount = web3.eth.accounts.privateKeyToAccount(privateKey);
 
