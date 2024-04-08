@@ -6,10 +6,10 @@ import * as abi from "./abi.json";
 import { BN } from "bn.js";
 
 const relaySol2Evm = async () => {
-  //const privateKey = "0x你的私钥";
+  const privateKey = "0x你的私钥";
 
   const txid =
-    "67oWXHFnWBQnjicnbrzckiU7bo9BpkA442pjAh7brNGTMtGQYLgAwkF99W7gSc7KF73qmySdTrWVW8gj3qmWF2sD";
+    "5QEto8tcbqEx48tKs6wJPUDadjmg2FDEKZaqijiXCoMAk7zyLneB5E8a3yvXDw2Xn5oox92KuY6y3VJQEJF5K4EZ";
 
   const web3 = new Web3(process.env.EVM_PROVIDER_URL!);
 
@@ -82,7 +82,7 @@ const relaySol2Evm = async () => {
 
     swapdata = zeroExData;
 
-    callgas = parseInt(zeroExGas) + 100000;
+    callgas = parseInt(zeroExGas) * 1.5;
   }
 
   const data = contract.methods
