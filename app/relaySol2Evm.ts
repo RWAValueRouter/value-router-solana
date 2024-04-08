@@ -9,7 +9,7 @@ const relaySol2Evm = async () => {
   const privateKey = "0x你的私钥";
 
   const txid =
-    "5LHa3HMx3jFN1qA8NGYtjsnzSusBmjTgzy13Pk17VcDLp9VyXg2sJs9egR8nS5bbKizHBzsB9Xwuwihn8jKduFsQ";
+    "5kEu2XqEVGuHpziEa9KzmqHfj3hxnCYVxgB43fRCgJQ5VNWXKbbbxAM5BeKCxKoxwTjYns3Cr6A9RiMeGyuP9oc1";
 
   const web3 = new Web3(process.env.EVM_PROVIDER_URL!);
 
@@ -33,14 +33,11 @@ const relaySol2Evm = async () => {
     attestation: messages.swapMessage.attestation,
   };
 
-  const sellToken = "0xaf88d065e77c8cc2239327c5edb3a432268e5831";
-  const buyToken = "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9";
-
-  //const sellToken = process.env.EVM_USDC;
+  const sellToken = process.env.EVM_USDC;
 
   const sellAmount = new BN(swapMessage.message.substring(306, 370), "hex");
 
-  //const buyToken = "0x" + swapMessage.message.substring(394, 434);
+  const buyToken = "0x" + swapMessage.message.substring(394, 434);
 
   const buyAmount = new BN(swapMessage.message.substring(434, 498), "hex");
 
@@ -51,32 +48,41 @@ const relaySol2Evm = async () => {
     buyAmount: buyAmount.toString(10),
   });
 
-  const url = `https://arbitrum.api.0x.org/swap/v1/quote?sellToken=${sellToken}&buyToken=${buyToken}&sellAmount=${sellAmount}`;
+  var swapdata = "0x";
 
-  const headers = {
-    "0x-api-key": "9f49e2cb-69fe-4192-8afa-c92130f8aaa6",
-  };
+  var callgas = 0;
 
-  // 发送 GET 请求
-  const { data: zeroExData, gas: zeroExGas } = await fetch(url, { headers })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then((data) => {
-      return data;
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-    });
+  if (
+    buyToken != "0x0000000000000000000000000000000000000000" &&
+    buyToken != sellToken
+  ) {
+    const url = `https://sepolia.api.0x.org/swap/v1/quote?sellToken=${sellToken}&buyToken=${buyToken}&sellAmount=${sellAmount}`;
 
-  console.log(zeroExData);
+    const headers = {
+      "0x-api-key": "9f49e2cb-69fe-4192-8afa-c92130f8aaa6",
+    };
 
-  const swapdata = zeroExData;
+    // 发送 GET 请求
+    const { data: zeroExData, gas: zeroExGas } = await fetch(url, { headers })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        return data;
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
 
-  const callgas = zeroExGas;
+    console.log(zeroExData);
+
+    swapdata = zeroExData;
+
+    callgas = zeroExGas;
+  }
 
   const data = contract.methods
     .relay(bridgeMessage, swapMessage, swapdata, callgas)
@@ -88,13 +94,14 @@ const relaySol2Evm = async () => {
         from: walletAccount.address,
         to: contractAddress,
         data: data,
-        gasPrice: web3.utils.toHex(web3.utils.toWei("2", "gwei")),
+        gasPrice: web3.utils.toHex(1000000000),
         value: 0,
-        gas: 600000 + zeroExGas, // 设置 gasLimit
+        gas: 500000 + callgas, // 设置 gasLimit
       },
       privateKey
     )
     .then((signedTx) => {
+      console.log(signedTx);
       // 发送已签名交易
       web3.eth.sendSignedTransaction(
         signedTx.rawTransaction,
