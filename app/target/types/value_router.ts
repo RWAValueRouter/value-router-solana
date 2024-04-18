@@ -24,6 +24,26 @@ export type ValueRouter = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "usdcVault",
+          "isMut": true,
+          "isSigner": false
         }
       ],
       "args": [
@@ -503,6 +523,26 @@ export const IDL: ValueRouter = {
         {
           "name": "systemProgram",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "usdcVault",
+          "isMut": true,
           "isSigner": false
         }
       ],

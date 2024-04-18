@@ -6,10 +6,12 @@ import * as abi from "./abi.json";
 import { BN } from "bn.js";
 
 const relaySol2Evm = async () => {
-  const privateKey = "0x你的私钥";
+  //const privateKey = "0x你的私钥";
+  const privateKey =
+    "0x5c9433d265a283464d7289498c3cdafd67e701d6b3799791fb64dd2570f2d1d9";
 
   const txid =
-    "5QEto8tcbqEx48tKs6wJPUDadjmg2FDEKZaqijiXCoMAk7zyLneB5E8a3yvXDw2Xn5oox92KuY6y3VJQEJF5K4EZ";
+    "5odoHdVaf9PopkzYFCYQENXxjVEWWJQzjenjEMvGhA8oTJKTBz4LHSDuCuAwgBdekwBWheUnYdjy4sgrbQJobKNq";
 
   const web3 = new Web3(process.env.EVM_PROVIDER_URL!);
 

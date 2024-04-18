@@ -14,6 +14,9 @@ const main = async () => {
     authorityPda: pdas.authorityPda.publicKey,
     valueRouter: pdas.valueRouterAccount.publicKey,
     systemProgram: SystemProgram.programId,
+    //tokenProgram
+    //associatedTokenProgram
+    //mint
   };
 
   const initializeTx = await valueRouterProgram.methods

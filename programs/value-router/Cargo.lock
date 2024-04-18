@@ -2254,6 +2254,7 @@ dependencies = [
  "lazy_static",
  "message-transmitter",
  "solana-program",
+ "spl-token",
  "token-messenger-minter",
 ]
 

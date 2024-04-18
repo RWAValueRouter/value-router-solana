@@ -117,7 +117,6 @@ const main = async () => {
   console.log("postBridgeMessageTx: ", postBridgeMessageTx);
 
   // 3. Post swap data
-  /*
   const postSwapMessageTx = await valueRouterProgram.methods
     .postSwapMessage({
       swapMessage: {
@@ -133,7 +132,6 @@ const main = async () => {
     .rpc();
 
   console.log("postSwapMessageTx: ", postSwapMessageTx);
-  */
 
   // accountMetas list to pass to remainingAccounts
   const accountMetas: any[] = [];
