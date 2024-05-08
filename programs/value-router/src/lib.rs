@@ -551,45 +551,6 @@ pub mod value_router {
     }
 
     pub fn relay<'a>(ctx: Context<'_, '_, '_, 'a, RelayInstruction<'a>>) -> Result<()> {
-        /// 注意
-        /// relay_params 账户此时已经保存了 bridge message 和 swap message
-        /// 这个函数会通过 cpi 调用 messager transmitter program 的 receive_message 指令
-        /// 接受 bridge message 和 swap message.
-        /// receive_message 会验证 attestation，然后回调 receiver 的 handle_receive_message 指令.
-        ///
-        /// bridge message 的 receiver 是 token messenger mint program.
-        /// swap message 的 receiver 是 value router program.
-        ///
-        /// 在正式的设计中，bridge message body 中的参数 recipient 是一个受 value_router program 控制的 usdc associated token account.
-        /// value router 将根据 swap message body 的内容进行后续处理.
-        ///
-        /// 在当前的版本中，bridge message body 中的 recipient 是用户的 usdc associated token account.
-        /// receive bridge message 将导致 usdc 直接 mint 到用户的账户上.
-        ///
-        /// swap message 在这个版本中会被接受、验证，但不会进行处理.
-        ///
-        /// 这个版本的 program 要和 solana-dev 版的 evm valueRouter 合约配合使用.
-        ///
-        /// It is asserting the relay_params account is storing the bridge message and swap message.
-        ///
-        /// This function will invoke the `receive_message` instruction of the messager transmitter program through CPI.
-        /// It will receive the bridge message and swap message.
-        /// The `receive_message` operation will validate the attestation and then callback the `handle_receive_message` instruction of the receiver.
-        ///
-        /// Notice
-        /// The receiver for the bridge message is the token messenger mint program.
-        /// The receiver for the swap message is the value router program.
-        ///
-        /// According to our design, the recipient parameter in the bridge message body is a USDC associated token account controlled by the value_router program.
-        /// The value router will proceed with further processing based on the content of the swap message body.
-        ///
-        /// BUT in this version, the recipient in the bridge message body is the user's USDC associated token account.
-        /// Receiving the bridge message will result in USDC being minted directly to the user's account.
-        ///
-        /// The swap message will be received, validated, but not processed in this version.
-        ///
-        /// This version of the program is intended to be used with the solana-dev version of the EVM valueRouter contract.
-
         msg!("relay: {:?}", ctx.accounts.relay_params);
 
         let message_transmitter = ctx.accounts.message_transmitter.clone().to_account_info();
