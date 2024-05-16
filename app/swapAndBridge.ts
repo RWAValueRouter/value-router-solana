@@ -121,6 +121,8 @@ const main = async () => {
     }
   })();
 
+  console.log("eventAuthority: ", eventAuthority);
+
   const accounts = {
     payer: provider.wallet.publicKey,
     eventRentPayer: provider.wallet.publicKey,
@@ -170,6 +172,25 @@ const main = async () => {
     ownerInputAta: userTokenAccount,
   };
 
+  console.log("remaining length: ", swapInstruction.keys.length);
+
+  const uniqueKeys = new Set(
+    swapInstruction.keys.map((publicKeyInfo) => publicKeyInfo.pubkey.toString())
+  );
+
+  const dedupKeys = Array.from(uniqueKeys).map((publicKeyString) => {
+    const originalObject = swapInstruction.keys.find(
+      (publicKeyInfo) => publicKeyInfo.pubkey.toString() === publicKeyString
+    );
+
+    return {
+      pubkey: new PublicKey(publicKeyString),
+      isSigner: originalObject!.isSigner,
+      isWritable: originalObject!.isWritable,
+    };
+  });
+  console.log("dedupKeys length: ", dedupKeys.length);
+
   // Call swapAndBridge
   const swapAndBridgeInstruction = await valueRouterProgram.methods
     .swapAndBridge({
@@ -184,7 +205,7 @@ const main = async () => {
     })
     // eventAuthority and program accounts are implicitly added by Anchor
     .accounts(accounts)
-    .remainingAccounts(swapInstruction.keys)
+    .remainingAccounts(dedupKeys)
     // messageSentEventAccountKeypair must be a signer so the MessageTransmitter program can take control of it and write to it.
     // provider.wallet is also an implicit signer
     //.signers([messageSentEventAccountKeypair1, messageSentEventAccountKeypair2])
