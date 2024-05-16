@@ -9,10 +9,12 @@
     "receiveMessage": "tsx receiveMessage.ts",
     "convertAddress": "tsx convertAddress.ts",
     "relayEvm2Sol": "tsx relayEvm2Sol.ts",
-    "relaySol2Evm": "tsx relaySol2Evm.ts"
+    "relaySol2Evm": "tsx relaySol2Evm.ts",
+    "setupALT": "tsx setupALT.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
+    "@jup-ag/api": "^6.0.20-test",
     "@solana/spl-token": "^0.4.1",
     "@solana/web3.js": "^1.90.1",
     "dotenv": "^16.4.5",

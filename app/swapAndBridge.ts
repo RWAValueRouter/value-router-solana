@@ -1,8 +1,21 @@
 import "dotenv/config";
 import * as anchor from "@coral-xyz/anchor";
-import { PublicKey, Keypair, SystemProgram } from "@solana/web3.js";
+import {
+  PublicKey,
+  Keypair,
+  SystemProgram,
+  TransactionMessage,
+  VersionedTransaction,
+} from "@solana/web3.js";
 import * as spl from "@solana/spl-token";
 import { getBytes } from "ethers";
+
+import {
+  getQuote,
+  getSwapIx,
+  instructionDataToTransactionInstruction,
+  getAdressLookupTableAccounts,
+} from "./jupiter";
 
 import {
   SOLANA_USDC_ADDRESS,
@@ -14,6 +27,13 @@ import {
 } from "./utils";
 
 const main = async () => {
+  let quote = await getQuote(
+    process.env.USDT_ADDRESS,
+    process.env.USDC_ADDRESS,
+    1000000 // 0.001
+  );
+  console.log("quote: ", JSON.stringify(quote));
+
   const provider = getAnchorConnection();
   provider.opts.expire = 4294967295;
 
@@ -23,15 +43,39 @@ const main = async () => {
     valueRouterProgram,
   } = getPrograms(provider);
 
-  // Init needed variables
   const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
+  const sourceMint = new PublicKey(process.env.USDT_ADDRESS);
   const userTokenAccount = new PublicKey(process.env.USER_TOKEN_ACCOUNT);
+  const jupiterProgramId = new PublicKey(process.env.JUPITER_ADDRESS);
   const remoteValueRouter = new PublicKey(
     getBytes(evmAddressToBytes32(process.env.REMOTE_VALUE_ROUTER!))
   );
+  const LOOKUP_TABLE_2_ADDRESS = new PublicKey(
+    //"4eiZMuz9vSj2EGHSX3JUg3BRou1rNVG68VtsiiXXZLyp"
+    "CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq"
+  );
+
+  const programUsdcAccount = PublicKey.findProgramAddressSync(
+    [Buffer.from("usdc")],
+    valueRouterProgram.programId
+  )[0];
+  console.log("programUsdcAccount: ", programUsdcAccount);
+
+  const swapIx = await getSwapIx(
+    provider.wallet.publicKey,
+    programUsdcAccount,
+    quote
+  );
+  let addressLookupTableAddresses = swapIx.addressLookupTableAddresses;
+
+  let swapInstruction = instructionDataToTransactionInstruction(
+    swapIx.swapInstruction
+  );
+
+  let computeBudgetInstructions = swapIx.computeBudgetInstructions;
 
   // Default to 1 USDCSOL (e.g. $0.000001)
-  const sellUSDCAmount = new anchor.BN(process.env.SELL_AMOUNT ?? 1);
+  const bridgeUsdcAmount = new anchor.BN(process.env.SELL_AMOUNT ?? 1);
   const destinationDomain = Number(process.env.DEST_DOMAIN!);
   // mintRecipient is a bytes32 type so pad with 0's then convert to a solana PublicKey
   const mintRecipient = new PublicKey(
@@ -58,18 +102,9 @@ const main = async () => {
 
   // Generate a new keypairs for the MessageSent event account.
   const messageSentEventAccountKeypair1 = Keypair.generate();
-  console.log(
-    "messageSentEventAccountKeypair1: ",
-    messageSentEventAccountKeypair1.publicKey
-  );
 
   const messageSentEventAccountKeypair2 = Keypair.generate();
-  console.log(
-    "messageSentEventAccountKeypair2: ",
-    messageSentEventAccountKeypair2.publicKey
-  );
 
-  // expect CNfZLeeL4RUxwfPnjA3tLiQt4y43jp4V7bMpga673jf9
   const seed = Buffer.from("__event_authority");
   let eventAuthority = (() => {
     for (let b = 255; b > 0; b--) {
@@ -120,28 +155,87 @@ const main = async () => {
     //eventAuthority: messageSentEventAccountKeypair.publicKey,
     //program: valueRouterProgram.programId,
 
+    programAuthority: PublicKey.findProgramAddressSync(
+      [Buffer.from("authority")],
+      valueRouterProgram.programId
+    )[0],
+
+    programUsdcAccount: programUsdcAccount,
+
+    sourceMint: sourceMint,
+
+    jupiterProgram: jupiterProgramId,
+
     // other
-    ownerInputAta: userTokenAccount, // 输入 token 的用户 token account
+    ownerInputAta: userTokenAccount,
   };
-  console.log("accounts: ", accounts);
 
   // Call swapAndBridge
-  const swapAndBridgeTx = await valueRouterProgram.methods
+  const swapAndBridgeInstruction = await valueRouterProgram.methods
     .swapAndBridge({
+      jupiterSwapData: swapInstruction.data,
       buyArgs: {
         buyToken: buyToken,
         guaranteedBuyAmount: guaranteedBuyAmount,
       },
-      sellUsdcAmount: sellUSDCAmount,
+      bridgeUsdcAmount: bridgeUsdcAmount,
       destDomain: 0,
       recipient: mintRecipient,
     })
     // eventAuthority and program accounts are implicitly added by Anchor
     .accounts(accounts)
+    .remainingAccounts(swapInstruction.keys)
     // messageSentEventAccountKeypair must be a signer so the MessageTransmitter program can take control of it and write to it.
     // provider.wallet is also an implicit signer
-    .signers([messageSentEventAccountKeypair1, messageSentEventAccountKeypair2])
-    .rpc();
+    //.signers([messageSentEventAccountKeypair1, messageSentEventAccountKeypair2])
+    //.rpc();
+    .instruction();
+
+  const instructions = [
+    ...computeBudgetInstructions.map(instructionDataToTransactionInstruction),
+    swapAndBridgeInstruction,
+  ];
+
+  const blockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+
+  // Jupiter ALT
+  const addressLookupTableAccounts = await getAdressLookupTableAccounts(
+    provider.connection,
+    addressLookupTableAddresses
+  );
+
+  // ValueRouter ALT
+  const lookupTable2 = (
+    await provider.connection.getAddressLookupTable(LOOKUP_TABLE_2_ADDRESS)
+  ).value;
+
+  addressLookupTableAccounts.push(lookupTable2);
+
+  console.log("addressLookupTableAccounts: ", addressLookupTableAccounts);
+
+  const messageV0 = new TransactionMessage({
+    payerKey: provider.wallet.publicKey,
+    recentBlockhash: blockhash,
+    instructions,
+  }).compileToV0Message(addressLookupTableAccounts);
+  const transaction = new VersionedTransaction(messageV0);
+
+  try {
+    /*await provider.simulate(transaction, [
+      messageSentEventAccountKeypair1,
+      messageSentEventAccountKeypair2,
+    ]);*/
+
+    const txID = await provider.sendAndConfirm(transaction, [
+      messageSentEventAccountKeypair1,
+      messageSentEventAccountKeypair2,
+    ]);
+    console.log({ txID });
+  } catch (e) {
+    console.log({ e: e });
+  }
+
+  return;
 
   // Fetch message and attestation
   console.log("valueRouterProgram txHash:", swapAndBridgeTx);
