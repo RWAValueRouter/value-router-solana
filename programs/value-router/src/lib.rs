@@ -272,10 +272,11 @@ pub mod value_router {
                 "valuerouter: program_usdc_account: {:?}",
                 ctx.accounts.program_usdc_account.clone().to_account_info()
             );
+            let out_mint: Account<Mint> = Account::try_from(&ctx.accounts.burn_token_mint)?;
             let program_usdc_account = create_usdc_token_idempotent(
                 ctx.accounts.program_authority.clone(),
                 ctx.accounts.program_usdc_account.clone(),
-                ctx.accounts.source_mint.clone(),
+                Box::new(out_mint),
                 ctx.accounts.token_program.clone(),
                 ctx.accounts.system_program.clone(),
                 &authority_bump,

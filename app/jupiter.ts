@@ -1,5 +1,9 @@
 import { createJupiterApiClient } from "@jup-ag/api";
-import { AddressLookupTableAccount, PublicKey, TransactionInstruction } from "@solana/web3.js";
+import {
+  AddressLookupTableAccount,
+  PublicKey,
+  TransactionInstruction,
+} from "@solana/web3.js";
 
 const config = {
   basePath: "https://quote-api.jup.ag/v6",
@@ -7,7 +11,7 @@ const config = {
 
 const jupiterQuoteApi = createJupiterApiClient(config); // config is optional
 
-export const getQuote = async (inputMint, outputMint, amount) => {
+export const getQuote_2 = async (inputMint, outputMint, amount) => {
   let quote = await jupiterQuoteApi.quoteGet({
     inputMint: inputMint,
     outputMint: outputMint,
@@ -19,6 +23,16 @@ export const getQuote = async (inputMint, outputMint, amount) => {
   return quote;
 };
 
+export const getQuote = async (
+  fromMint: string,
+  toMint: string,
+  amount: number
+) => {
+  return fetch(
+    `${config.basePath}/quote?outputMint=${toMint}&inputMint=${fromMint}&amount=${amount}&slippage=0.5&maxAccounts=20`
+  ).then((response) => response.json());
+};
+
 export const getSwapIx = async (
   user: PublicKey,
   outputAccount: PublicKey,
@@ -28,6 +42,8 @@ export const getSwapIx = async (
     quoteResponse: quote,
     userPublicKey: user.toBase58(),
     destinationTokenAccount: outputAccount.toBase58(),
+    useSharedAccounts: false,
+    wrapAndUnwrapSol: true,
   };
   return fetch(config.basePath + `/swap-instructions`, {
     method: "POST",

@@ -26,11 +26,28 @@ import {
   getPrograms,
 } from "./utils";
 
+const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
+const usdtAddress = new PublicKey(process.env.USDT_ADDRESS);
+const wsolAddress = new PublicKey(process.env.WSOL_ADDRESS);
+const sourceMint = new PublicKey(process.env.USDT_ADDRESS);
+const userTokenAccount = new PublicKey(process.env.USER_TOKEN_ACCOUNT);
+const jupiterProgramId = new PublicKey(process.env.JUPITER_ADDRESS);
+const remoteValueRouter = new PublicKey(
+  getBytes(evmAddressToBytes32(process.env.REMOTE_VALUE_ROUTER!))
+);
+const LOOKUP_TABLE_2_ADDRESS = new PublicKey(
+  //"4eiZMuz9vSj2EGHSX3JUg3BRou1rNVG68VtsiiXXZLyp"
+  "CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq"
+);
+
+const inputToken = usdtAddress;
+//const inputToken = wsolAddress;
+
 const main = async () => {
   let quote = await getQuote(
-    process.env.USDT_ADDRESS,
+    inputToken.toBase58(),
     process.env.USDC_ADDRESS,
-    1000000 // 0.001
+    10000
   );
   console.log("quote: ", JSON.stringify(quote));
 
@@ -42,18 +59,6 @@ const main = async () => {
     tokenMessengerMinterProgram,
     valueRouterProgram,
   } = getPrograms(provider);
-
-  const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
-  const sourceMint = new PublicKey(process.env.USDT_ADDRESS);
-  const userTokenAccount = new PublicKey(process.env.USER_TOKEN_ACCOUNT);
-  const jupiterProgramId = new PublicKey(process.env.JUPITER_ADDRESS);
-  const remoteValueRouter = new PublicKey(
-    getBytes(evmAddressToBytes32(process.env.REMOTE_VALUE_ROUTER!))
-  );
-  const LOOKUP_TABLE_2_ADDRESS = new PublicKey(
-    //"4eiZMuz9vSj2EGHSX3JUg3BRou1rNVG68VtsiiXXZLyp"
-    "CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq"
-  );
 
   const programUsdcAccount = PublicKey.findProgramAddressSync(
     [Buffer.from("usdc")],
@@ -71,6 +76,9 @@ const main = async () => {
   let swapInstruction = instructionDataToTransactionInstruction(
     swapIx.swapInstruction
   );
+
+  //console.log("swapIx: ", swapIx);
+  //console.log("swapInstruction: ", swapInstruction);
 
   let computeBudgetInstructions = swapIx.computeBudgetInstructions;
 
@@ -120,8 +128,6 @@ const main = async () => {
       }
     }
   })();
-
-  console.log("eventAuthority: ", eventAuthority);
 
   const accounts = {
     payer: provider.wallet.publicKey,
@@ -205,7 +211,8 @@ const main = async () => {
     })
     // eventAuthority and program accounts are implicitly added by Anchor
     .accounts(accounts)
-    .remainingAccounts(dedupKeys)
+    .remainingAccounts(swapInstruction.keys)
+    //.remainingAccounts(dedupKeys)
     // messageSentEventAccountKeypair must be a signer so the MessageTransmitter program can take control of it and write to it.
     // provider.wallet is also an implicit signer
     //.signers([messageSentEventAccountKeypair1, messageSentEventAccountKeypair2])
