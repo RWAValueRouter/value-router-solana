@@ -47,7 +47,7 @@ const main = async () => {
   let quote = await getQuote(
     inputToken.toBase58(),
     process.env.USDC_ADDRESS,
-    10000
+    100000
   );
   console.log("quote: ", JSON.stringify(quote));
 
@@ -224,8 +224,6 @@ const main = async () => {
     swapAndBridgeInstruction,
   ];
 
-  const blockhash = (await provider.connection.getLatestBlockhash()).blockhash;
-
   // Jupiter ALT
   const addressLookupTableAccounts = await getAdressLookupTableAccounts(
     provider.connection,
@@ -240,6 +238,8 @@ const main = async () => {
   addressLookupTableAccounts.push(lookupTable2);
 
   console.log("addressLookupTableAccounts: ", addressLookupTableAccounts);
+
+  const blockhash = (await provider.connection.getLatestBlockhash()).blockhash;
 
   const messageV0 = new TransactionMessage({
     payerKey: provider.wallet.publicKey,

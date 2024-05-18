@@ -30,7 +30,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("2vL3mbzQyFMK3caqAJ7KUon8xDiRLQRJ5Gnfu9T78PJe");
+declare_id!("21dFJ81mfizZFKmBsxBtzkys6Sis9WNyhCZcc6FC7Zbw");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -260,7 +260,7 @@ pub mod value_router {
         let usdc_bump = ctx.bumps.get("program_usdc_account").unwrap().to_le_bytes();
 
         let mut flagLocalSwap = false;
-        let mut after_balance: u64 = 0;
+        let mut final_balance: u64 = 0;
         if ctx.accounts.source_mint.clone().key() != ctx.accounts.burn_token_mint.key() {
             msg!("valuerouter: handling local swap");
             flagLocalSwap = true;
@@ -273,7 +273,7 @@ pub mod value_router {
                 ctx.accounts.program_usdc_account.clone().to_account_info()
             );
             let out_mint: Account<Mint> = Account::try_from(&ctx.accounts.burn_token_mint)?;
-            let program_usdc_account = create_usdc_token_idempotent(
+            let initial_program_usdc_account = create_usdc_token_idempotent(
                 ctx.accounts.program_authority.clone(),
                 ctx.accounts.program_usdc_account.clone(),
                 Box::new(out_mint),
@@ -284,8 +284,8 @@ pub mod value_router {
             )?;
 
             msg!(
-                "valuerouter: program_usdc_account: {:?}",
-                program_usdc_account
+                "valuerouter: initial_program_usdc_account: {:?}",
+                initial_program_usdc_account
             );
 
             msg!("valuerouter: swap on jupiter");
@@ -295,20 +295,28 @@ pub mod value_router {
                 params.jupiter_swap_data,
             )?;
 
-            after_balance = program_usdc_account.amount;
-            msg!("valuerouter: swap output {:?}", after_balance);
+            let final_token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
+            let final_program_usdc_account =
+                TokenAccount::try_deserialize(&mut final_token_account_data.as_ref())?;
+
+            msg!(
+                "valuerouter: final_program_usdc_account: {:?}",
+                final_program_usdc_account
+            );
+            final_balance = final_program_usdc_account.amount;
+            msg!("valuerouter: swap output {:?}", final_balance);
             assert!(
-                after_balance >= params.bridge_usdc_amount,
+                final_balance >= params.bridge_usdc_amount,
                 "no enough swap output"
             );
         } else {
             msg!("valuerouter: no local swap");
-            after_balance = params.bridge_usdc_amount;
+            final_balance = params.bridge_usdc_amount;
         }
 
         // cpi depositForBurnWithCaller
         let deposit_for_burn_accounts = DepositForBurnContext {
-            owner: ctx.accounts.program_authority.clone().to_account_info(),
+            owner: ctx.accounts.program_authority.to_account_info(),
             event_rent_payer: ctx.accounts.event_rent_payer.clone().to_account_info(),
             sender_authority_pda: ctx.accounts.sender_authority_pda.to_account_info(),
             burn_token_account: ctx.accounts.program_usdc_account.clone().to_account_info(),
@@ -336,7 +344,7 @@ pub mod value_router {
         };
 
         let deposit_for_burn_params = DepositForBurnWithCallerParams {
-            amount: after_balance,
+            amount: final_balance,
             destination_domain: params.dest_domain,
             mint_recipient: *ctx
                 .accounts
@@ -352,12 +360,15 @@ pub mod value_router {
                 .key,
         };
 
-        let deposit_for_burn_ctx = CpiContext::new(
+        let signer_seeds: &[&[&[u8]]] = &[&[AUTHORITY_SEED, authority_bump.as_ref()]];
+
+        let deposit_for_burn_ctx = CpiContext::new_with_signer(
             ctx.accounts
                 .token_messenger_minter_program
                 .clone()
                 .to_account_info(),
             deposit_for_burn_accounts,
+            signer_seeds,
         );
 
         msg!("swap_and_bridge: cpi deposit_for_burn_with_caller");
@@ -404,7 +415,7 @@ pub mod value_router {
         let message_body = SwapMessage::format_message(
             1u32,
             bridge_nonce_hash.to_vec(),
-            after_balance,
+            final_balance,
             &params.buy_args.buy_token,
             params.buy_args.guaranteed_buy_amount.clone(),
             &params.recipient.clone(),
@@ -457,7 +468,7 @@ pub mod value_router {
         msg!("send message nonce: {:?}", nonce2);
 
         emit!(SwapAndBridgeEvent {
-            bridge_usdc_amount: after_balance,
+            bridge_usdc_amount: final_balance,
             buy_token: params.buy_args.buy_token,
             guaranteed_buy_amount: params.buy_args.guaranteed_buy_amount,
             dest_domain: params.dest_domain,
