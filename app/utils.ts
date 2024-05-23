@@ -27,8 +27,10 @@ import { MessageTransmitter } from "./target/types/message_transmitter";
 import { TokenMessengerMinter } from "./target/types/token_messenger_minter";
 import { ValueRouter } from "./target/types/value_router";
 
+//export const IRIS_API_URL =
+//  process.env.IRIS_API_URL ?? "https://iris-api-sandbox.circle.com";
 export const IRIS_API_URL =
-  process.env.IRIS_API_URL ?? "https://iris-api-sandbox.circle.com";
+  process.env.IRIS_API_URL ?? "https://iris-api.circle.com";
 export const SOLANA_SRC_DOMAIN_ID = 5;
 export const SOLANA_USDC_ADDRESS =
   process.env.SOLANA_USDC_ADDRESS ??

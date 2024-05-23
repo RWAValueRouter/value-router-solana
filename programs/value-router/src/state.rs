@@ -33,3 +33,14 @@ impl fmt::Debug for RelayData {
             .finish()
     }
 }
+
+#[event]
+pub struct SwapAndBridgeEvent {
+    pub bridge_usdc_amount: u64,
+    pub buy_token: Pubkey,
+    pub guaranteed_buy_amount: Vec<u8>,
+    pub dest_domain: u32,
+    pub recipient: Pubkey,
+    pub bridge_nonce: u64,
+    pub swap_nonce: u64,
+}

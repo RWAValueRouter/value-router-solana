@@ -15,6 +15,7 @@ import {
   getPrograms,
   decodeEventNonceFromMessage,
   getRelayPdas,
+  getSwapAndBridgePdas,
   SOLANA_USDC_ADDRESS,
 } from "./utils";
 
@@ -54,6 +55,17 @@ const messageHex2 = "0x000000000000000000000005000000000003ef66";
 
 const nonce1 = decodeEventNonceFromMessage(messageHex1);
 const nonce2 = decodeEventNonceFromMessage(messageHex2);
+const jupiterProgramId = new PublicKey(process.env.JUPITER_ADDRESS);
+
+const swapAndBridgePdas = getSwapAndBridgePdas(
+  {
+    messageTransmitterProgram,
+    tokenMessengerMinterProgram,
+    valueRouterProgram,
+  },
+  usdcAddress,
+  0 // not used here
+);
 
 const populateLookupTable = async (lookupTableAddress, addresses) => {
   const addAddressesInstruction = AddressLookupTableProgram.extendLookupTable({
@@ -85,7 +97,14 @@ const createAndSendV0Tx = async ([ints]) => {
 };
 
 (async () => {
-  const pdas = await getRelayPdas(
+  //const lookupTableAddress = await createLookupTable();
+  const lookupTableAddress = new PublicKey(
+    //"4eiZMuz9vSj2EGHSX3JUg3BRou1rNVG68VtsiiXXZLyp" // mainnet
+    //"7XE9Q69NwcE58XKY3VWfnLB5WrdQeiRQYgEBj2VUkXYg" // devnet
+    "CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq" // mainnet
+  );
+
+  const relayPdas = await getRelayPdas(
     {
       messageTransmitterProgram,
       tokenMessengerMinterProgram,
@@ -98,13 +117,6 @@ const createAndSendV0Tx = async ([ints]) => {
     nonce2
   );
 
-  //const lookupTableAddress = await createLookupTable();
-  const lookupTableAddress = new PublicKey(
-    //"4eiZMuz9vSj2EGHSX3JUg3BRou1rNVG68VtsiiXXZLyp" // mainnet
-    //"CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq" // mainnet
-    "7XE9Q69NwcE58XKY3VWfnLB5WrdQeiRQYgEBj2VUkXYg" // devnet
-  );
-
   // 每次更换合约时执行
   await populateLookupTable(lookupTableAddress, [
     messageTransmitterProgram.programId,
@@ -112,17 +124,23 @@ const createAndSendV0Tx = async ([ints]) => {
     valueRouterProgram.programId,
     spl.TOKEN_PROGRAM_ID,
     SystemProgram.programId,
-    pdas.messageTransmitterAccount.publicKey,
-    pdas.tokenMessengerAccount.publicKey,
-    pdas.tokenMinterAccount.publicKey,
-    pdas.localToken.publicKey,
-    pdas.remoteTokenMessengerKey.publicKey,
-    pdas.remoteTokenKey,
+    swapAndBridgePdas.messageTransmitterAccount.publicKey,
+    swapAndBridgePdas.tokenMessengerAccount.publicKey,
+    swapAndBridgePdas.tokenMinterAccount.publicKey,
+    swapAndBridgePdas.localToken.publicKey,
+    swapAndBridgePdas.remoteTokenMessengerKey.publicKey,
+    relayPdas.remoteTokenKey,
     usdcAddress,
-    pdas.tokenPair.publicKey,
-    pdas.custodyTokenAccount.publicKey,
-    pdas.tmAuthorityPda,
-    pdas.vrAuthorityPda,
-    pdas.tokenMessengerEventAuthority.publicKey,
+    relayPdas.tokenPair.publicKey,
+    relayPdas.custodyTokenAccount.publicKey,
+    relayPdas.tmAuthorityPda,
+    relayPdas.vrAuthorityPda,
+    relayPdas.tokenMessengerEventAuthority.publicKey,
+    swapAndBridgePdas.valueRouterAccount.publicKey,
+    swapAndBridgePdas.localToken.publicKey,
+    usdcAddress,
+    jupiterProgramId,
+    swapAndBridgePdas.authorityPda.publicKey,
+    swapAndBridgePdas.authorityPda2.publicKey,
   ]);
 })();

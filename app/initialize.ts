@@ -1,4 +1,4 @@
-import { PublicKey, Keypair, SystemProgram } from "@solana/web3.js";
+import { PublicKey, Keypair, SystemProgram, Authorized } from "@solana/web3.js";
 import { getAnchorConnection, getPrograms, getInitializePdas } from "./utils";
 
 const main = async () => {
@@ -6,6 +6,7 @@ const main = async () => {
   provider.opts.expire = 4294967295;
 
   const { valueRouterProgram } = getPrograms(provider);
+  console.log(valueRouterProgram);
 
   const pdas = getInitializePdas({ valueRouterProgram });
 
