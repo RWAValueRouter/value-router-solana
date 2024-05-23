@@ -29,7 +29,7 @@ export const getQuote = async (
   amount: number
 ) => {
   return fetch(
-    `${config.basePath}/quote?outputMint=${toMint}&inputMint=${fromMint}&amount=${amount}&slippage=0.5&maxAccounts=20`
+    `${config.basePath}/quote?outputMint=${toMint}&inputMint=${fromMint}&amount=${amount}&slippage=0.5&maxAccounts=15`
   ).then((response) => response.json());
 };
 

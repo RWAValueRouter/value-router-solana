@@ -43,14 +43,51 @@ const LOOKUP_TABLE_2_ADDRESS = new PublicKey(
 const inputToken = usdtAddress;
 //const inputToken = wsolAddress;
 
-const main = async () => {
-  let quote = await getQuote(
-    inputToken.toBase58(),
-    process.env.USDC_ADDRESS,
-    100000
-  );
-  console.log("quote: ", JSON.stringify(quote));
+// Default to 1 USDCSOL (e.g. $0.000001)
+const bridgeUsdcAmount = new anchor.BN(process.env.SELL_AMOUNT ?? 1);
+const destinationDomain = Number(process.env.DEST_DOMAIN!);
 
+// mintRecipient is a bytes32 type so pad with 0's then convert to a solana PublicKey
+const mintRecipient = new PublicKey(
+  getBytes(evmAddressToBytes32(process.env.MINT_RECIPIENT_HEX!))
+);
+const buyToken = new PublicKey(
+  getBytes(evmAddressToBytes32(process.env.BUY_TOKEN!))
+);
+let guaranteedBuyAmount_num = new anchor.BN(process.env.BUY_AMOUNT ?? 1);
+const guaranteedBuyAmount_hex = guaranteedBuyAmount_num.toString(16);
+const paddedHexString: string = guaranteedBuyAmount_hex.padStart(64, "0");
+const guaranteedBuyAmount: Buffer = Buffer.from(paddedHexString, "hex");
+
+// Generate a new keypairs for the MessageSent event account.
+const messageSentEventAccountKeypair1 = Keypair.generate();
+const messageSentEventAccountKeypair2 = Keypair.generate();
+
+const main = async () => {
+  let txID = await sendSwapAndBridgeTx();
+  await getCCTPAttestations(txID);
+};
+
+/**
+ * 发起 Solana -> EVM/Noble swapAndBridge transaction
+ *
+ * 调用 value_router program swap_and_bridge 指令
+ * 合约功能:
+ * 1. 调用 Jupiter，把 SPL token 兑换为 local token (USDC)
+ * 2. 调用 CCTP token messenger，发送 bridge message
+ * 3. 根据 swap args 参数生成 swap message body，调用 CCTP messenger transmitter，发送 swap message
+ *
+ * 此脚本功能:
+ * 1. 获取 Jupiter 报价
+ * 2. 获取 Local swap 的指令 data 和 accounts
+ * 3. 计算 context accounts
+ * 4. 归集 address lookup table
+ *  swapIx 中包含的多个 ALT
+ *  value_router 合约专用 ALT
+ * 5. 构建 swap_and_bridge instruction
+ * 6. 发送交易
+ */
+const sendSwapAndBridgeTx = async () => {
   const provider = getAnchorConnection();
   provider.opts.expire = 4294967295;
 
@@ -66,6 +103,16 @@ const main = async () => {
   )[0];
   console.log("programUsdcAccount: ", programUsdcAccount);
 
+  /// 1. 获取 Jupiter 报价
+  let quote = await getQuote(
+    inputToken.toBase58(),
+    process.env.USDC_ADDRESS,
+    100000
+  );
+
+  console.log("quote: ", JSON.stringify(quote));
+
+  /// 2. 获取 local swap 的 data 和 accounts
   const swapIx = await getSwapIx(
     provider.wallet.publicKey,
     programUsdcAccount,
@@ -77,27 +124,9 @@ const main = async () => {
     swapIx.swapInstruction
   );
 
-  //console.log("swapIx: ", swapIx);
-  //console.log("swapInstruction: ", swapInstruction);
-
   let computeBudgetInstructions = swapIx.computeBudgetInstructions;
 
-  // Default to 1 USDCSOL (e.g. $0.000001)
-  const bridgeUsdcAmount = new anchor.BN(process.env.SELL_AMOUNT ?? 1);
-  const destinationDomain = Number(process.env.DEST_DOMAIN!);
-  // mintRecipient is a bytes32 type so pad with 0's then convert to a solana PublicKey
-  const mintRecipient = new PublicKey(
-    getBytes(evmAddressToBytes32(process.env.MINT_RECIPIENT_HEX!))
-  );
-  const buyToken = new PublicKey(
-    getBytes(evmAddressToBytes32(process.env.BUY_TOKEN!))
-  );
-  let guaranteedBuyAmount_num = new anchor.BN(process.env.BUY_AMOUNT ?? 1);
-  const guaranteedBuyAmount_hex = guaranteedBuyAmount_num.toString(16);
-  const paddedHexString: string = guaranteedBuyAmount_hex.padStart(64, "0");
-  const guaranteedBuyAmount: Buffer = Buffer.from(paddedHexString, "hex");
-
-  // Get pdas
+  /// 3. Get accounts
   const pdas = getSwapAndBridgePdas(
     {
       messageTransmitterProgram,
@@ -107,11 +136,6 @@ const main = async () => {
     usdcAddress,
     destinationDomain
   );
-
-  // Generate a new keypairs for the MessageSent event account.
-  const messageSentEventAccountKeypair1 = Keypair.generate();
-
-  const messageSentEventAccountKeypair2 = Keypair.generate();
 
   const seed = Buffer.from("__event_authority");
   let eventAuthority = (() => {
@@ -180,6 +204,8 @@ const main = async () => {
 
   console.log("remaining length: ", swapInstruction.keys.length);
 
+  // accounts 去重处理，不用了
+  /*
   const uniqueKeys = new Set(
     swapInstruction.keys.map((publicKeyInfo) => publicKeyInfo.pubkey.toString())
   );
@@ -196,8 +222,25 @@ const main = async () => {
     };
   });
   console.log("dedupKeys length: ", dedupKeys.length);
+  */
 
-  // Call swapAndBridge
+  /// 4. Organize accounts in address lookup tables
+  /// 4.1 Jupiter ALT
+  const addressLookupTableAccounts = await getAdressLookupTableAccounts(
+    provider.connection,
+    addressLookupTableAddresses
+  );
+
+  /// 4.2 ValueRouter ALT
+  const lookupTable2 = (
+    await provider.connection.getAddressLookupTable(LOOKUP_TABLE_2_ADDRESS)
+  ).value;
+
+  addressLookupTableAccounts.push(lookupTable2);
+
+  console.log("addressLookupTableAccounts: ", addressLookupTableAccounts);
+
+  /// 5. Call swapAndBridge
   const swapAndBridgeInstruction = await valueRouterProgram.methods
     .swapAndBridge({
       jupiterSwapData: swapInstruction.data,
@@ -224,21 +267,7 @@ const main = async () => {
     swapAndBridgeInstruction,
   ];
 
-  // Jupiter ALT
-  const addressLookupTableAccounts = await getAdressLookupTableAccounts(
-    provider.connection,
-    addressLookupTableAddresses
-  );
-
-  // ValueRouter ALT
-  const lookupTable2 = (
-    await provider.connection.getAddressLookupTable(LOOKUP_TABLE_2_ADDRESS)
-  ).value;
-
-  addressLookupTableAccounts.push(lookupTable2);
-
-  console.log("addressLookupTableAccounts: ", addressLookupTableAccounts);
-
+  /// 6. Send transaction
   const blockhash = (await provider.connection.getLatestBlockhash()).blockhash;
 
   const messageV0 = new TransactionMessage({
@@ -259,12 +288,15 @@ const main = async () => {
       messageSentEventAccountKeypair2,
     ]);
     console.log({ txID });
+    return txID;
   } catch (e) {
     console.log({ e: e });
   }
+};
 
-  return;
-
+/// 1. 获取 swap_and_bridge 交易中的 bridge message and swap message
+/// 2. 获取对应的 attestations
+const getCCTPAttestations = async (swapAndBridgeTx) => {
   // Fetch message and attestation
   console.log("valueRouterProgram txHash:", swapAndBridgeTx);
   const { bridgeMessage, swapMessage } = await (async () => {
