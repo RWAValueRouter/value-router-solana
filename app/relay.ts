@@ -5,6 +5,8 @@ import {
   SystemProgram,
   ComputeBudgetProgram,
   Keypair,
+  TransactionMessage,
+  VersionedTransaction,
 } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
@@ -15,6 +17,24 @@ import {
   getRelayPdas,
 } from "./utils";
 
+/**
+ * EVM/Noble -> Solana relay 任务在 Solana 上执行的部分
+ * 0. 获取到 value router bridge message 和 swap message 以及相应的 attestations
+ *
+ * 1. 创建 data account
+ *  发送 create relay data 指令的交易 —— createRelayDataTx
+ *
+ * 2. 构建 post data 交易，包含两个指令
+ *  2.1 post bridge message instruction
+ *  2.2 post swap message instruction
+ *  2.3 发送 postDataTransaction
+ *
+ * 3. 构建 relay 交易，包含两个指令
+ *  3.1 准备 address lookup table
+ *  3.2 构建 relay instruction
+ *  3.3 构建 compute budget instruction
+ *  3.4 发送 relay 交易
+ */
 const main = async () => {
   const provider = getAnchorConnection();
   provider.opts.expire = 4294967295;
@@ -32,10 +52,10 @@ const main = async () => {
   const remoteDomain = process.env.REMOTE_DOMAIN!;
   const messageHex1 = process.env.MESSAGE_HEX_BRIDGE!;
   const attestationHex1 = process.env.ATTESTATION_HEX_BRIDGE!;
-  //const messageHex2 = process.env.MESSAGE_HEX_SWAP!;
-  //const attestationHex2 = process.env.ATTESTATION_HEX_SWAP!;
-  const messageHex2 = "0x000000000000000000000005000000000003ef66";
-  const attestationHex2 = "";
+  const messageHex2 = process.env.MESSAGE_HEX_SWAP!;
+  const attestationHex2 = process.env.ATTESTATION_HEX_SWAP!;
+  //const messageHex2 = "0x000000000000000000000005000000000003ef66";
+  //const attestationHex2 = "";
   const nonce1 = decodeEventNonceFromMessage(messageHex1);
   const nonce2 = decodeEventNonceFromMessage(messageHex2);
 
@@ -84,23 +104,21 @@ const main = async () => {
 
   console.log(pdas);
 
-  // 1. Create RelayData account
+  /// 1. Create RelayData account transaction
   const createRelayDataTx = await valueRouterProgram.methods
     .createRelayData()
-    // eventAuthority and program accounts are implicitly added by Anchor
     .accounts({
       relayData: relayDataKeypair.publicKey,
       systemProgram: SystemProgram.programId,
     })
     .signers([relayDataKeypair])
-    // messageSentEventAccountKeypair must be a signer so the MessageTransmitter program can take control of it and write to it.
-    // provider.wallet is also an implicit signer
     .rpc();
 
   console.log("createRelayDataTx: ", createRelayDataTx);
 
-  // 2. Post bridge data
-  const postBridgeMessageTx = await valueRouterProgram.methods
+  /// 2. Post relay data transaction
+  /// 2.1 Post bridge data instruction
+  const postBridgeMessageIx = await valueRouterProgram.methods
     .postBridgeMessage({
       bridgeMessage: {
         message: Buffer.from(messageHex1.replace("0x", ""), "hex"),
@@ -112,12 +130,10 @@ const main = async () => {
       relayData: relayDataKeypair.publicKey,
     })
     .signers([])
-    .rpc();
+    .instruction();
 
-  console.log("postBridgeMessageTx: ", postBridgeMessageTx);
-
-  // 3. Post swap data
-  const postSwapMessageTx = await valueRouterProgram.methods
+  /// 2.2 Post swap data instruction
+  const postSwapMessageIx = await valueRouterProgram.methods
     .postSwapMessage({
       swapMessage: {
         message: Buffer.from(messageHex2.replace("0x", ""), "hex"),
@@ -129,11 +145,43 @@ const main = async () => {
       relayData: relayDataKeypair.publicKey,
     })
     .signers([])
-    .rpc();
+    .instruction();
 
-  console.log("postSwapMessageTx: ", postSwapMessageTx);
+  /// 2.3 Send post transaction
+  const postDataInstructions = [postBridgeMessageIx, postSwapMessageIx];
 
-  // accountMetas list to pass to remainingAccounts
+  const blockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+
+  const postDataMessageV0 = new TransactionMessage({
+    payerKey: provider.wallet.publicKey,
+    recentBlockhash: blockhash,
+    instructions: postDataInstructions,
+  }).compileToV0Message();
+
+  const postDataTransaction = new VersionedTransaction(postDataMessageV0);
+
+  try {
+    /*await provider.simulate(relayTransaction);*/
+
+    const txID = await provider.sendAndConfirm(postDataTransaction);
+    console.log("post data transaction: ", { txID });
+  } catch (e) {
+    console.log({ e: e });
+  }
+
+  /// 3. Relay transaction
+  /// 3.1. Prepare address lookup table
+  const LOOKUP_TABLE_ADDRESS = new PublicKey(
+    "7XE9Q69NwcE58XKY3VWfnLB5WrdQeiRQYgEBj2VUkXYg"
+  );
+
+  const lookupTable = (
+    await provider.connection.getAddressLookupTable(LOOKUP_TABLE_ADDRESS)
+  ).value;
+
+  const addressLookupTableAccounts = [lookupTable];
+
+  /// 3.2 Relay instruction
   const accountMetas: any[] = [];
   accountMetas.push({
     isSigner: false,
@@ -202,27 +250,20 @@ const main = async () => {
     }
   })();
 
-  console.log(
-    "messageTransmitterProgram.programId: ",
-    messageTransmitterProgram.programId
-  );
-
-  const relayTx = await valueRouterProgram.methods
+  const relayIx = await valueRouterProgram.methods
     .relay()
     .accounts({
       payer: provider.wallet.publicKey,
       caller: provider.wallet.publicKey,
       valueRouterProgram: valueRouterProgram.programId,
-      authorityPda: pdas.authorityPda,
+      tmAuthorityPda: pdas.tmAuthorityPda,
+      vrAuthorityPda: pdas.vrAuthorityPda,
       messageTransmitterProgram: messageTransmitterProgram.programId,
       messageTransmitter: pdas.messageTransmitterAccount.publicKey,
       usedNonces: pdas.usedNonces1,
       systemProgram: SystemProgram.programId,
       messageTransmitterEventAuthority: eventAuthority,
       relayParams: relayDataKeypair.publicKey,
-      /*relayParams: new PublicKey(
-        "Ee7jv9pPPWWzKRnqf5Kw1d1Lp7vtApTGmcbTu4WnDYVP"
-      ),*/
       tokenMessengerMinterProgram: tokenMessengerMinterProgram.programId,
       tokenProgram: TOKEN_PROGRAM_ID,
       usdcVault: userTokenAccount,
@@ -237,17 +278,34 @@ const main = async () => {
       tokenMessengerEventAuthority: pdas.tokenMessengerEventAuthority.publicKey,
     })
     .remainingAccounts(accountMetas)
-    .transaction();
+    .instruction();
 
-  provider.sendAndConfirm(
-    relayTx.add(
-      ComputeBudgetProgram.setComputeUnitLimit({
-        units: 800000,
-      })
-    )
-  );
+  /// 3.3 Computte budget instruction
+  const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
+    units: 1200000,
+  });
 
-  console.log("\n\nrelay Tx: ", relayTx);
+  const relayInstructions = [computeBudgetIx, relayIx];
+
+  /// 3.4 Send relay transaction
+  const blockhash2 = (await provider.connection.getLatestBlockhash()).blockhash;
+
+  const relayMessageV0 = new TransactionMessage({
+    payerKey: provider.wallet.publicKey,
+    recentBlockhash: blockhash2,
+    instructions: relayInstructions,
+  }).compileToV0Message(addressLookupTableAccounts);
+
+  const relayTransaction = new VersionedTransaction(relayMessageV0);
+
+  try {
+    /*await provider.simulate(relayTransaction);*/
+
+    const txID = await provider.sendAndConfirm(relayTransaction);
+    console.log("relay transaction: ", { txID });
+  } catch (e) {
+    console.log({ e: e });
+  }
 };
 
 main();

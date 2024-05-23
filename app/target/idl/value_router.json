@@ -24,26 +24,6 @@
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "associatedTokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "mint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "usdcVault",
-          "isMut": true,
-          "isSigner": false
         }
       ],
       "args": [
@@ -259,7 +239,12 @@
           "isSigner": true
         },
         {
-          "name": "authorityPda",
+          "name": "tmAuthorityPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vrAuthorityPda",
           "isMut": false,
           "isSigner": false
         },

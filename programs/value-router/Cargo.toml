@@ -24,7 +24,6 @@ anchor-lang = { version = "=0.28.0", features = [
 ] }
 solana-program = "1.16.9"
 anchor-spl = "=0.28.0"
-spl-token = "3.5.0"
 message-transmitter = { path = "../message-transmitter", features = [
     "no-entrypoint",
     "cpi",

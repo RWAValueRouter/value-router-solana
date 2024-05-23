@@ -11,7 +11,7 @@ const relaySol2Evm = async () => {
     "0x5c9433d265a283464d7289498c3cdafd67e701d6b3799791fb64dd2570f2d1d9";
 
   const txid =
-    "5odoHdVaf9PopkzYFCYQENXxjVEWWJQzjenjEMvGhA8oTJKTBz4LHSDuCuAwgBdekwBWheUnYdjy4sgrbQJobKNq";
+    "5kEu2XqEVGuHpziEa9KzmqHfj3hxnCYVxgB43fRCgJQ5VNWXKbbbxAM5BeKCxKoxwTjYns3Cr6A9RiMeGyuP9oc1";
 
   const web3 = new Web3(process.env.EVM_PROVIDER_URL!);
 
@@ -84,7 +84,7 @@ const relaySol2Evm = async () => {
 
     swapdata = zeroExData;
 
-    callgas = parseInt(zeroExGas) * 1.5;
+    callgas = zeroExGas;
   }
 
   const data = contract.methods
@@ -99,7 +99,7 @@ const relaySol2Evm = async () => {
         data: data,
         gasPrice: web3.utils.toHex(1000000000),
         value: 0,
-        gas: 400000 + parseInt(callgas), // 设置 gasLimit
+        gas: 500000, // 设置 gasLimit
       },
       privateKey
     )

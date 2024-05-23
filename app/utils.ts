@@ -309,10 +309,15 @@ export const getRelayPdas = async (
     tokenMessengerMinterProgram.programId,
     [solUsdcAddress]
   );
-  const authorityPda = findProgramAddress(
+  const tmAuthorityPda = findProgramAddress(
     "message_transmitter_authority",
     messageTransmitterProgram.programId,
     [tokenMessengerMinterProgram.programId]
+  ).publicKey;
+  const vrAuthorityPda = findProgramAddress(
+    "message_transmitter_authority",
+    messageTransmitterProgram.programId,
+    [valueRouterProgram.programId]
   ).publicKey;
   const tokenMessengerEventAuthority = findProgramAddress(
     "__event_authority",
@@ -348,7 +353,8 @@ export const getRelayPdas = async (
     remoteTokenKey,
     tokenPair,
     custodyTokenAccount,
-    authorityPda,
+    tmAuthorityPda,
+    vrAuthorityPda,
     tokenMessengerEventAuthority,
     usedNonces1,
     usedNonces2,

@@ -24,26 +24,6 @@ export type ValueRouter = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "associatedTokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "mint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "usdcVault",
-          "isMut": true,
-          "isSigner": false
         }
       ],
       "args": [
@@ -259,7 +239,12 @@ export type ValueRouter = {
           "isSigner": true
         },
         {
-          "name": "authorityPda",
+          "name": "tmAuthorityPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vrAuthorityPda",
           "isMut": false,
           "isSigner": false
         },
@@ -524,26 +509,6 @@ export const IDL: ValueRouter = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "associatedTokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "mint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "usdcVault",
-          "isMut": true,
-          "isSigner": false
         }
       ],
       "args": [
@@ -759,7 +724,12 @@ export const IDL: ValueRouter = {
           "isSigner": true
         },
         {
-          "name": "authorityPda",
+          "name": "tmAuthorityPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vrAuthorityPda",
           "isMut": false,
           "isSigner": false
         },

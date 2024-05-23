@@ -44,6 +44,8 @@ const relayEvm2Sol = async () => {
     nonce,
   });
 
+  return;
+
   await solReceiveMessage(
     usdcAddress,
     userTokenAccount,

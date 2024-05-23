@@ -2,14 +2,8 @@ mod state;
 
 use {
     crate::state::{RelayData, ValueRouter},
-    anchor_lang::{
-        prelude::*,
-        solana_program::{entrypoint::ProgramResult, instruction::Instruction, program::invoke_signed},
-        system_program,
-    },
-    anchor_spl::{
-        token::{self, Mint, Token, TokenAccount},
-    },
+    anchor_lang::prelude::*,
+    anchor_spl::token::{Mint, Token, TokenAccount},
     message_transmitter::{
         cpi::accounts::{ReceiveMessageContext, SendMessageContext},
         instructions::{
@@ -64,12 +58,6 @@ pub mod value_router {
         pub value_router: Box<Account<'info, ValueRouter>>,
 
         pub system_program: Program<'info, System>,
-
-        pub token_program: Program<'info, Token>,
-
-        pub mint: Account<'info, Mint>,
-
-        pub authority: Program<'info, program::ValueRouter>,
     }
 
     // Instruction parameters
@@ -83,6 +71,7 @@ pub mod value_router {
             .bumps
             .get("authority_pda")
             .ok_or(ProgramError::InvalidSeeds)?;
+
         Ok(())
     }
 
@@ -92,7 +81,7 @@ pub mod value_router {
     // Instruction accounts
     #[derive(Accounts)]
     #[instruction(params: SwapAndBridgeParams)]
-    pub struct SwapAndBridgeInstruction<'info> { 
+    pub struct SwapAndBridgeInstruction<'info> {
         // Signers
         #[account()]
         pub payer: Signer<'info>,
@@ -156,7 +145,7 @@ pub mod value_router {
         pub local_token: Box<Account<'info, LocalToken>>,
 
         #[account(mut)]
-        pub burn_token_mint: Box<Account<'info, Mint>>, // USDC
+        pub burn_token_mint: Box<Account<'info, Mint>>,
 
         /// CHECK:
         pub remote_value_router: UncheckedAccount<'info>,
@@ -164,20 +153,6 @@ pub mod value_router {
         /// CHECK:
         #[account()]
         pub event_authority: UncheckedAccount<'info>,
-
-        // Jupiter
-
-        #[account(mut, seeds = [AUTHORITY_SEED], bump)]
-        pub program_authority: SystemAccount<'info>,
-
-        /// CHECK: This may not be initialized yet.
-        #[account(mut, seeds = [WSOL_SEED], bump)]
-        pub source_token_account: UncheckedAccount<'info>,
-
-        #[account(address = spl_token::native_mint::id())]
-        pub source_mint: Account<'info, Mint>,
-
-        pub jupiter_program: Program<'info, Jupiter>,
     }
 
     #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -275,63 +250,8 @@ pub mod value_router {
             ]
             .concat(),
             authority_seeds,
+        )?;
         */
-
-        // ========================
-
-
-        let authority_bump = ctx.bumps.program_authority.to_le_bytes();
-        let wsol_bump = ctx.bumps.burn_token_mint.to_le_bytes();
-
-        create_wsol_token_idempotent(
-            ctx.accounts.program_authority.clone(),
-            ctx.accounts.source_token_account.clone(),
-            ctx.accounts.source_mint.clone(),
-            ctx.accounts.token_program.clone(),
-            ctx.accounts.system_program.clone(),
-            &authority_bump,
-            &wsol_bump,
-        )?;
-
-        swap_on_jupiter(
-            ctx.remaining_accounts,
-            ctx.accounts.jupiter_program.clone(),
-            data,
-        )?;
-
-        let after_swap_lamports = ctx.accounts.burn_token_mint.lamports();
-
-        close_program_wsol(
-            ctx.accounts.program_authority.clone(),
-            ctx.accounts.burn_token_mint.clone(),
-            ctx.accounts.token_program.clone(),
-            &authority_bump,
-        )?;
-
-        let rent = Rent::get()?;
-        let space = TokenAccount::LEN;
-        let token_lamports = rent.minimum_balance(space);
-        let out_amount = after_swap_lamports - token_lamports;
-
-        msg!("Transfer SOL to user");
-        let signer_seeds: &[&[&[u8]]] = &[&[AUTHORITY_SEED, authority_bump.as_ref()]];
-        let lamports = out_amount;
-        system_program::transfer(
-            CpiContext::new_with_signer(
-                ctx.accounts.system_program.to_account_info(),
-                system_program::Transfer {
-                    from: ctx.accounts.program_authority.to_account_info(),
-                    to: ctx.accounts.payer.to_account_info(),
-                },
-                signer_seeds,
-            ),
-            lamports,
-        )?;
-
-        // ========================
-
-
-
 
         // cpi depositForBurnWithCaller
         let deposit_for_burn_accounts = DepositForBurnContext {
@@ -475,173 +395,290 @@ pub mod value_router {
         Ok(())
     }
 
+    /*
+    Instruction 3: create_relay_data
+     */
+    #[derive(Accounts)]
+    pub struct CreateRelayData<'info> {
+        #[account(mut)]
+        pub event_rent_payer: Signer<'info>,
+
+        // TODO use pda
+        #[account(
+            init,
+            payer = event_rent_payer,
+            space = 1500,
+        )]
+        pub relay_data: Box<Account<'info, RelayData>>,
+
+        pub system_program: Program<'info, System>,
+    }
+
+    pub fn create_relay_data(ctx: Context<CreateRelayData>) -> Result<()> {
+        msg!(
+            "create relay data account: {:?}",
+            ctx.accounts.relay_data.to_account_info()
+        );
+        Ok(())
+    }
+
+    /*
+    Instruction 4: post_bridge_message
+     */
+    #[derive(Accounts)]
+    #[instruction(params: PostBridgeDataParams)]
+    pub struct PostBridgeData<'info> {
+        #[account()]
+        pub owner: Signer<'info>,
+
+        #[account(mut)]
+        pub relay_data: Box<Account<'info, RelayData>>,
+    }
+
+    // Instruction parameters
+    #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+    pub struct PostBridgeDataParams {
+        bridge_message: ReceiveMessageParams,
+    }
+
+    pub fn post_bridge_message(
+        ctx: Context<PostBridgeData>,
+        params: PostBridgeDataParams,
+    ) -> Result<()> {
+        msg!("post_bridge_message");
+
+        ctx.accounts.relay_data.bridge_message = params.bridge_message;
+
+        Ok(())
+    }
+
+    /*
+    Instruction 5: post_swap_message
+     */
+    #[derive(Accounts)]
+    #[instruction(params: PostSwapDataParams)]
+    pub struct PostSwapData<'info> {
+        #[account()]
+        pub owner: Signer<'info>,
+
+        #[account(mut)]
+        pub relay_data: Box<Account<'info, RelayData>>,
+    }
+
+    // Instruction parameters
+    #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+    pub struct PostSwapDataParams {
+        swap_message: ReceiveMessageParams,
+    }
+
+    pub fn post_swap_message(ctx: Context<PostSwapData>, params: PostSwapDataParams) -> Result<()> {
+        msg!("post_swap_message");
+
+        ctx.accounts.relay_data.swap_message = params.swap_message;
+
+        Ok(())
+    }
+
     // TODO reclaim
-}
 
-// Jupiter flash fill
+    /*
+    Instruction 6: relay
+     */
+    // Instruction accounts
+    #[derive(Accounts)]
+    pub struct RelayInstruction<'info> {
+        #[account(mut)]
+        pub payer: Signer<'info>,
 
-pub const AUTHORITY_SEED: &[u8] = b"authority";
-pub const WSOL_SEED: &[u8] = b"wsol";
+        #[account()]
+        pub caller: Signer<'info>,
 
-mod jupiter {
-    use anchor_lang::declare_id;
-    declare_id!("JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4");
-}
+        /// CHECK: token messenger authority pda
+        #[account()]
+        pub tm_authority_pda: UncheckedAccount<'info>,
 
-#[derive(Clone)]
-pub struct Jupiter;
+        /// CHECK: value router authority pda
+        #[account()]
+        pub vr_authority_pda: UncheckedAccount<'info>,
 
-impl anchor_lang::Id for Jupiter {
-    fn id() -> Pubkey {
-        jupiter::id()
+        pub message_transmitter_program:
+            Program<'info, message_transmitter::program::MessageTransmitter>,
+
+        #[account()]
+        pub message_transmitter: Box<Account<'info, MessageTransmitter>>,
+
+        // Used nonces state, see UsedNonces struct for more details
+        /// CHECK:
+        #[account(mut)]
+        pub used_nonces: Box<Account<'info, UsedNonces>>,
+
+        pub token_messenger_minter_program: Program<'info, TokenMessengerMinter>,
+
+        pub value_router_program: Program<'info, program::ValueRouter>,
+
+        pub token_program: Program<'info, Token>,
+
+        pub system_program: Program<'info, System>,
+
+        /// CHECK: unsafe
+        #[account()]
+        pub message_transmitter_event_authority: UncheckedAccount<'info>,
+
+        /// CHECK: unsafe
+        #[account()]
+        pub token_messenger_event_authority: UncheckedAccount<'info>,
+        // remaining accounts: additional accounts to be passed to the receiver
+        #[account()]
+        pub relay_params: Box<Account<'info, RelayData>>,
+
+        #[account(mut)]
+        pub usdc_vault: Account<'info, TokenAccount>,
+
+        pub token_messenger: Box<Account<'info, TokenMessenger>>,
+
+        pub remote_token_messenger: Box<Account<'info, RemoteTokenMessenger>>,
+
+        pub token_minter: Box<Account<'info, TokenMinter>>,
+
+        #[account(mut)]
+        pub local_token: Box<Account<'info, LocalToken>>,
+
+        pub token_pair: Box<Account<'info, TokenPair>>,
+
+        pub payer_input_ata: Account<'info, TokenAccount>,
+
+        #[account(mut)]
+        pub recipient_token_account: Box<Account<'info, TokenAccount>>,
+
+        #[account(mut)]
+        pub custody_token_account: Box<Account<'info, TokenAccount>>,
     }
-}
 
+    pub fn relay<'a>(ctx: Context<'_, '_, '_, 'a, RelayInstruction<'a>>) -> Result<()> {
+        msg!("relay: {:?}", ctx.accounts.relay_params);
 
-#[error_code]
-pub enum ErrorCode {
-    InvalidReturnData,
-    InvalidJupiterProgram,
-    IncorrectOwner,
-}
+        let message_transmitter = ctx.accounts.message_transmitter.clone().to_account_info();
 
-fn swap_on_jupiter<'info>(
-    remaining_accounts: &[AccountInfo],
-    jupiter_program: Program<'info, Jupiter>,
-    data: Vec<u8>,
-) -> ProgramResult {
-    let accounts: Vec<AccountMeta> = remaining_accounts
-        .iter()
-        .map(|acc| AccountMeta {
-            pubkey: *acc.key,
-            is_signer: acc.is_signer,
-            is_writable: acc.is_writable,
-        })
-        .collect();
+        let accounts_1 = ReceiveMessageContext {
+            payer: ctx.accounts.payer.to_account_info(),
+            caller: ctx.accounts.caller.to_account_info(),
+            authority_pda: ctx.accounts.tm_authority_pda.to_account_info(),
+            message_transmitter: message_transmitter.clone(),
+            used_nonces: ctx.accounts.used_nonces.to_account_info(),
+            receiver: ctx
+                .accounts
+                .token_messenger_minter_program
+                .to_account_info(),
+            system_program: ctx.accounts.system_program.to_account_info(),
+            event_authority: ctx
+                .accounts
+                .message_transmitter_event_authority
+                .to_account_info(),
+            program: ctx.accounts.value_router_program.to_account_info(),
+        };
 
-    let accounts_infos: Vec<AccountInfo> = remaining_accounts
-        .iter()
-        .map(|acc| AccountInfo { ..acc.clone() })
-        .collect();
+        let mut remaining: Vec<AccountInfo> = [
+            ctx.accounts.token_messenger.to_account_info(),
+            ctx.accounts.remote_token_messenger.to_account_info(),
+            ctx.accounts.token_minter.to_account_info(),
+            ctx.accounts.local_token.to_account_info(),
+            ctx.accounts.token_pair.to_account_info(),
+            ctx.accounts.recipient_token_account.to_account_info(),
+            ctx.accounts.custody_token_account.to_account_info(),
+            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts
+                .token_messenger_event_authority
+                .to_account_info(),
+            ctx.accounts
+                .token_messenger_minter_program
+                .to_account_info(),
+        ]
+        .to_vec();
 
-    // TODO: Check the first 8 bytes. Only Jupiter Route CPI allowed.
+        let cpi_ctx_1 = CpiContext::new(message_transmitter.clone(), accounts_1)
+            .with_remaining_accounts(remaining);
 
-    invoke_signed(
-        &Instruction {
-            program_id: *jupiter_program.key,
-            accounts,
-            data,
-        },
-        &accounts_infos,
-        &[],
-    )
-}
+        /*message_transmitter::cpi::receive_message(
+            cpi_ctx_1,
+            ctx.accounts.relay_params.bridge_message.clone(),
+        )?;*/
+        msg!("receive bridge msg success");
 
-fn create_wsol_token_idempotent<'info>(
-    program_authority: SystemAccount<'info>,
-    program_wsol_account: UncheckedAccount<'info>,
-    sol_mint: Account<'info, Mint>,
-    token_program: Program<'info, Token>,
-    system_program: Program<'info, System>,
-    authority_bump: &[u8],
-    wsol_bump: &[u8],
-) -> Result<TokenAccount> {
-    if program_wsol_account.data_is_empty() {
-        let signer_seeds: &[&[&[u8]]] = &[
-            &[AUTHORITY_SEED, authority_bump.as_ref()],
-            &[WSOL_SEED, wsol_bump.as_ref()],
-        ];
+        // check usdc balance change of usdc_vault;
 
-        msg!("Initialize program wSOL account");
-        let rent = Rent::get()?;
-        let space = TokenAccount::LEN;
-        let lamports = rent.minimum_balance(space);
-        system_program::create_account(
-            CpiContext::new_with_signer(
-                system_program.to_account_info(),
-                system_program::CreateAccount {
-                    from: program_authority.to_account_info(),
-                    to: program_wsol_account.to_account_info(),
-                },
-                signer_seeds,
-            ),
-            lamports,
-            space as u64,
-            token_program.key,
+        // check received
+
+        let accounts_2 = ReceiveMessageContext {
+            payer: ctx.accounts.payer.to_account_info(),
+            caller: ctx.accounts.caller.to_account_info(),
+            authority_pda: ctx.accounts.vr_authority_pda.to_account_info(),
+            message_transmitter: message_transmitter.clone(),
+            used_nonces: ctx.accounts.used_nonces.to_account_info(),
+            receiver: ctx.accounts.value_router_program.to_account_info(),
+            system_program: ctx.accounts.system_program.to_account_info(),
+            event_authority: ctx
+                .accounts
+                .message_transmitter_event_authority
+                .to_account_info(),
+            program: ctx.accounts.value_router_program.to_account_info(),
+        };
+
+        let cpi_ctx_2 = CpiContext::new(message_transmitter, accounts_2);
+
+        message_transmitter::cpi::receive_message(
+            cpi_ctx_2,
+            ctx.accounts.relay_params.swap_message.clone(),
         )?;
+        msg!("receive swap msg success");
 
-        msg!("Initialize program wSOL token account");
-        token::initialize_account3(CpiContext::new(
-            token_program.to_account_info(),
-            token::InitializeAccount3 {
-                account: program_wsol_account.to_account_info(),
-                mint: sol_mint.to_account_info(),
-                authority: program_authority.to_account_info(),
-            },
-        ))?;
+        // do nothing
+        // TODO
 
-        let data = program_wsol_account.try_borrow_data()?;
-        let wsol_token_account = TokenAccount::try_deserialize(&mut data.as_ref())?;
+        // decode message
 
-        Ok(wsol_token_account)
-    } else {
-        let data = program_wsol_account.try_borrow_data()?;
-        let wsol_token_account = TokenAccount::try_deserialize(&mut data.as_ref())?;
-        if &wsol_token_account.owner != program_authority.key {
-            // TODO: throw error
-            return err!(ErrorCode::IncorrectOwner);
-        }
+        // do swap
 
-        Ok(wsol_token_account)
+        // check swap result
+
+        // send to recipient
+
+        Ok(())
     }
-}
 
-fn close_program_wsol<'info>(
-    program_authority: SystemAccount<'info>,
-    program_wsol_account: UncheckedAccount<'info>,
-    token_program: Program<'info, Token>,
-    authority_bump: &[u8],
-) -> Result<()> {
-    let signer_seeds: &[&[&[u8]]] = &[&[AUTHORITY_SEED, authority_bump.as_ref()]];
+    /*
+    Instruction 7: HandleReceiveMessage
+     */
+    #[event_cpi]
+    #[derive(Accounts)]
+    #[instruction(params: HandleReceiveMessageParams)]
+    pub struct HandleReceiveMessageContext<'info> {
+        #[account(
+            seeds = [b"message_transmitter_authority", crate::ID.as_ref()],
+            bump = params.authority_bump,
+            seeds::program = message_transmitter::ID
+        )]
+        pub authority_pda: Signer<'info>,
+        /*#[account(
+            constraint = params.remote_domain == remote_value_router.domain
+        )]
+        pub remote_value_router: Box<Account<'info, RemoteTokenMessenger>>,*/
+    }
 
-    msg!("Close program wSOL token account");
-    token::close_account(CpiContext::new_with_signer(
-        token_program.to_account_info(),
-        token::CloseAccount {
-            account: program_wsol_account.to_account_info(),
-            destination: program_authority.to_account_info(),
-            authority: program_authority.to_account_info(),
-        },
-        signer_seeds,
-    ))
-}
+    // Instruction handler
+    pub fn handle_receive_message(
+        _ctx: Context<HandleReceiveMessageContext>,
+        params: HandleReceiveMessageParams,
+    ) -> Result<()> {
+        // TODO verify authority_seeds params.authority_bump
+        // TODO params.sender == remote_value_router
+        msg!(
+            "value_router: receive message {:?}, {:?}, {:?}, {:?}",
+            params.remote_domain,
+            params.sender,
+            params.message_body,
+            params.authority_bump
+        );
 
-#[derive(Accounts)]
-pub struct SwapToSOL<'info> {
-    #[account(mut, seeds = [AUTHORITY_SEED], bump)]
-    pub program_authority: SystemAccount<'info>,
-    /// CHECK: This may not be initialized yet.
-    #[account(mut, seeds = [WSOL_SEED], bump)]
-    pub program_wsol_account: UncheckedAccount<'info>,
-    pub user_account: Signer<'info>,
-    #[account(address = spl_token::native_mint::id())]
-    pub sol_mint: Account<'info, Mint>,
-    pub jupiter_program: Program<'info, Jupiter>,
-    pub token_program: Program<'info, Token>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct SOLToSwap<'info> {
-    #[account(mut, seeds = [AUTHORITY_SEED], bump)]
-    pub program_authority: SystemAccount<'info>,
-    /// CHECK: This may not be initialized yet.
-    #[account(mut, seeds = [WSOL_SEED], bump)]
-    pub program_wsol_account: UncheckedAccount<'info>,
-    pub user_account: Signer<'info>,
-    #[account(address = spl_token::native_mint::id())]
-    pub sol_mint: Account<'info, Mint>,
-    pub jupiter_program: Program<'info, Jupiter>,
-    pub token_program: Program<'info, Token>,
-    pub system_program: Program<'info, System>,
+        Ok(())
+    }
 }
