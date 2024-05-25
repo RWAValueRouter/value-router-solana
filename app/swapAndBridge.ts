@@ -63,9 +63,24 @@ const guaranteedBuyAmount: Buffer = Buffer.from(paddedHexString, "hex");
 const messageSentEventAccountKeypair1 = Keypair.generate();
 const messageSentEventAccountKeypair2 = Keypair.generate();
 
+const provider = getAnchorConnection();
+provider.opts.expire = 4294967295;
+
+const {
+  messageTransmitterProgram,
+  tokenMessengerMinterProgram,
+  valueRouterProgram,
+} = getPrograms(provider);
+
 const main = async () => {
   let txID = await sendSwapAndBridgeTx();
-  await getCCTPAttestations(txID);
+  let { bridgeMessage, swapMessage } = await getCCTPAttestations(txID);
+  reclaim(
+    bridgeMessage,
+    swapMessage,
+    messageSentEventAccountKeypair1.publicKey,
+    messageSentEventAccountKeypair2.publicKey
+  );
 };
 
 /**
@@ -88,15 +103,6 @@ const main = async () => {
  * 6. 发送交易
  */
 const sendSwapAndBridgeTx = async () => {
-  const provider = getAnchorConnection();
-  provider.opts.expire = 4294967295;
-
-  const {
-    messageTransmitterProgram,
-    tokenMessengerMinterProgram,
-    valueRouterProgram,
-  } = getPrograms(provider);
-
   const programUsdcAccount = PublicKey.findProgramAddressSync(
     [Buffer.from("usdc")],
     valueRouterProgram.programId
@@ -296,10 +302,10 @@ const sendSwapAndBridgeTx = async () => {
 
 /// 1. 获取 swap_and_bridge 交易中的 bridge message and swap message
 /// 2. 获取对应的 attestations
-const getCCTPAttestations = async (swapAndBridgeTx) => {
+const getCCTPAttestations = async (swapAndBridgeTx): Promise<any> => {
   // Fetch message and attestation
   console.log("valueRouterProgram txHash:", swapAndBridgeTx);
-  const { bridgeMessage, swapMessage } = await (async () => {
+  return await (async () => {
     while (true) {
       const response = await getMessages(swapAndBridgeTx);
       console.log(
@@ -335,6 +341,23 @@ const getCCTPAttestations = async (swapAndBridgeTx) => {
       setTimeout(() => {}, 1000);
     }
   })();
+};
+
+const reclaim = async (
+  bridgeMessage,
+  swapMessage,
+  messageSentEventPubkey1,
+  messageSentEventPubkey2
+) => {
+  const pdas = getSwapAndBridgePdas(
+    {
+      messageTransmitterProgram,
+      tokenMessengerMinterProgram,
+      valueRouterProgram,
+    },
+    usdcAddress,
+    destinationDomain
+  );
 
   // Now, you can call receiveMessage on an EVM chain, see public quickstart for more information:
   // https://developers.circle.com/stablecoin/docs/cctp-usdc-transfer-quickstart
@@ -350,7 +373,7 @@ const getCCTPAttestations = async (swapAndBridgeTx) => {
     .accounts({
       payee: provider.wallet.publicKey,
       messageTransmitter: pdas.messageTransmitterAccount.publicKey,
-      messageSentEventData: messageSentEventAccountKeypair1.publicKey,
+      messageSentEventData: messageSentEventPubkey1,
     })
     .rpc();
   console.log("\n\nreclaimEventAccount txHash: ", reclaimEventAccountTx1);
@@ -368,7 +391,7 @@ const getCCTPAttestations = async (swapAndBridgeTx) => {
     .accounts({
       payee: provider.wallet.publicKey,
       messageTransmitter: pdas.messageTransmitterAccount.publicKey,
-      messageSentEventData: messageSentEventAccountKeypair2.publicKey,
+      messageSentEventData: messageSentEventPubkey2,
     })
     .rpc();
   console.log("\n\nreclaimEventAccount txHash: ", reclaimEventAccountTx2);
