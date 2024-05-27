@@ -1,8 +1,8 @@
-export const findEvmMessage = async (
-  web3: any,
-  irisUrl: string,
-  txid: string
-) => {
+import "dotenv/config";
+import Web3 from "web3";
+const web3 = new Web3(process.env.EVM_PROVIDER_URL!);
+
+export const findEvmMessage = async (irisUrl: string, txid: string) => {
   const transactionReceipt = await web3.eth.getTransactionReceipt(txid);
   const eventTopic = web3.utils.keccak256("MessageSent(bytes)");
   const logs = transactionReceipt.logs.filter(
@@ -27,3 +27,12 @@ export const findEvmMessage = async (
   const results = await Promise.all(promises);
   return results;
 };
+
+(async () => {
+  const irisUrl = "https://iris-api.circle.com/attestations";
+
+  findEvmMessage(
+    irisUrl,
+    "0xee807263402ad881c63534e355c4f60945ea6daa88bcc664cec2e82aae6ad00e"
+  ).then(console.log);
+})();

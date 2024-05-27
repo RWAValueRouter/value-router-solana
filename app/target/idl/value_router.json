@@ -340,11 +340,6 @@
           "isSigner": false
         },
         {
-          "name": "payerInputAta",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "recipientTokenAccount",
           "isMut": true,
           "isSigner": false
@@ -635,6 +630,6 @@
     }
   ],
   "metadata": {
-    "address": "21dFJ81mfizZFKmBsxBtzkys6Sis9WNyhCZcc6FC7Zbw"
+    "address": "4VKGGei57gmMPxaQZfEX4rBgBN13X4wJeNj2RWkPAk22"
   }
 }

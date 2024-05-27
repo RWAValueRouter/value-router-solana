@@ -33,7 +33,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("21dFJ81mfizZFKmBsxBtzkys6Sis9WNyhCZcc6FC7Zbw");
+declare_id!("4VKGGei57gmMPxaQZfEX4rBgBN13X4wJeNj2RWkPAk22");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -571,8 +571,6 @@ pub mod value_router {
 
         pub token_pair: Box<Account<'info, TokenPair>>,
 
-        pub payer_input_ata: Account<'info, TokenAccount>,
-
         #[account(mut)]
         pub recipient_token_account: Box<Account<'info, TokenAccount>>,
 
@@ -613,7 +611,7 @@ pub mod value_router {
         ctx: Context<'_, '_, '_, 'a, RelayInstruction<'a>>,
         params: RelayParams,
     ) -> Result<()> {
-        msg!("relay: {:?}", ctx.accounts.relay_params);
+        msg!("relay");
 
         let authority_bump = ctx.bumps.get("program_authority").unwrap().to_le_bytes();
         let usdc_bump = ctx.bumps.get("program_usdc_account").unwrap().to_le_bytes();
@@ -629,12 +627,14 @@ pub mod value_router {
             &usdc_bump,
         )?;
 
-        msg!(
-            "valuerouter: initial_program_usdc_account: {:?}",
-            initial_program_usdc_account
-        );
+        msg!("valuerouter: initial_program_usdc_account");
 
         let message_transmitter = ctx.accounts.message_transmitter.clone().to_account_info();
+
+        let signer_seeds: &[&[&[u8]]] = &[&[
+            constants::CCTP_CALLER_SEED,
+            &[ctx.bumps["cctp_caller_bump"]],
+        ]];
 
         let accounts_1 = ReceiveMessageContext {
             payer: ctx.accounts.payer.to_account_info(),
@@ -660,7 +660,7 @@ pub mod value_router {
             ctx.accounts.token_minter.to_account_info(),
             ctx.accounts.local_token.to_account_info(),
             ctx.accounts.token_pair.to_account_info(),
-            ctx.accounts.recipient_token_account.to_account_info(),
+            ctx.accounts.program_usdc_account.to_account_info(),
             ctx.accounts.custody_token_account.to_account_info(),
             ctx.accounts.token_program.to_account_info(),
             ctx.accounts
@@ -672,8 +672,9 @@ pub mod value_router {
         ]
         .to_vec();
 
-        let cpi_ctx_1 = CpiContext::new(message_transmitter.clone(), accounts_1)
-            .with_remaining_accounts(remaining);
+        let cpi_ctx_1 =
+            CpiContext::new_with_signer(message_transmitter.clone(), accounts_1, &signer_seeds)
+                .with_remaining_accounts(remaining);
 
         message_transmitter::cpi::receive_message(
             cpi_ctx_1,
@@ -703,7 +704,7 @@ pub mod value_router {
             program: ctx.accounts.value_router_program.to_account_info(),
         };
 
-        let cpi_ctx_2 = CpiContext::new(message_transmitter, accounts_2);
+        let cpi_ctx_2 = CpiContext::new_with_signer(message_transmitter, accounts_2, &signer_seeds);
 
         message_transmitter::cpi::receive_message(
             cpi_ctx_2,

@@ -73,14 +73,16 @@ const {
 } = getPrograms(provider);
 
 const main = async () => {
-  let txID = await sendSwapAndBridgeTx();
+  //let txID = await sendSwapAndBridgeTx();
+  let txID =
+    "66jRmWbuopkgRhWEgmE4pYkeHVHgvSYdCYyFpERX3zXsSvZ2cPPEtggaH2146ZoSWL8qye3opu2k45ShTzjAkULX";
   let { bridgeMessage, swapMessage } = await getCCTPAttestations(txID);
-  reclaim(
+  /*reclaim(
     bridgeMessage,
     swapMessage,
     messageSentEventAccountKeypair1.publicKey,
     messageSentEventAccountKeypair2.publicKey
-  );
+  );*/
 };
 
 /**

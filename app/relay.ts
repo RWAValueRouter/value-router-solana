@@ -85,7 +85,16 @@ const main = async () => {
     }
    */
 
-  const relayDataKeypair = Keypair.generate();
+  //const relayDataKeypair = Keypair.generate();
+  //console.log("relayData: ", relayDataKeypair);
+  const relayDataKeypair = Keypair.fromSecretKey(
+    new Uint8Array([
+      239, 209, 150, 245, 160, 228, 6, 66, 229, 189, 236, 180, 214, 192, 60, 30,
+      248, 154, 249, 183, 3, 202, 155, 94, 132, 24, 107, 4, 70, 120, 41, 234, 2,
+      139, 32, 65, 8, 134, 153, 37, 81, 2, 194, 4, 158, 56, 206, 45, 28, 184,
+      174, 240, 10, 98, 77, 114, 30, 41, 48, 180, 16, 80, 182, 210,
+    ])
+  );
   console.log("relayData publicKey: ", relayDataKeypair.publicKey);
 
   // Get PDAs
@@ -103,9 +112,10 @@ const main = async () => {
   );
 
   console.log(pdas);
+  return;
 
   /// 1. Create RelayData account transaction
-  const createRelayDataTx = await valueRouterProgram.methods
+  /*const createRelayDataTx = await valueRouterProgram.methods
     .createRelayData()
     .accounts({
       relayData: relayDataKeypair.publicKey,
@@ -114,10 +124,11 @@ const main = async () => {
     .signers([relayDataKeypair])
     .rpc();
 
-  console.log("createRelayDataTx: ", createRelayDataTx);
+  console.log("createRelayDataTx: ", createRelayDataTx);*/
 
   /// 2. Post relay data transaction
   /// 2.1 Post bridge data instruction
+  /*
   const postBridgeMessageIx = await valueRouterProgram.methods
     .postBridgeMessage({
       bridgeMessage: {
@@ -161,18 +172,16 @@ const main = async () => {
   const postDataTransaction = new VersionedTransaction(postDataMessageV0);
 
   try {
-    /*await provider.simulate(relayTransaction);*/
-
     const txID = await provider.sendAndConfirm(postDataTransaction);
     console.log("post data transaction: ", { txID });
   } catch (e) {
     console.log({ e: e });
   }
-
+*/
   /// 3. Relay transaction
   /// 3.1. Prepare address lookup table
   const LOOKUP_TABLE_ADDRESS = new PublicKey(
-    "7XE9Q69NwcE58XKY3VWfnLB5WrdQeiRQYgEBj2VUkXYg"
+    "CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq"
   );
 
   const lookupTable = (
@@ -182,7 +191,7 @@ const main = async () => {
   const addressLookupTableAccounts = [lookupTable];
 
   /// 3.2 Relay instruction
-  const accountMetas: any[] = [];
+  /*const accountMetas: any[] = [];
   accountMetas.push({
     isSigner: false,
     isWritable: false,
@@ -232,7 +241,7 @@ const main = async () => {
     isSigner: false,
     isWritable: false,
     pubkey: tokenMessengerMinterProgram.programId,
-  });
+  });*/
 
   const seed = Buffer.from("__event_authority");
   let eventAuthority = (() => {
@@ -250,23 +259,39 @@ const main = async () => {
     }
   })();
 
+  const programUsdcAccount = PublicKey.findProgramAddressSync(
+    [Buffer.from("usdc")],
+    valueRouterProgram.programId
+  )[0];
+  console.log("programUsdcAccount: ", programUsdcAccount);
+
+  const programAuthority = PublicKey.findProgramAddressSync(
+    [Buffer.from("authority")],
+    valueRouterProgram.programId
+  )[0];
+  console.log("programAuthority: ", programAuthority);
+
+  const jupiterProgramId = new PublicKey(process.env.JUPITER_ADDRESS);
+
   const relayIx = await valueRouterProgram.methods
-    .relay()
+    .relay({
+      jupiterSwapData: new Buffer(""),
+    })
     .accounts({
       payer: provider.wallet.publicKey,
-      caller: provider.wallet.publicKey,
-      valueRouterProgram: valueRouterProgram.programId,
+      caller: valueRouterProgram.programId,
       tmAuthorityPda: pdas.tmAuthorityPda,
-      vrAuthorityPda: pdas.vrAuthorityPda,
+      vrAuthorityPda: pdas.cctpCallerPda,
       messageTransmitterProgram: messageTransmitterProgram.programId,
       messageTransmitter: pdas.messageTransmitterAccount.publicKey,
       usedNonces: pdas.usedNonces1,
-      systemProgram: SystemProgram.programId,
-      messageTransmitterEventAuthority: eventAuthority,
-      relayParams: relayDataKeypair.publicKey,
       tokenMessengerMinterProgram: tokenMessengerMinterProgram.programId,
+      valueRouterProgram: valueRouterProgram.programId,
       tokenProgram: TOKEN_PROGRAM_ID,
-      usdcVault: userTokenAccount,
+      messageTransmitterEventAuthority: eventAuthority,
+      systemProgram: SystemProgram.programId,
+      tokenMessengerEventAuthority: pdas.tokenMessengerEventAuthority.publicKey,
+      relayParams: relayDataKeypair.publicKey,
       tokenMessenger: pdas.tokenMessengerAccount.publicKey,
       remoteTokenMessenger: pdas.remoteTokenMessengerKey.publicKey,
       tokenMinter: pdas.tokenMinterAccount.publicKey,
@@ -274,10 +299,12 @@ const main = async () => {
       tokenPair: pdas.tokenPair.publicKey,
       recipientTokenAccount: userTokenAccount,
       custodyTokenAccount: pdas.custodyTokenAccount.publicKey,
-      payerInputAta: userTokenAccount,
-      tokenMessengerEventAuthority: pdas.tokenMessengerEventAuthority.publicKey,
+      programUsdcAccount: programUsdcAccount,
+      usdcMint: usdcAddress,
+      programAuthority: programAuthority,
+      jupiterProgram: jupiterProgramId,
     })
-    .remainingAccounts(accountMetas)
+    //.remainingAccounts(accountMetas)
     .instruction();
 
   /// 3.3 Computte budget instruction

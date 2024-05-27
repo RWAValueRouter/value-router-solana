@@ -10,7 +10,8 @@
     "convertAddress": "tsx convertAddress.ts",
     "relayEvm2Sol": "tsx relayEvm2Sol.ts",
     "relaySol2Evm": "tsx relaySol2Evm.ts",
-    "setupALT": "tsx setupALT.ts"
+    "setupALT": "tsx setupALT.ts",
+    "findEvmMessage": "tsx findEvmMessage.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
