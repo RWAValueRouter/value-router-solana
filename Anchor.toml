@@ -16,7 +16,8 @@ url = "https://api.apr.dev"
 #cluster = "https://api.mainnet-beta.solana.com"
 #cluster = "https://api.testnet.solana.com"
 #cluster = "https://devnet.helius-rpc.com/?api-key=34591cc1-fd65-44d3-a283-1dbd8970e594"
-cluster = "https://mainnet.helius-rpc.com/?api-key=04c58328-42b7-4445-afd5-786c039a54b5"
+#cluster = "https://mainnet.helius-rpc.com/?api-key=04c58328-42b7-4445-afd5-786c039a54b5"
+cluster = "https://blue-omniscient-friday.solana-mainnet.quiknode.pro/59ccc9be093f05d398a9256ef883d0b9ad4857e2"
 wallet = "/home/justin/solflare/key.json"
 
 [scripts]

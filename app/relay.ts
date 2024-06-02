@@ -85,14 +85,17 @@ const main = async () => {
     }
    */
 
+  // 创建 relay data account 密钥对，可重复使用，可回收
   //const relayDataKeypair = Keypair.generate();
   //console.log("relayData: ", relayDataKeypair);
+  // 导入已有的 relay data account 私钥
   const relayDataKeypair = Keypair.fromSecretKey(
     new Uint8Array([
-      239, 209, 150, 245, 160, 228, 6, 66, 229, 189, 236, 180, 214, 192, 60, 30,
-      248, 154, 249, 183, 3, 202, 155, 94, 132, 24, 107, 4, 70, 120, 41, 234, 2,
-      139, 32, 65, 8, 134, 153, 37, 81, 2, 194, 4, 158, 56, 206, 45, 28, 184,
-      174, 240, 10, 98, 77, 114, 30, 41, 48, 180, 16, 80, 182, 210,
+      149, 90, 244, 153, 109, 225, 177, 191, 116, 209, 82, 55, 251, 190, 192,
+      199, 107, 25, 11, 150, 20, 197, 104, 225, 159, 142, 94, 89, 30, 207, 174,
+      43, 204, 40, 193, 124, 174, 126, 164, 237, 12, 117, 15, 101, 189, 198,
+      239, 91, 254, 124, 168, 137, 120, 235, 248, 223, 209, 17, 253, 208, 236,
+      134, 6, 106,
     ])
   );
   console.log("relayData publicKey: ", relayDataKeypair.publicKey);
@@ -111,11 +114,19 @@ const main = async () => {
     nonce2
   );
 
-  console.log(pdas);
-  return;
+  console.log("pdas: ", pdas);
+
+  const [cctpCaller, bump] = PublicKey.findProgramAddressSync(
+    [Buffer.from("cctp_caller")],
+    valueRouterProgram.programId
+  );
+
+  console.log("cctpCaller: ", cctpCaller);
+  console.log("bump: ", bump);
 
   /// 1. Create RelayData account transaction
-  /*const createRelayDataTx = await valueRouterProgram.methods
+  /*
+  const createRelayDataTx = await valueRouterProgram.methods
     .createRelayData()
     .accounts({
       relayData: relayDataKeypair.publicKey,
@@ -124,7 +135,8 @@ const main = async () => {
     .signers([relayDataKeypair])
     .rpc();
 
-  console.log("createRelayDataTx: ", createRelayDataTx);*/
+  console.log("createRelayDataTx: ", createRelayDataTx);
+  */
 
   /// 2. Post relay data transaction
   /// 2.1 Post bridge data instruction
@@ -177,7 +189,8 @@ const main = async () => {
   } catch (e) {
     console.log({ e: e });
   }
-*/
+  */
+
   /// 3. Relay transaction
   /// 3.1. Prepare address lookup table
   const LOOKUP_TABLE_ADDRESS = new PublicKey(
@@ -279,9 +292,9 @@ const main = async () => {
     })
     .accounts({
       payer: provider.wallet.publicKey,
-      caller: valueRouterProgram.programId,
+      caller: cctpCaller,
       tmAuthorityPda: pdas.tmAuthorityPda,
-      vrAuthorityPda: pdas.cctpCallerPda,
+      vrAuthorityPda: pdas.vrAuthorityPda,
       messageTransmitterProgram: messageTransmitterProgram.programId,
       messageTransmitter: pdas.messageTransmitterAccount.publicKey,
       usedNonces: pdas.usedNonces1,

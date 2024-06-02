@@ -321,10 +321,6 @@ export const getRelayPdas = async (
     messageTransmitterProgram.programId,
     [valueRouterProgram.programId]
   ).publicKey;
-  const cctpCallerPda = findProgramAddress(
-    "cctp_caller",
-    valueRouterProgram.programId
-  ).publicKey;
   const tokenMessengerEventAuthority = findProgramAddress(
     "__event_authority",
     tokenMessengerMinterProgram.programId
@@ -361,7 +357,6 @@ export const getRelayPdas = async (
     custodyTokenAccount,
     tmAuthorityPda,
     vrAuthorityPda,
-    cctpCallerPda,
     tokenMessengerEventAuthority,
     usedNonces1,
     usedNonces2,

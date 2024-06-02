@@ -7,9 +7,8 @@ use {
         solana_program::{
             entrypoint::ProgramResult, instruction::Instruction, program::invoke_signed,
         },
-        system_program,
     },
-    anchor_spl::token::{self, Mint, Token, TokenAccount},
+    anchor_spl::token::{Mint, Token},
 };
 
 mod jupiter {

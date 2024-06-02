@@ -11,8 +11,8 @@ use {
         state::{RelayData, SwapAndBridgeEvent, ValueRouter},
         swap_message::SwapMessage,
     },
-    anchor_lang::{prelude::*, system_program},
-    anchor_spl::token::{self, Mint, Token, TokenAccount},
+    anchor_lang::prelude::*,
+    anchor_spl::token::{Mint, Token, TokenAccount},
     message_transmitter::{
         cpi::accounts::{ReceiveMessageContext, SendMessageContext},
         instructions::{
@@ -33,7 +33,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("4VKGGei57gmMPxaQZfEX4rBgBN13X4wJeNj2RWkPAk22");
+declare_id!("6WkVny9dBkg1EMpvyCHmr4aoDahPVxkTKW3CPAhVBzQR");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -243,14 +243,19 @@ pub mod value_router {
                 params.jupiter_swap_data,
             )?;
 
-            let final_token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
-            let final_program_usdc_account =
-                TokenAccount::try_deserialize(&mut final_token_account_data.as_ref())?;
+            //let final_token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
+            let final_program_usdc_account = TokenAccount::try_deserialize(
+                &mut ctx
+                    .accounts
+                    .program_usdc_account
+                    .try_borrow_data()?
+                    .as_ref(),
+            )?;
 
             final_balance = final_program_usdc_account.amount;
             msg!("valuerouter: swap output {:?}", final_balance);
             assert!(
-                final_balance >= params.bridge_usdc_amount,
+                final_program_usdc_account.amount >= params.bridge_usdc_amount,
                 "value_router: no enough swap output"
             );
         } else {
@@ -519,8 +524,13 @@ pub mod value_router {
         #[account(mut)]
         pub payer: Signer<'info>,
 
-        #[account()]
-        pub caller: Signer<'info>,
+        /// CHECK:
+        #[account(
+            mut,
+            seeds = [constants::CCTP_CALLER_SEED],
+            bump
+        )]
+        pub caller: UncheckedAccount<'info>,
 
         /// CHECK: token messenger authority pda
         #[account()]
@@ -613,34 +623,21 @@ pub mod value_router {
     ) -> Result<()> {
         msg!("relay");
 
-        let authority_bump = ctx.bumps.get("program_authority").unwrap().to_le_bytes();
-        let usdc_bump = ctx.bumps.get("program_usdc_account").unwrap().to_le_bytes();
-
-        let usdc_mint: Account<Mint> = Account::try_from(&ctx.accounts.usdc_mint)?;
-        let initial_program_usdc_account = utils::create_usdc_token_idempotent(
+        utils::create_usdc_token_idempotent(
             ctx.accounts.program_authority.clone(),
             ctx.accounts.program_usdc_account.clone(),
-            Box::new(usdc_mint),
+            Box::new(Account::try_from(&ctx.accounts.usdc_mint)?),
             ctx.accounts.token_program.clone(),
             ctx.accounts.system_program.clone(),
-            &authority_bump,
-            &usdc_bump,
+            &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
+            &ctx.bumps.get("program_usdc_account").unwrap().to_le_bytes(),
         )?;
-
-        msg!("valuerouter: initial_program_usdc_account");
-
-        let message_transmitter = ctx.accounts.message_transmitter.clone().to_account_info();
-
-        let signer_seeds: &[&[&[u8]]] = &[&[
-            constants::CCTP_CALLER_SEED,
-            &[ctx.bumps["cctp_caller_bump"]],
-        ]];
 
         let accounts_1 = ReceiveMessageContext {
             payer: ctx.accounts.payer.to_account_info(),
             caller: ctx.accounts.caller.to_account_info(),
             authority_pda: ctx.accounts.tm_authority_pda.to_account_info(),
-            message_transmitter: message_transmitter.clone(),
+            message_transmitter: ctx.accounts.message_transmitter.clone().to_account_info(),
             used_nonces: ctx.accounts.used_nonces.to_account_info(),
             receiver: ctx
                 .accounts
@@ -672,9 +669,17 @@ pub mod value_router {
         ]
         .to_vec();
 
-        let cpi_ctx_1 =
-            CpiContext::new_with_signer(message_transmitter.clone(), accounts_1, &signer_seeds)
-                .with_remaining_accounts(remaining);
+        let seeds: &[&[&[u8]]] = &[&[
+            constants::CCTP_CALLER_SEED,
+            &[*ctx.bumps.get("caller").unwrap()],
+        ]];
+
+        let cpi_ctx_1 = CpiContext::new_with_signer(
+            ctx.accounts.message_transmitter.clone().to_account_info(),
+            accounts_1,
+            seeds,
+        )
+        .with_remaining_accounts(remaining);
 
         message_transmitter::cpi::receive_message(
             cpi_ctx_1,
@@ -683,17 +688,21 @@ pub mod value_router {
         msg!("receive bridge msg success");
 
         // check usdc balance change of usdc_vault;
-        let token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
-        let program_usdc_account = TokenAccount::try_deserialize(&mut token_account_data.as_ref())?;
-
-        let usdc_balance = program_usdc_account.amount;
-        msg!("received usdc: {:?}", usdc_balance);
+        //let token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
+        let usdc_balance = TokenAccount::try_deserialize(
+            &mut ctx
+                .accounts
+                .program_usdc_account
+                .try_borrow_data()?
+                .as_ref(),
+        )?
+        .amount;
 
         let accounts_2 = ReceiveMessageContext {
             payer: ctx.accounts.payer.to_account_info(),
             caller: ctx.accounts.caller.to_account_info(),
             authority_pda: ctx.accounts.vr_authority_pda.to_account_info(),
-            message_transmitter: message_transmitter.clone(),
+            message_transmitter: ctx.accounts.message_transmitter.clone().to_account_info(),
             used_nonces: ctx.accounts.used_nonces.to_account_info(),
             receiver: ctx.accounts.value_router_program.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
@@ -704,7 +713,11 @@ pub mod value_router {
             program: ctx.accounts.value_router_program.to_account_info(),
         };
 
-        let cpi_ctx_2 = CpiContext::new_with_signer(message_transmitter, accounts_2, &signer_seeds);
+        let cpi_ctx_2 = CpiContext::new_with_signer(
+            ctx.accounts.message_transmitter.clone().to_account_info(),
+            accounts_2,
+            seeds,
+        );
 
         message_transmitter::cpi::receive_message(
             cpi_ctx_2,
@@ -715,18 +728,17 @@ pub mod value_router {
         // decode message
         let swap_message = SwapMessage::new(1, &ctx.accounts.relay_params.swap_message.message)?;
         let buy_token = swap_message.get_buy_token()?;
-        msg!("value_router swap: buy_token: {:?}", buy_token);
-        let recipient = swap_message.get_recipient()?;
-        msg!("value_router swap: recipient: {:?}", recipient);
+        //msg!("value_router swap: buy_token: {:?}", buy_token);
+        //let recipient = swap_message.get_recipient()?;
+        //msg!("value_router swap: recipient: {:?}", recipient);
         let guaranteed_buy_amount = swap_message.get_guaranteed_buy_amount()?;
-        msg!(
+        /*msg!(
             "value_router swap: guaranteed_buy_amount: {:?}",
             guaranteed_buy_amount
-        );
+        );*/
         if buy_token != ctx.accounts.usdc_mint.key() {
-            let sell_amount = swap_message.get_sell_amount()?;
             assert!(
-                usdc_balance >= sell_amount,
+                usdc_balance >= swap_message.get_sell_amount()?,
                 "value_router: no enough usdc amount to swap"
             );
             // swap
@@ -737,9 +749,9 @@ pub mod value_router {
                 ctx.accounts.jupiter_program.clone(),
                 params.jupiter_swap_data,
             )?;
-            let token_balance_after = ctx.accounts.recipient_token_account.amount;
             assert!(
-                token_balance_after - token_balance_before >= guaranteed_buy_amount,
+                ctx.accounts.recipient_token_account.amount - token_balance_before
+                    >= guaranteed_buy_amount,
                 "value_router: swap output not enough"
             );
         } else {
@@ -755,7 +767,7 @@ pub mod value_router {
                         .to_account_info(),
                 )?,
                 ctx.accounts.program_authority.clone(),
-                &authority_bump,
+                &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
                 ctx.accounts.token_program.clone(),
                 usdc_balance,
             );
@@ -766,9 +778,9 @@ pub mod value_router {
             ctx.accounts.program_authority.clone(),
             ctx.accounts.program_usdc_account.clone(),
             ctx.accounts.token_program.clone(),
-            &authority_bump,
+            &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
         )?;
-        msg!("program usdc account closed");
+        //msg!("program usdc account closed");
 
         Ok(())
     }
@@ -796,7 +808,6 @@ pub mod value_router {
         _ctx: Context<HandleReceiveMessageContext>,
         params: HandleReceiveMessageParams,
     ) -> Result<()> {
-        // TODO verify authority_seeds params.authority_bump
         // TODO params.sender == remote_value_router
         msg!(
             "value_router: receive message {:?}, {:?}, {:?}, {:?}",
