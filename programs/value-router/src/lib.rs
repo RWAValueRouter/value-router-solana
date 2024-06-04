@@ -33,7 +33,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("6WkVny9dBkg1EMpvyCHmr4aoDahPVxkTKW3CPAhVBzQR");
+declare_id!("3xPxu21BB9qU1TbfBJj8D2eYwyaUTxxk4jnasG194ejS");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -401,7 +401,7 @@ pub mod value_router {
         msg!("swap_and_bridge: build send_message_ctx");
 
         let send_message_ctx = CpiContext::new_with_signer(
-            message_transmitter.to_account_info(),
+            message_transmitter_program.to_account_info(),
             send_message_accounts,
             authority_seeds,
         );
@@ -666,6 +666,7 @@ pub mod value_router {
             ctx.accounts
                 .token_messenger_minter_program
                 .to_account_info(),
+            ctx.accounts.message_transmitter_program.to_account_info(),
         ]
         .to_vec();
 
@@ -675,7 +676,10 @@ pub mod value_router {
         ]];
 
         let cpi_ctx_1 = CpiContext::new_with_signer(
-            ctx.accounts.message_transmitter.clone().to_account_info(),
+            ctx.accounts
+                .message_transmitter_program
+                .clone()
+                .to_account_info(),
             accounts_1,
             seeds,
         )
@@ -714,7 +718,10 @@ pub mod value_router {
         };
 
         let cpi_ctx_2 = CpiContext::new_with_signer(
-            ctx.accounts.message_transmitter.clone().to_account_info(),
+            ctx.accounts
+                .message_transmitter_program
+                .clone()
+                .to_account_info(),
             accounts_2,
             seeds,
         );
@@ -773,7 +780,6 @@ pub mod value_router {
             );
         }
 
-        msg!("closing program usdc account");
         utils::close_program_usdc(
             ctx.accounts.program_authority.clone(),
             ctx.accounts.program_usdc_account.clone(),

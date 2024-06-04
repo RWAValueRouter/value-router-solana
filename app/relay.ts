@@ -82,7 +82,11 @@ const main = async () => {
   console.log("relayData publicKey: ", relayDataKeypair.publicKey);
 
   /// 1. Create RelayData account transaction
-  //await createDataAccount(provider, valueRouterProgram, relayDataKeypair);
+  /*await createDataAccount(
+    provider,
+    valueRouterProgram,
+    relayDataKeypair
+  );*/
 
   /// 2. Post relay data transaction
   await postMessages(provider, valueRouterProgram, relayDataKeypair, [
@@ -186,6 +190,7 @@ export const createDataAccount = async (
       MAX_RETRIES,
       "retries"
     );
+    throw new Error("create relay data account failed");
   }
 };
 
@@ -200,21 +205,18 @@ export const postMessages = async (
   );
   if (accountInfo) {
   } else {
-    console.log("relay data account does not exist");
-
-    return;
+    console.error("relay data account does not exist");
+    throw new Error("post message failed");
   }
 
   /// 2.1 Post bridge data instruction
+  const bridgeMessage = {
+    message: Buffer.from(messages[0].message.replace("0x", ""), "hex"),
+    attestation: Buffer.from(messages[0].attestation.replace("0x", ""), "hex"),
+  };
   const postBridgeMessageIx = await valueRouterProgram.methods
     .postBridgeMessage({
-      bridgeMessage: {
-        message: Buffer.from(messages[0].message.replace("0x", ""), "hex"),
-        attestation: Buffer.from(
-          messages[0].attestation.replace("0x", ""),
-          "hex"
-        ),
-      },
+      bridgeMessage,
     })
     .accounts({
       owner: provider.wallet.publicKey,
@@ -224,15 +226,13 @@ export const postMessages = async (
     .instruction();
 
   /// 2.2 Post swap data instruction
+  const swapMessage = {
+    message: Buffer.from(messages[1].message.replace("0x", ""), "hex"),
+    attestation: Buffer.from(messages[1].attestation.replace("0x", ""), "hex"),
+  };
   const postSwapMessageIx = await valueRouterProgram.methods
     .postSwapMessage({
-      swapMessage: {
-        message: Buffer.from(messages[1].message.replace("0x", ""), "hex"),
-        attestation: Buffer.from(
-          messages[1].attestation.replace("0x", ""),
-          "hex"
-        ),
-      },
+      swapMessage,
     })
     .accounts({
       owner: provider.wallet.publicKey,
@@ -293,6 +293,17 @@ export const postMessages = async (
           "relay data account data:",
           accountInfo.data.toString("hex")
         );
+
+        // sendAndConfirm 结果失败，但交易可能已经上链
+        // 检查 account data 是否已经更新
+        // 对比开头一部分就够了
+        const accountDataSlice = accountInfo.data.subarray(12, 212);
+        const messageSlice = bridgeMessage.message.subarray(0, 200);
+
+        if (accountDataSlice.toString("hex") === messageSlice.toString("hex")) {
+          console.log("post relay data already success");
+          break;
+        }
       } else {
         // Unreachable
         console.log("relay data account does not exist");
@@ -308,6 +319,7 @@ export const postMessages = async (
       MAX_RETRIES,
       "retries"
     );
+    throw new Error("post message failed");
   }
 };
 
@@ -491,6 +503,7 @@ export const relay = async (
 
   if (!txID) {
     console.error(`Failed to relay transaction after ${MAX_RETRIES} attempts.`);
+    throw new Error("relay failed");
   }
 };
 

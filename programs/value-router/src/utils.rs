@@ -47,7 +47,7 @@ pub fn create_usdc_token_idempotent<'info>(
             &[constants::USDC_SEED, usdc_bump.as_ref()],
         ];
 
-        msg!("Initialize program usdc account");
+        msg!("Create program usdc token account");
         let rent = Rent::get()?;
         let space = TokenAccount::LEN;
         let lamports = rent.minimum_balance(space);
@@ -93,9 +93,7 @@ pub fn create_usdc_token_idempotent<'info>(
         ))?;
 
         let data = program_usdc_account.try_borrow_data()?;
-        msg!("program_usdc_account data: {:?}", data);
         let usdc_token_account = TokenAccount::try_deserialize(&mut data.as_ref())?;
-        msg!("program_usdc_account: {:?}", usdc_token_account);
         if &usdc_token_account.owner != program_authority.key {
             return err!(ErrorCode::IncorrectOwner);
         }

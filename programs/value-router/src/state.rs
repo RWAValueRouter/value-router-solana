@@ -7,14 +7,14 @@ use {anchor_lang::prelude::*, message_transmitter::instructions::ReceiveMessageP
 #[derive(Debug, InitSpace)]
 /// Main state of the MessageTransmitter program
 pub struct ValueRouter {
-    pub authority_bump: u8,
+    pub authority_bump: u8, // 奇怪但是能用
+    // TODO add other fields
 }
 
 #[account]
 pub struct RelayData {
     pub bridge_message: ReceiveMessageParams,
     pub swap_message: ReceiveMessageParams,
-    // TODO Jupiter params
 }
 
 impl fmt::Debug for RelayData {
