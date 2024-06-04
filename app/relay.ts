@@ -1,5 +1,4 @@
 import "dotenv/config";
-import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes/index.js";
 import {
   PublicKey,
   SystemProgram,
@@ -54,10 +53,6 @@ const main = async () => {
   const attestationHex1 = process.env.ATTESTATION_HEX_BRIDGE!;
   const messageHex2 = process.env.MESSAGE_HEX_SWAP!;
   const attestationHex2 = process.env.ATTESTATION_HEX_SWAP!;
-  //const messageHex2 = "0x000000000000000000000005000000000003ef66";
-  //const attestationHex2 = "";
-  const nonce1 = decodeEventNonceFromMessage(messageHex1);
-  const nonce2 = decodeEventNonceFromMessage(messageHex2);
 
   console.log({
     usdc: usdcAddress,
@@ -66,39 +61,280 @@ const main = async () => {
     remoteDomain: remoteDomain,
     messageHex1: messageHex1,
     attestationHex1: attestationHex1,
-    nonce1: nonce1,
     messageHex2: messageHex2,
     attestationHex2: attestationHex2,
-    nonce2: nonce2,
   });
-
-  /*
-    {
-      bridgeMessage: {
-        message: Buffer.from(messageHex1.replace("0x", ""), "hex"),
-        attestation: Buffer.from(attestationHex1.replace("0x", ""), "hex"),
-      },
-      swapMessage: {
-        message: Buffer.from(messageHex2.replace("0x", ""), "hex"),
-        attestation: Buffer.from(attestationHex2.replace("0x", ""), "hex"),
-      },
-    }
-   */
 
   // 创建 relay data account 密钥对，可重复使用，可回收
   //const relayDataKeypair = Keypair.generate();
   //console.log("relayData: ", relayDataKeypair);
+
   // 导入已有的 relay data account 私钥
   const relayDataKeypair = Keypair.fromSecretKey(
     new Uint8Array([
-      149, 90, 244, 153, 109, 225, 177, 191, 116, 209, 82, 55, 251, 190, 192,
-      199, 107, 25, 11, 150, 20, 197, 104, 225, 159, 142, 94, 89, 30, 207, 174,
-      43, 204, 40, 193, 124, 174, 126, 164, 237, 12, 117, 15, 101, 189, 198,
-      239, 91, 254, 124, 168, 137, 120, 235, 248, 223, 209, 17, 253, 208, 236,
-      134, 6, 106,
+      41, 82, 92, 121, 142, 30, 194, 221, 232, 108, 134, 157, 83, 147, 197, 65,
+      106, 102, 174, 252, 204, 167, 197, 108, 145, 81, 29, 141, 78, 155, 118,
+      196, 254, 231, 122, 152, 73, 143, 185, 28, 122, 96, 73, 148, 147, 116, 35,
+      97, 175, 34, 167, 210, 87, 169, 250, 62, 95, 8, 150, 186, 189, 211, 237,
+      37,
     ])
   );
   console.log("relayData publicKey: ", relayDataKeypair.publicKey);
+
+  /// 1. Create RelayData account transaction
+  //await createDataAccount(provider, valueRouterProgram, relayDataKeypair);
+
+  /// 2. Post relay data transaction
+  await postMessages(provider, valueRouterProgram, relayDataKeypair, [
+    {
+      message: messageHex1,
+      attestation: attestationHex1,
+    },
+    {
+      message: messageHex2,
+      attestation: attestationHex2,
+    },
+  ]);
+
+  /// 3. Relay transaction
+  await relay(
+    provider,
+    messageTransmitterProgram,
+    tokenMessengerMinterProgram,
+    valueRouterProgram,
+    usdcAddress,
+    remoteTokenAddressHex,
+    remoteDomain,
+    [messageHex1, messageHex2],
+    userTokenAccount,
+    relayDataKeypair
+  );
+};
+
+const MAX_RETRIES = 5; // 最大重试次数
+const TIMEOUT = 120000; // 等待时间（毫秒）
+
+export const createDataAccount = async (
+  provider,
+  valueRouterProgram,
+  relayDataKeypair
+) => {
+  const createRelayDataTx = await valueRouterProgram.methods
+    .createRelayData()
+    .accounts({
+      relayData: relayDataKeypair.publicKey,
+      systemProgram: SystemProgram.programId,
+    })
+    .signers([relayDataKeypair])
+    .transaction();
+
+  let txID;
+  let retryCount = 0;
+
+  while (retryCount < MAX_RETRIES) {
+    console.log("Retry: ", retryCount);
+    try {
+      txID = await provider.sendAndConfirm(
+        createRelayDataTx,
+        [relayDataKeypair],
+        TIMEOUT
+      );
+      console.log("create relay data account transaction: ", { txID });
+
+      // 查询relayDataKeypair的pubkey对应的account是否存在
+      const accountInfo = await provider.connection.getAccountInfo(
+        relayDataKeypair.publicKey
+      );
+      if (accountInfo) {
+        console.log("relay data account exists:", accountInfo);
+
+        console.log(
+          "relay data account data:",
+          accountInfo.data.toString("hex")
+        );
+      } else {
+        console.log("relay data account does not exist");
+      }
+
+      break; // 交易成功，跳出循环
+    } catch (e) {
+      console.log({ e: e });
+      retryCount++;
+
+      // 每次尝试不论成功或失败都要查询relayDataKeypair的pubkey对应的account是否存在
+      const accountInfo = await provider.connection.getAccountInfo(
+        relayDataKeypair.publicKey
+      );
+      if (accountInfo) {
+        console.log("relay data account exists:", accountInfo);
+
+        console.log(
+          "relay data account data:",
+          accountInfo.data.toString("hex")
+        );
+
+        break;
+      } else {
+        console.log("relay data account does not exist");
+      }
+    }
+  }
+
+  if (retryCount === MAX_RETRIES) {
+    console.error(
+      "Failed to create relay data account transaction after",
+      MAX_RETRIES,
+      "retries"
+    );
+  }
+};
+
+export const postMessages = async (
+  provider,
+  valueRouterProgram,
+  relayDataKeypair,
+  messages
+) => {
+  const accountInfo = await provider.connection.getAccountInfo(
+    relayDataKeypair.publicKey
+  );
+  if (accountInfo) {
+  } else {
+    console.log("relay data account does not exist");
+
+    return;
+  }
+
+  /// 2.1 Post bridge data instruction
+  const postBridgeMessageIx = await valueRouterProgram.methods
+    .postBridgeMessage({
+      bridgeMessage: {
+        message: Buffer.from(messages[0].message.replace("0x", ""), "hex"),
+        attestation: Buffer.from(
+          messages[0].attestation.replace("0x", ""),
+          "hex"
+        ),
+      },
+    })
+    .accounts({
+      owner: provider.wallet.publicKey,
+      relayData: relayDataKeypair.publicKey,
+    })
+    .signers([])
+    .instruction();
+
+  /// 2.2 Post swap data instruction
+  const postSwapMessageIx = await valueRouterProgram.methods
+    .postSwapMessage({
+      swapMessage: {
+        message: Buffer.from(messages[1].message.replace("0x", ""), "hex"),
+        attestation: Buffer.from(
+          messages[1].attestation.replace("0x", ""),
+          "hex"
+        ),
+      },
+    })
+    .accounts({
+      owner: provider.wallet.publicKey,
+      relayData: relayDataKeypair.publicKey,
+    })
+    .signers([])
+    .instruction();
+
+  /// 2.3 Send post transaction
+  const postDataInstructions = [postBridgeMessageIx, postSwapMessageIx];
+
+  const blockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+
+  const postDataMessageV0 = new TransactionMessage({
+    payerKey: provider.wallet.publicKey,
+    recentBlockhash: blockhash,
+    instructions: postDataInstructions,
+  }).compileToV0Message();
+
+  const postDataTransaction = new VersionedTransaction(postDataMessageV0);
+
+  let txID;
+  let retryCount = 0;
+
+  while (retryCount < MAX_RETRIES) {
+    try {
+      txID = await provider.sendAndConfirm(postDataTransaction, null, TIMEOUT);
+      console.log("post data transaction: ", { txID });
+
+      // 查询relayDataKeypair的pubkey对应的account是否存在
+      const accountInfo = await provider.connection.getAccountInfo(
+        relayDataKeypair.publicKey
+      );
+      if (accountInfo) {
+        console.log("relay data account exists:", accountInfo);
+
+        console.log(
+          "relay data account data:",
+          accountInfo.data.toString("hex")
+        );
+      } else {
+        console.log("relay data account does not exist");
+      }
+
+      break; // 交易成功，跳出循环
+    } catch (e) {
+      console.log({ e: e });
+      retryCount++;
+
+      // 每次尝试不论成功或失败都要查询relayDataKeypair的pubkey对应的account是否存在
+      const accountInfo = await provider.connection.getAccountInfo(
+        relayDataKeypair.publicKey
+      );
+      if (accountInfo) {
+        console.log("relay data account exists:", accountInfo);
+
+        console.log(
+          "relay data account data:",
+          accountInfo.data.toString("hex")
+        );
+      } else {
+        // Unreachable
+        console.log("relay data account does not exist");
+
+        break;
+      }
+    }
+  }
+
+  if (retryCount === MAX_RETRIES) {
+    console.error(
+      "Failed to post relay data transaction after",
+      MAX_RETRIES,
+      "retries"
+    );
+  }
+};
+
+export const relay = async (
+  provider,
+  messageTransmitterProgram,
+  tokenMessengerMinterProgram,
+  valueRouterProgram,
+  usdcAddress,
+  remoteTokenAddressHex,
+  remoteDomain,
+  messages,
+  recipientTokenAccount,
+  relayDataKeypair
+) => {
+  const LOOKUP_TABLE_ADDRESS = new PublicKey(
+    "CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq"
+  );
+
+  const lookupTable = (
+    await provider.connection.getAddressLookupTable(LOOKUP_TABLE_ADDRESS)
+  ).value;
+
+  const addressLookupTableAccounts = [lookupTable];
+
+  const nonce1 = decodeEventNonceFromMessage(messages[0]);
+  const nonce2 = decodeEventNonceFromMessage(messages[1]);
 
   // Get PDAs
   const pdas = await getRelayPdas(
@@ -124,138 +360,7 @@ const main = async () => {
   console.log("cctpCaller: ", cctpCaller);
   console.log("bump: ", bump);
 
-  /// 1. Create RelayData account transaction
-  /*
-  const createRelayDataTx = await valueRouterProgram.methods
-    .createRelayData()
-    .accounts({
-      relayData: relayDataKeypair.publicKey,
-      systemProgram: SystemProgram.programId,
-    })
-    .signers([relayDataKeypair])
-    .rpc();
-
-  console.log("createRelayDataTx: ", createRelayDataTx);
-  */
-
-  /// 2. Post relay data transaction
-  /// 2.1 Post bridge data instruction
-  /*
-  const postBridgeMessageIx = await valueRouterProgram.methods
-    .postBridgeMessage({
-      bridgeMessage: {
-        message: Buffer.from(messageHex1.replace("0x", ""), "hex"),
-        attestation: Buffer.from(attestationHex1.replace("0x", ""), "hex"),
-      },
-    })
-    .accounts({
-      owner: provider.wallet.publicKey,
-      relayData: relayDataKeypair.publicKey,
-    })
-    .signers([])
-    .instruction();
-
-  /// 2.2 Post swap data instruction
-  const postSwapMessageIx = await valueRouterProgram.methods
-    .postSwapMessage({
-      swapMessage: {
-        message: Buffer.from(messageHex2.replace("0x", ""), "hex"),
-        attestation: Buffer.from(attestationHex2.replace("0x", ""), "hex"),
-      },
-    })
-    .accounts({
-      owner: provider.wallet.publicKey,
-      relayData: relayDataKeypair.publicKey,
-    })
-    .signers([])
-    .instruction();
-
-  /// 2.3 Send post transaction
-  const postDataInstructions = [postBridgeMessageIx, postSwapMessageIx];
-
-  const blockhash = (await provider.connection.getLatestBlockhash()).blockhash;
-
-  const postDataMessageV0 = new TransactionMessage({
-    payerKey: provider.wallet.publicKey,
-    recentBlockhash: blockhash,
-    instructions: postDataInstructions,
-  }).compileToV0Message();
-
-  const postDataTransaction = new VersionedTransaction(postDataMessageV0);
-
-  try {
-    const txID = await provider.sendAndConfirm(postDataTransaction);
-    console.log("post data transaction: ", { txID });
-  } catch (e) {
-    console.log({ e: e });
-  }
-  */
-
-  /// 3. Relay transaction
-  /// 3.1. Prepare address lookup table
-  const LOOKUP_TABLE_ADDRESS = new PublicKey(
-    "CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq"
-  );
-
-  const lookupTable = (
-    await provider.connection.getAddressLookupTable(LOOKUP_TABLE_ADDRESS)
-  ).value;
-
-  const addressLookupTableAccounts = [lookupTable];
-
   /// 3.2 Relay instruction
-  /*const accountMetas: any[] = [];
-  accountMetas.push({
-    isSigner: false,
-    isWritable: false,
-    pubkey: pdas.tokenMessengerAccount.publicKey,
-  });
-  accountMetas.push({
-    isSigner: false,
-    isWritable: false,
-    pubkey: pdas.remoteTokenMessengerKey.publicKey,
-  });
-  accountMetas.push({
-    isSigner: false,
-    isWritable: true,
-    pubkey: pdas.tokenMinterAccount.publicKey,
-  });
-  accountMetas.push({
-    isSigner: false,
-    isWritable: true,
-    pubkey: pdas.localToken.publicKey,
-  });
-  accountMetas.push({
-    isSigner: false,
-    isWritable: false,
-    pubkey: pdas.tokenPair.publicKey,
-  });
-  accountMetas.push({
-    isSigner: false,
-    isWritable: true,
-    pubkey: userTokenAccount,
-  });
-  accountMetas.push({
-    isSigner: false,
-    isWritable: true,
-    pubkey: pdas.custodyTokenAccount.publicKey,
-  });
-  accountMetas.push({
-    isSigner: false,
-    isWritable: false,
-    pubkey: TOKEN_PROGRAM_ID,
-  });
-  accountMetas.push({
-    isSigner: false,
-    isWritable: false,
-    pubkey: pdas.tokenMessengerEventAuthority.publicKey,
-  });
-  accountMetas.push({
-    isSigner: false,
-    isWritable: false,
-    pubkey: tokenMessengerMinterProgram.programId,
-  });*/
-
   const seed = Buffer.from("__event_authority");
   let eventAuthority = (() => {
     for (let b = 255; b > 0; b--) {
@@ -301,8 +406,8 @@ const main = async () => {
       tokenMessengerMinterProgram: tokenMessengerMinterProgram.programId,
       valueRouterProgram: valueRouterProgram.programId,
       tokenProgram: TOKEN_PROGRAM_ID,
-      messageTransmitterEventAuthority: eventAuthority,
       systemProgram: SystemProgram.programId,
+      messageTransmitterEventAuthority: eventAuthority,
       tokenMessengerEventAuthority: pdas.tokenMessengerEventAuthority.publicKey,
       relayParams: relayDataKeypair.publicKey,
       tokenMessenger: pdas.tokenMessengerAccount.publicKey,
@@ -310,19 +415,18 @@ const main = async () => {
       tokenMinter: pdas.tokenMinterAccount.publicKey,
       localToken: pdas.localToken.publicKey,
       tokenPair: pdas.tokenPair.publicKey,
-      recipientTokenAccount: userTokenAccount,
+      recipientTokenAccount: recipientTokenAccount,
       custodyTokenAccount: pdas.custodyTokenAccount.publicKey,
       programUsdcAccount: programUsdcAccount,
       usdcMint: usdcAddress,
       programAuthority: programAuthority,
       jupiterProgram: jupiterProgramId,
     })
-    //.remainingAccounts(accountMetas)
     .instruction();
 
   /// 3.3 Computte budget instruction
   const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
-    units: 1200000,
+    units: 1800000,
   });
 
   const relayInstructions = [computeBudgetIx, relayIx];
@@ -339,12 +443,54 @@ const main = async () => {
   const relayTransaction = new VersionedTransaction(relayMessageV0);
 
   try {
-    /*await provider.simulate(relayTransaction);*/
-
-    const txID = await provider.sendAndConfirm(relayTransaction);
+    const txID = await provider.sendAndConfirm(relayTransaction, null, TIMEOUT);
     console.log("relay transaction: ", { txID });
   } catch (e) {
     console.log({ e: e });
+  }
+
+  let txID = null;
+  let attempts = 0;
+
+  while (attempts < MAX_RETRIES) {
+    attempts++;
+
+    try {
+      txID = await provider.sendAndConfirm(relayTransaction, null, TIMEOUT);
+      console.log(
+        `Relay transaction: ${attempts}/${MAX_RETRIES} - Success, TX ID: ${txID}`
+      );
+      break; // Exit the loop if successful
+    } catch (error) {
+      console.error(
+        `Relay transaction: ${attempts}/${MAX_RETRIES} - Failed: ${error.message}`
+      );
+
+      // Check if transaction ID is already on-chain using connection
+      if (error.txId) {
+        console.log(`Checking TX ID: ${error.txId} on-chain...`);
+        try {
+          const transactionInfo = await provider.connection.getTransaction(
+            error.txId
+          );
+          if (transactionInfo) {
+            console.log(
+              `Transaction ID: ${error.txId} found on-chain. Skipping to next attempt.`
+            );
+            continue;
+          }
+        } catch (error) {
+          console.error(`Error checking transaction: ${error.message}`);
+        }
+      }
+
+      // If not on-chain, continue with next attempt
+      console.error("Transaction not yet on-chain. Retrying...");
+    }
+  }
+
+  if (!txID) {
+    console.error(`Failed to relay transaction after ${MAX_RETRIES} attempts.`);
   }
 };
 
