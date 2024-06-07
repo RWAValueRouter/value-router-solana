@@ -432,7 +432,7 @@ export const relay = async (
   })();
 
   const programUsdcAccount = PublicKey.findProgramAddressSync(
-    [Buffer.from("usdc")],
+    [Buffer.from("usdc_in")],
     valueRouterProgram.programId
   )[0];
   console.log("programUsdcAccount: ", programUsdcAccount);
