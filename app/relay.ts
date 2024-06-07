@@ -1,4 +1,5 @@
 import "dotenv/config";
+import * as fs from "fs";
 import {
   PublicKey,
   SystemProgram,
@@ -28,11 +29,12 @@ import {
  *  2.2 post swap message instruction
  *  2.3 发送 postDataTransaction
  *
- * 3. 构建 relay 交易，包含两个指令
+ * 3. 构建 relay 交易，包含3个指令
  *  3.1 准备 address lookup table
- *  3.2 构建 relay instruction
- *  3.3 构建 compute budget instruction
- *  3.4 发送 relay 交易
+ *  3.2 构建 relay1 instruction
+ *  3.3 构建 relay2 instruction
+ *  3.4 构建 compute budget instruction
+ *  3.5 发送 relay 交易
  */
 const main = async () => {
   const provider = getAnchorConnection();
@@ -65,28 +67,34 @@ const main = async () => {
     attestationHex2: attestationHex2,
   });
 
-  // 创建 relay data account 密钥对，可重复使用，可回收
-  //const relayDataKeypair = Keypair.generate();
-  //console.log("relayData: ", relayDataKeypair);
+  // relay data account 私钥文件，可重复使用
+  const keyFile = "./relayDataAccount.json";
 
-  // 导入已有的 relay data account 私钥
-  const relayDataKeypair = Keypair.fromSecretKey(
-    new Uint8Array([
-      41, 82, 92, 121, 142, 30, 194, 221, 232, 108, 134, 157, 83, 147, 197, 65,
-      106, 102, 174, 252, 204, 167, 197, 108, 145, 81, 29, 141, 78, 155, 118,
-      196, 254, 231, 122, 152, 73, 143, 185, 28, 122, 96, 73, 148, 147, 116, 35,
-      97, 175, 34, 167, 210, 87, 169, 250, 62, 95, 8, 150, 186, 189, 211, 237,
-      37,
-    ])
-  );
-  console.log("relayData publicKey: ", relayDataKeypair.publicKey);
+  const relayDataKeypair = await (async () => {
+    if (fs.existsSync(keyFile)) {
+      const data = await fs.readFileSync(keyFile);
+      return Keypair.fromSecretKey(new Uint8Array(JSON.parse(data.toString())));
+    } else {
+      const relayDataKeypair = Keypair.generate();
+      fs.writeFile(
+        keyFile,
+        JSON.stringify(Array.from(relayDataKeypair.secretKey)),
+        (err) => {
+          if (err) {
+            console.error("Error writing file:", err);
+          } else {
+            console.log("File written successfully");
+          }
+        }
+      );
+      return relayDataKeypair;
+    }
+  })();
+
+  console.log("relay data account: ", relayDataKeypair.publicKey);
 
   /// 1. Create RelayData account transaction
-  /*await createDataAccount(
-    provider,
-    valueRouterProgram,
-    relayDataKeypair
-  );*/
+  await createDataAccount(provider, valueRouterProgram, relayDataKeypair);
 
   /// 2. Post relay data transaction
   await postMessages(provider, valueRouterProgram, relayDataKeypair, [
@@ -100,7 +108,7 @@ const main = async () => {
     },
   ]);
 
-  /// 3. Relay transaction
+  /// 3. Relay 1 transaction
   await relay(
     provider,
     messageTransmitterProgram,
@@ -123,6 +131,17 @@ export const createDataAccount = async (
   valueRouterProgram,
   relayDataKeypair
 ) => {
+  console.log("\n\n1. Create data account\n");
+
+  const accountInfo = await provider.connection.getAccountInfo(
+    relayDataKeypair.publicKey
+  );
+  if (accountInfo) {
+    console.log("relay data account exists:", accountInfo);
+
+    return;
+  }
+
   const createRelayDataTx = await valueRouterProgram.methods
     .createRelayData()
     .accounts({
@@ -200,20 +219,43 @@ export const postMessages = async (
   relayDataKeypair,
   messages
 ) => {
-  const accountInfo = await provider.connection.getAccountInfo(
-    relayDataKeypair.publicKey
-  );
-  if (accountInfo) {
-  } else {
-    console.error("relay data account does not exist");
-    throw new Error("post message failed");
-  }
+  console.log("\n\n2. Post relay data\n");
 
-  /// 2.1 Post bridge data instruction
   const bridgeMessage = {
     message: Buffer.from(messages[0].message.replace("0x", ""), "hex"),
     attestation: Buffer.from(messages[0].attestation.replace("0x", ""), "hex"),
   };
+
+  const swapMessage = {
+    message: Buffer.from(messages[1].message.replace("0x", ""), "hex"),
+    attestation: Buffer.from(messages[1].attestation.replace("0x", ""), "hex"),
+  };
+
+  const accountInfo = await provider.connection.getAccountInfo(
+    relayDataKeypair.publicKey
+  );
+  if (accountInfo) {
+    console.log("relay data account exists:", accountInfo);
+
+    // sendAndConfirm 结果失败，但交易可能已经上链
+    // 检查 account data 是否已经更新
+    // 对比开头一部分就够了
+    const accountDataSlice = accountInfo.data.subarray(12, 212);
+    const messageSlice = bridgeMessage.message.subarray(0, 200);
+
+    if (accountDataSlice.toString("hex") === messageSlice.toString("hex")) {
+      console.log("post relay data already updated");
+      return;
+    } else {
+      // account 存在，但 data 未更新
+    }
+  } else {
+    // account 不存在
+    console.error("account does not exist");
+    return;
+  }
+
+  /// 2.1 Post bridge data instruction
   const postBridgeMessageIx = await valueRouterProgram.methods
     .postBridgeMessage({
       bridgeMessage,
@@ -226,10 +268,6 @@ export const postMessages = async (
     .instruction();
 
   /// 2.2 Post swap data instruction
-  const swapMessage = {
-    message: Buffer.from(messages[1].message.replace("0x", ""), "hex"),
-    attestation: Buffer.from(messages[1].attestation.replace("0x", ""), "hex"),
-  };
   const postSwapMessageIx = await valueRouterProgram.methods
     .postSwapMessage({
       swapMessage,
@@ -260,23 +298,30 @@ export const postMessages = async (
   while (retryCount < MAX_RETRIES) {
     try {
       txID = await provider.sendAndConfirm(postDataTransaction, null, TIMEOUT);
+      // 成功
       console.log("post data transaction: ", { txID });
 
-      // 查询relayDataKeypair的pubkey对应的account是否存在
+      // 等待 5 秒
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      // 查看 account 是否更新成功
       const accountInfo = await provider.connection.getAccountInfo(
         relayDataKeypair.publicKey
       );
       if (accountInfo) {
-        console.log("relay data account exists:", accountInfo);
+        // sendAndConfirm 结果成功
+        // 检查 account data 是否已经更新
+        // 对比开头一部分就够了
+        const accountDataSlice = accountInfo.data.subarray(12, 212);
+        const messageSlice = bridgeMessage.message.subarray(0, 200);
 
-        console.log(
-          "relay data account data:",
-          accountInfo.data.toString("hex")
-        );
-      } else {
-        console.log("relay data account does not exist");
+        if (accountDataSlice.toString("hex") === messageSlice.toString("hex")) {
+          console.log("post relay data success");
+          break;
+        }
       }
 
+      console.error("relay data is wrong");
       break; // 交易成功，跳出循环
     } catch (e) {
       console.log({ e: e });
@@ -288,11 +333,6 @@ export const postMessages = async (
       );
       if (accountInfo) {
         console.log("relay data account exists:", accountInfo);
-
-        console.log(
-          "relay data account data:",
-          accountInfo.data.toString("hex")
-        );
 
         // sendAndConfirm 结果失败，但交易可能已经上链
         // 检查 account data 是否已经更新
@@ -335,6 +375,8 @@ export const relay = async (
   recipientTokenAccount,
   relayDataKeypair
 ) => {
+  console.log("\n\n3. Relay\n");
+
   const LOOKUP_TABLE_ADDRESS = new PublicKey(
     "CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq"
   );
@@ -372,7 +414,7 @@ export const relay = async (
   console.log("cctpCaller: ", cctpCaller);
   console.log("bump: ", bump);
 
-  /// 3.2 Relay instruction
+  /// 3.2 Relay 1 instruction
   const seed = Buffer.from("__event_authority");
   let eventAuthority = (() => {
     for (let b = 255; b > 0; b--) {
@@ -403,15 +445,12 @@ export const relay = async (
 
   const jupiterProgramId = new PublicKey(process.env.JUPITER_ADDRESS);
 
-  const relayIx = await valueRouterProgram.methods
-    .relay({
-      jupiterSwapData: new Buffer(""),
-    })
+  const relay1Ix = await valueRouterProgram.methods
+    .relayBridge({})
     .accounts({
       payer: provider.wallet.publicKey,
       caller: cctpCaller,
       tmAuthorityPda: pdas.tmAuthorityPda,
-      vrAuthorityPda: pdas.vrAuthorityPda,
       messageTransmitterProgram: messageTransmitterProgram.programId,
       messageTransmitter: pdas.messageTransmitterAccount.publicKey,
       usedNonces: pdas.usedNonces1,
@@ -427,8 +466,33 @@ export const relay = async (
       tokenMinter: pdas.tokenMinterAccount.publicKey,
       localToken: pdas.localToken.publicKey,
       tokenPair: pdas.tokenPair.publicKey,
-      recipientTokenAccount: recipientTokenAccount,
       custodyTokenAccount: pdas.custodyTokenAccount.publicKey,
+      programUsdcAccount: programUsdcAccount,
+      usdcMint: usdcAddress,
+      programAuthority: programAuthority,
+    })
+    .instruction();
+
+  console.log("relay1Ix: ", relay1Ix);
+
+  /// 3.3 Relay 2 instruction
+  const relay2Ix = await valueRouterProgram.methods
+    .relaySwap({
+      jupiterSwapData: new Buffer(""),
+    })
+    .accounts({
+      payer: provider.wallet.publicKey,
+      caller: cctpCaller,
+      vrAuthorityPda: pdas.vrAuthorityPda,
+      messageTransmitterProgram: messageTransmitterProgram.programId,
+      messageTransmitter: pdas.messageTransmitterAccount.publicKey,
+      usedNonces: pdas.usedNonces1,
+      valueRouterProgram: valueRouterProgram.programId,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+      messageTransmitterEventAuthority: eventAuthority,
+      relayParams: relayDataKeypair.publicKey,
+      recipientTokenAccount: recipientTokenAccount,
       programUsdcAccount: programUsdcAccount,
       usdcMint: usdcAddress,
       programAuthority: programAuthority,
@@ -436,19 +500,21 @@ export const relay = async (
     })
     .instruction();
 
-  /// 3.3 Computte budget instruction
+  console.log("relay2Ix: ", relay2Ix);
+
+  /// 3.4 Computte budget instruction
   const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
-    units: 1800000,
+    units: 2000000,
   });
 
-  const relayInstructions = [computeBudgetIx, relayIx];
+  const relayInstructions = [computeBudgetIx, relay1Ix, relay2Ix];
 
-  /// 3.4 Send relay transaction
-  const blockhash2 = (await provider.connection.getLatestBlockhash()).blockhash;
+  /// 3.5 Send relay transaction
+  const blockhash = (await provider.connection.getLatestBlockhash()).blockhash;
 
   const relayMessageV0 = new TransactionMessage({
     payerKey: provider.wallet.publicKey,
-    recentBlockhash: blockhash2,
+    recentBlockhash: blockhash,
     instructions: relayInstructions,
   }).compileToV0Message(addressLookupTableAccounts);
 

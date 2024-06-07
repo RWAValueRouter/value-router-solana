@@ -7,6 +7,7 @@ mod utils;
 
 use {
     crate::{
+        errors::ErrorCode,
         jupiter::{swap_on_jupiter, Jupiter},
         state::{RelayData, SwapAndBridgeEvent, ValueRouter},
         swap_message::SwapMessage,
@@ -33,7 +34,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("3xPxu21BB9qU1TbfBJj8D2eYwyaUTxxk4jnasG194ejS");
+declare_id!("CW9pxGKBLCHwPVPhKort1aUbhawPhFDynSqu3HD8BxRw");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -401,7 +402,7 @@ pub mod value_router {
         msg!("swap_and_bridge: build send_message_ctx");
 
         let send_message_ctx = CpiContext::new_with_signer(
-            message_transmitter_program.to_account_info(),
+            ctx.accounts.message_transmitter_program.to_account_info(),
             send_message_accounts,
             authority_seeds,
         );
@@ -437,7 +438,6 @@ pub mod value_router {
         #[account(mut)]
         pub event_rent_payer: Signer<'info>,
 
-        // TODO use pda
         #[account(
             init,
             payer = event_rent_payer,
@@ -516,11 +516,12 @@ pub mod value_router {
     // TODO reclaim
 
     /*
-    Instruction 6: relay
+    Instruction 6: relay_bridge
      */
     // Instruction accounts
     #[derive(Accounts)]
-    pub struct RelayInstruction<'info> {
+    #[instruction(params: RelayBridgeParams)]
+    pub struct RelayBridgeInstruction<'info> {
         #[account(mut)]
         pub payer: Signer<'info>,
 
@@ -535,10 +536,6 @@ pub mod value_router {
         /// CHECK: token messenger authority pda
         #[account()]
         pub tm_authority_pda: UncheckedAccount<'info>,
-
-        /// CHECK: value router authority pda
-        #[account()]
-        pub vr_authority_pda: UncheckedAccount<'info>,
 
         pub message_transmitter_program:
             Program<'info, message_transmitter::program::MessageTransmitter>,
@@ -582,16 +579,13 @@ pub mod value_router {
         pub token_pair: Box<Account<'info, TokenPair>>,
 
         #[account(mut)]
-        pub recipient_token_account: Box<Account<'info, TokenAccount>>,
-
-        #[account(mut)]
         pub custody_token_account: Box<Account<'info, TokenAccount>>,
 
         /// Program usdc token account
         /// CHECK:
         #[account(
             mut,
-            seeds = [constants::USDC_SEED],
+            seeds = [constants::USDC_IN_SEED],
             bump
         )]
         pub program_usdc_account: UncheckedAccount<'info>,
@@ -607,21 +601,22 @@ pub mod value_router {
             bump
         )]
         pub program_authority: UncheckedAccount<'info>,
-
-        pub jupiter_program: Program<'info, Jupiter>,
     }
 
     // Instruction parameters
-    #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-    pub struct RelayParams {
-        pub jupiter_swap_data: Vec<u8>,
-    }
+    #[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone)]
+    pub struct RelayBridgeParams {}
 
-    pub fn relay<'a>(
-        ctx: Context<'_, '_, '_, 'a, RelayInstruction<'a>>,
-        params: RelayParams,
+    pub fn relay_bridge<'a>(
+        ctx: Context<'_, '_, '_, 'a, RelayBridgeInstruction<'a>>,
+        params: RelayBridgeParams,
     ) -> Result<()> {
-        msg!("relay");
+        msg!("relay-1");
+
+        require!(
+            ctx.accounts.program_usdc_account.data_is_empty(),
+            ErrorCode::USDCInAccountNotClosed
+        );
 
         utils::create_usdc_token_idempotent(
             ctx.accounts.program_authority.clone(),
@@ -691,6 +686,95 @@ pub mod value_router {
         )?;
         msg!("receive bridge msg success");
 
+        Ok(())
+    }
+
+    /*
+    Instruction 7: relay_swap
+     */
+    // Instruction accounts
+    #[derive(Accounts)]
+    #[instruction(params: RelaySwapParams)]
+    pub struct RelaySwapInstruction<'info> {
+        #[account(mut)]
+        pub payer: Signer<'info>,
+
+        /// CHECK:
+        #[account(
+            mut,
+            seeds = [constants::CCTP_CALLER_SEED],
+            bump
+        )]
+        pub caller: UncheckedAccount<'info>,
+
+        /// CHECK: value router authority pda
+        #[account()]
+        pub vr_authority_pda: UncheckedAccount<'info>,
+
+        pub message_transmitter_program:
+            Program<'info, message_transmitter::program::MessageTransmitter>,
+
+        #[account()]
+        pub message_transmitter: Box<Account<'info, MessageTransmitter>>,
+
+        // Used nonces state, see UsedNonces struct for more details
+        /// CHECK:
+        #[account(mut)]
+        pub used_nonces: Box<Account<'info, UsedNonces>>,
+
+        pub value_router_program: Program<'info, program::ValueRouter>,
+
+        pub token_program: Program<'info, Token>,
+
+        pub system_program: Program<'info, System>,
+
+        /// CHECK: unsafe
+        #[account()]
+        pub message_transmitter_event_authority: UncheckedAccount<'info>,
+
+        // remaining accounts: additional accounts to be passed to the receiver
+        #[account()]
+        pub relay_params: Box<Account<'info, RelayData>>,
+
+        #[account(mut)]
+        pub recipient_token_account: Box<Account<'info, TokenAccount>>,
+
+        /// Program usdc token account
+        /// CHECK:
+        #[account(
+            mut,
+            seeds = [constants::USDC_IN_SEED],
+            bump
+        )]
+        pub program_usdc_account: UncheckedAccount<'info>,
+
+        /// CHECK: usdc mint
+        #[account(mut)]
+        pub usdc_mint: UncheckedAccount<'info>,
+
+        /// CHECK:
+        #[account(
+            mut,
+            seeds = [constants::AUTHORITY_SEED],
+            bump
+        )]
+        pub program_authority: UncheckedAccount<'info>,
+
+        pub jupiter_program: Program<'info, Jupiter>,
+    }
+
+    // Instruction parameters
+    #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+    pub struct RelaySwapParams {
+        pub jupiter_swap_data: Vec<u8>,
+    }
+
+    pub fn relay_swap<'a>(
+        ctx: Context<'_, '_, '_, 'a, RelaySwapInstruction<'a>>,
+        params: RelaySwapParams,
+    ) -> Result<()> {
+        msg!("relay-2");
+
         // check usdc balance change of usdc_vault;
         //let token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
         let usdc_balance = TokenAccount::try_deserialize(
@@ -716,6 +800,11 @@ pub mod value_router {
                 .to_account_info(),
             program: ctx.accounts.value_router_program.to_account_info(),
         };
+
+        let seeds: &[&[&[u8]]] = &[&[
+            constants::CCTP_CALLER_SEED,
+            &[*ctx.bumps.get("caller").unwrap()],
+        ]];
 
         let cpi_ctx_2 = CpiContext::new_with_signer(
             ctx.accounts
@@ -790,8 +879,9 @@ pub mod value_router {
 
         Ok(())
     }
+
     /*
-    Instruction 7: HandleReceiveMessage
+    Instruction 8: HandleReceiveMessage
      */
     #[event_cpi]
     #[derive(Accounts)]

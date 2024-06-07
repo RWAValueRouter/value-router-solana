@@ -8,4 +8,5 @@ pub enum ErrorCode {
     InvalidJupiterProgram,
     IncorrectOwner,
     InsufficientLengthForU64Conversion,
+    USDCInAccountNotClosed,
 }

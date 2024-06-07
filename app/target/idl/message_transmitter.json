@@ -34,16 +34,6 @@
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "eventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "program",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -66,16 +56,6 @@
         {
           "name": "messageTransmitter",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "eventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "program",
-          "isMut": false,
           "isSigner": false
         }
       ],
@@ -100,16 +80,6 @@
           "name": "messageTransmitter",
           "isMut": true,
           "isSigner": false
-        },
-        {
-          "name": "eventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "program",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -132,16 +102,6 @@
         {
           "name": "messageTransmitter",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "eventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "program",
-          "isMut": false,
           "isSigner": false
         }
       ],
@@ -166,16 +126,6 @@
           "name": "messageTransmitter",
           "isMut": true,
           "isSigner": false
-        },
-        {
-          "name": "eventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "program",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -198,16 +148,6 @@
         {
           "name": "messageTransmitter",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "eventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "program",
-          "isMut": false,
           "isSigner": false
         }
       ],
@@ -232,16 +172,6 @@
           "name": "messageTransmitter",
           "isMut": true,
           "isSigner": false
-        },
-        {
-          "name": "eventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "program",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -264,16 +194,6 @@
         {
           "name": "messageTransmitter",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "eventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "program",
-          "isMut": false,
           "isSigner": false
         }
       ],
@@ -306,16 +226,6 @@
         },
         {
           "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "eventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -351,16 +261,6 @@
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "eventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "program",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -383,16 +283,6 @@
         {
           "name": "messageTransmitter",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "eventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "program",
-          "isMut": false,
           "isSigner": false
         }
       ],
@@ -572,16 +462,6 @@
         },
         {
           "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "eventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "program",
           "isMut": false,
           "isSigner": false
         }

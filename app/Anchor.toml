@@ -11,7 +11,7 @@ value_router = "97jJVm6gLtNFa6r2ocKrp8WbF7SzKvtHjWPMFhvVEo1p"
 [programs.mainnet]
 message_transmitter = "CCTPmbSD7gX1bxKPAmg77w8oFzNFpaQiQUWD43TKaecd"
 token_messenger_minter = "CCTPiPYPc6AsJuwueEnWgSgucamXDZwBd53dQ11YiKX3"
-value_router = "EAKYCCUqemuRgcvBfBJ2hZtsdD2EJrQ3ez5mg2enK648"
+value_router = "CW9pxGKBLCHwPVPhKort1aUbhawPhFDynSqu3HD8BxRw"
 
 [provider]
 cluster = "Mainnet"
