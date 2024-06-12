@@ -26,6 +26,7 @@ import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 import { MessageTransmitter } from "./target/types/message_transmitter";
 import { TokenMessengerMinter } from "./target/types/token_messenger_minter";
 import { ValueRouter } from "./target/types/value_router";
+import { CctpMessageReceiver } from "./target/types/cctp_message_receiver";
 
 //export const IRIS_API_URL =
 //  process.env.IRIS_API_URL ?? "https://iris-api-sandbox.circle.com";
@@ -57,10 +58,13 @@ export const getPrograms = (provider: anchor.AnchorProvider) => {
     .TokenMessengerMinter as anchor.Program<TokenMessengerMinter>;
   const valueRouterProgram = anchor.workspace
     .valueRouter as anchor.Program<ValueRouter>;
+  const cctpMessageReceiverProgram = anchor.workspace
+    .cctpMessageReceiver as anchor.Program<CctpMessageReceiver>;
   return {
     messageTransmitterProgram,
     tokenMessengerMinterProgram,
     valueRouterProgram,
+    cctpMessageReceiverProgram,
   };
 };
 

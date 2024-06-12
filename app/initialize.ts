@@ -5,10 +5,14 @@ const main = async () => {
   const provider = getAnchorConnection();
   provider.opts.expire = 4294967295;
 
-  const { valueRouterProgram } = getPrograms(provider);
+  const { valueRouterProgram, cctpMessageReceiverProgram } =
+    getPrograms(provider);
   console.log(valueRouterProgram);
+  console.log(cctpMessageReceiverProgram);
 
-  const pdas = getInitializePdas({ valueRouterProgram });
+  const pdas = getInitializePdas({
+    valueRouterProgram,
+  });
 
   const accounts = {
     payer: provider.wallet.publicKey,
@@ -18,7 +22,9 @@ const main = async () => {
   };
 
   const initializeTx = await valueRouterProgram.methods
-    .initialize({})
+    .initialize({
+      receiver: cctpMessageReceiverProgram.programId,
+    })
     .accounts(accounts)
     .rpc();
 

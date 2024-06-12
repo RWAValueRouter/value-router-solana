@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "name": "cctp_message_receiver",
+  "instructions": [
+    {
+      "name": "handleReceiveMessage",
+      "accounts": [
+        {
+          "name": "authorityPda",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": "HandleReceiveMessageParams"
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "address": "7KFgUWtjK1t3ZSeTRfC9W9pmrXhUwAJ3WiUdyEq4zJDK"
+  }
+}
