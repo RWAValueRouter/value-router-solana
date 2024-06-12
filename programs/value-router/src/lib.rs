@@ -74,7 +74,9 @@ pub mod value_router {
 
     // Instruction parameters
     #[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone)]
-    pub struct InitializeParams {}
+    pub struct InitializeParams {
+        receiver: Pubkey,
+    }
 
     // Instruction handler
     pub fn initialize(ctx: Context<InitializeContext>, _params: InitializeParams) -> Result<()> {
@@ -83,6 +85,8 @@ pub mod value_router {
             .bumps
             .get("authority_pda")
             .ok_or(ProgramError::InvalidSeeds)?;
+
+        value_router.receiver = _params.receiver;
         Ok(())
     }
 
@@ -709,6 +713,18 @@ pub mod value_router {
         )]
         pub caller: UncheckedAccount<'info>,
 
+        /// CHECK:
+        #[account(
+            constraint = cctp_message_receiver.key().eq(&value_router.receiver)
+        )]
+        pub cctp_message_receiver: UncheckedAccount<'info>,
+
+        #[account(
+            seeds = [b"value_router"],
+            bump
+        )]
+        pub value_router: Box<Account<'info, ValueRouter>>,
+
         /// CHECK: value router authority pda
         #[account()]
         pub vr_authority_pda: UncheckedAccount<'info>,
@@ -794,7 +810,7 @@ pub mod value_router {
             authority_pda: ctx.accounts.vr_authority_pda.to_account_info(),
             message_transmitter: ctx.accounts.message_transmitter.clone().to_account_info(),
             used_nonces: ctx.accounts.used_nonces.to_account_info(),
-            receiver: ctx.accounts.value_router_program.to_account_info(),
+            receiver: ctx.accounts.cctp_message_receiver.to_account_info(),
             system_program: ctx.accounts.system_program.to_account_info(),
             event_authority: ctx
                 .accounts
@@ -878,42 +894,6 @@ pub mod value_router {
             &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
         )?;
         //msg!("program usdc account closed");
-
-        Ok(())
-    }
-
-    /*
-    Instruction 8: HandleReceiveMessage
-     */
-    #[event_cpi]
-    #[derive(Accounts)]
-    #[instruction(params: HandleReceiveMessageParams)]
-    pub struct HandleReceiveMessageContext<'info> {
-        #[account(
-            seeds = [b"message_transmitter_authority", crate::ID.as_ref()],
-            bump = params.authority_bump,
-            seeds::program = message_transmitter::ID
-        )]
-        pub authority_pda: Signer<'info>,
-        /*#[account(
-            constraint = params.remote_domain == remote_value_router.domain
-        )]
-        pub remote_value_router: Box<Account<'info, RemoteTokenMessenger>>,*/
-    }
-
-    // Instruction handler
-    pub fn handle_receive_message(
-        _ctx: Context<HandleReceiveMessageContext>,
-        params: HandleReceiveMessageParams,
-    ) -> Result<()> {
-        // TODO params.sender == remote_value_router
-        msg!(
-            "value_router: receive message {:?}, {:?}, {:?}, {:?}",
-            params.remote_domain,
-            params.sender,
-            params.message_body,
-            params.authority_bump
-        );
 
         Ok(())
     }
