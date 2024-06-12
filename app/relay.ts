@@ -31,10 +31,11 @@ import {
  *
  * 3. 构建 relay 交易，包含3个指令
  *  3.1 准备 address lookup table
- *  3.2 构建 relay1 instruction
- *  3.3 构建 relay2 instruction
+ *  3.2 构建 relay1 tx
+ *  3.3 构建 relay2 tx
  *  3.4 构建 compute budget instruction
- *  3.5 发送 relay 交易
+ *  3.5 发送 relay1 tx
+ *  3.6 发送 relay2 tx
  */
 const main = async () => {
   const provider = getAnchorConnection();
@@ -123,7 +124,7 @@ const main = async () => {
   );
 };
 
-const MAX_RETRIES = 5; // 最大重试次数
+const MAX_RETRIES = 10; // 最大重试次数
 const TIMEOUT = 120000; // 等待时间（毫秒）
 
 export const createDataAccount = async (
@@ -502,75 +503,77 @@ export const relay = async (
 
   console.log("relay2Ix: ", relay2Ix);
 
-  /// 3.4 Computte budget instruction
+  /// 3.4 Computte budget instructions
   const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
     units: 2000000,
   });
 
-  const relayInstructions = [computeBudgetIx, relay1Ix, relay2Ix];
+  const relayInstructions_1 = [computeBudgetIx, relay1Ix];
+  const relayInstructions_2 = [computeBudgetIx, relay2Ix];
 
-  /// 3.5 Send relay transaction
-  const blockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+  /// 3.5 Send relay transactions
+  const sendTx = async (relayInstructions: any) => {
+    let txID = null;
+    let attempts = 0;
+    while (attempts < MAX_RETRIES) {
+      attempts++;
 
-  const relayMessageV0 = new TransactionMessage({
-    payerKey: provider.wallet.publicKey,
-    recentBlockhash: blockhash,
-    instructions: relayInstructions,
-  }).compileToV0Message(addressLookupTableAccounts);
+      const blockhash = (await provider.connection.getLatestBlockhash())
+        .blockhash;
 
-  const relayTransaction = new VersionedTransaction(relayMessageV0);
+      const relayMessageV0 = new TransactionMessage({
+        payerKey: provider.wallet.publicKey,
+        recentBlockhash: blockhash,
+        instructions: relayInstructions,
+      }).compileToV0Message(addressLookupTableAccounts);
 
-  try {
-    const txID = await provider.sendAndConfirm(relayTransaction, null, TIMEOUT);
-    console.log("relay transaction: ", { txID });
-  } catch (e) {
-    console.log({ e: e });
-  }
+      const relayTransaction = new VersionedTransaction(relayMessageV0);
 
-  let txID = null;
-  let attempts = 0;
+      try {
+        txID = await provider.sendAndConfirm(relayTransaction, null, TIMEOUT);
+        console.log(
+          `Relay transaction: ${attempts}/${MAX_RETRIES} - Success, TX ID: ${txID}`
+        );
+        break; // Exit the loop if successful
+      } catch (error) {
+        console.error(`Relay transaction: ${attempts}/${MAX_RETRIES} - Failed`);
+        console.log({ e: error });
 
-  while (attempts < MAX_RETRIES) {
-    attempts++;
-
-    try {
-      txID = await provider.sendAndConfirm(relayTransaction, null, TIMEOUT);
-      console.log(
-        `Relay transaction: ${attempts}/${MAX_RETRIES} - Success, TX ID: ${txID}`
-      );
-      break; // Exit the loop if successful
-    } catch (error) {
-      console.error(
-        `Relay transaction: ${attempts}/${MAX_RETRIES} - Failed: ${error.message}`
-      );
-
-      // Check if transaction ID is already on-chain using connection
-      if (error.txId) {
-        console.log(`Checking TX ID: ${error.txId} on-chain...`);
-        try {
-          const transactionInfo = await provider.connection.getTransaction(
-            error.txId
-          );
-          if (transactionInfo) {
-            console.log(
-              `Transaction ID: ${error.txId} found on-chain. Skipping to next attempt.`
+        // Check if transaction ID is already on-chain using connection
+        if (error.txId) {
+          console.log(`Checking TX ID: ${error.txId} on-chain...`);
+          try {
+            const transactionInfo = await provider.connection.getTransaction(
+              error.txId
             );
-            continue;
+            if (transactionInfo) {
+              console.log(
+                `Transaction ID: ${error.txId} found on-chain. Skipping to next attempt.`
+              );
+              continue;
+            }
+          } catch (error) {
+            console.error(`Error checking transaction: ${error.message}`);
           }
-        } catch (error) {
-          console.error(`Error checking transaction: ${error.message}`);
         }
+
+        // If not on-chain, continue with next attempt
+        console.error("Transaction not yet on-chain. Retrying...");
+        // 等 2 秒重试
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       }
-
-      // If not on-chain, continue with next attempt
-      console.error("Transaction not yet on-chain. Retrying...");
     }
-  }
 
-  if (!txID) {
-    console.error(`Failed to relay transaction after ${MAX_RETRIES} attempts.`);
-    throw new Error("relay failed");
-  }
+    if (!txID) {
+      console.error(
+        `Failed to relay transaction after ${MAX_RETRIES} attempts.`
+      );
+      throw new Error("relay failed");
+    }
+  };
+
+  //await sendTx(relayInstructions_1);
+  await sendTx(relayInstructions_2);
 };
 
 main();

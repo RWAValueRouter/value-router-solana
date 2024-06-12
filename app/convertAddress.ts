@@ -16,7 +16,7 @@ let addresses = {
   wsol: "So11111111111111111111111111111111111111112",
   wallet: "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt",
   walletUsdc: "9h2CxvWshcJaNAJ9BqrzL5Y849wQXkZdMF6nQMf6c4cY",
-  valueRouter: "EJAsKQ3Bb4xLyHF7W39wgyxMGQ2oTrtN4dhRR9ymxjcC",
+  valueRouter: "7NN3BwRpAy3a8vb68Yo3kNJxkh3NMNBWFPDSXuXqk68F",
   caller: "",
   programUsdcAccount: "",
 };
@@ -27,7 +27,7 @@ addresses.caller = PublicKey.findProgramAddressSync(
 )[0].toBase58();
 
 addresses.programUsdcAccount = PublicKey.findProgramAddressSync(
-  [Buffer.from("usdc")],
+  [Buffer.from("usdc_in")],
   new PublicKey(addresses.valueRouter)
 )[0].toBase58();
 

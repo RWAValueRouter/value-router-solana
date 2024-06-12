@@ -360,7 +360,7 @@
         {
           "name": "params",
           "type": {
-            "defined": "Relay1Params"
+            "defined": "RelayBridgeParams"
           }
         }
       ]
@@ -454,7 +454,7 @@
         {
           "name": "params",
           "type": {
-            "defined": "Relay2Params"
+            "defined": "RelaySwapParams"
           }
         }
       ]
@@ -720,6 +720,6 @@
     }
   ],
   "metadata": {
-    "address": "CW9pxGKBLCHwPVPhKort1aUbhawPhFDynSqu3HD8BxRw"
+    "address": "7NN3BwRpAy3a8vb68Yo3kNJxkh3NMNBWFPDSXuXqk68F"
   }
 }

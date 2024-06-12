@@ -8,7 +8,7 @@ use {anchor_lang::prelude::*, message_transmitter::instructions::ReceiveMessageP
 /// Main state of the MessageTransmitter program
 pub struct ValueRouter {
     pub authority_bump: u8, // 奇怪但是能用
-    // TODO add other fields
+    pub receiver: Pubkey,
 }
 
 #[account]

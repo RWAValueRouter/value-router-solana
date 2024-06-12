@@ -34,7 +34,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("CW9pxGKBLCHwPVPhKort1aUbhawPhFDynSqu3HD8BxRw");
+declare_id!("7NN3BwRpAy3a8vb68Yo3kNJxkh3NMNBWFPDSXuXqk68F");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -229,6 +229,7 @@ pub mod value_router {
                 ctx.accounts.token_program.clone(),
                 ctx.accounts.system_program.clone(),
                 &authority_bump,
+                &constants::USDC_SEED,
                 &usdc_bump,
             )?;
 
@@ -625,6 +626,7 @@ pub mod value_router {
             ctx.accounts.token_program.clone(),
             ctx.accounts.system_program.clone(),
             &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
+            &constants::USDC_IN_SEED,
             &ctx.bumps.get("program_usdc_account").unwrap().to_le_bytes(),
         )?;
 

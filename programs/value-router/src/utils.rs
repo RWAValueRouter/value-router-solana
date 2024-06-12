@@ -2,7 +2,7 @@
 
 use {
     crate::{constants, errors::ErrorCode},
-    anchor_lang::{ prelude::*, system_program},
+    anchor_lang::{prelude::*, system_program},
     anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer},
 };
 
@@ -38,13 +38,14 @@ pub fn create_usdc_token_idempotent<'info>(
     token_program: Program<'info, Token>,
     system_program: Program<'info, System>,
     authority_bump: &[u8],
+    usdc_seed: &[u8],
     usdc_bump: &[u8],
 ) -> Result<TokenAccount> {
     if program_usdc_account.data_is_empty() {
         msg!("program_usdc_account data is empty");
         let signer_seeds: &[&[&[u8]]] = &[
             &[constants::AUTHORITY_SEED, authority_bump.as_ref()],
-            &[constants::USDC_SEED, usdc_bump.as_ref()],
+            &[usdc_seed.as_ref(), usdc_bump.as_ref()],
         ];
 
         msg!("Create program usdc token account");
