@@ -29,6 +29,11 @@ export type ValueRouter = {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "cctpMessageReceiver",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -223,12 +228,7 @@ export type ValueRouter = {
       "name": "InitializeParams",
       "type": {
         "kind": "struct",
-        "fields": [
-          {
-            "name": "receiver",
-            "type": "publicKey"
-          }
-        ]
+        "fields": []
       }
     },
     {
@@ -375,6 +375,11 @@ export const IDL: ValueRouter = {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "cctpMessageReceiver",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -569,12 +574,7 @@ export const IDL: ValueRouter = {
       "name": "InitializeParams",
       "type": {
         "kind": "struct",
-        "fields": [
-          {
-            "name": "receiver",
-            "type": "publicKey"
-          }
-        ]
+        "fields": []
       }
     },
     {

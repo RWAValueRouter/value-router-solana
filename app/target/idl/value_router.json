@@ -29,6 +29,11 @@
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "cctpMessageReceiver",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -173,309 +178,6 @@
           }
         }
       ]
-    },
-    {
-      "name": "createRelayData",
-      "accounts": [
-        {
-          "name": "eventRentPayer",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "relayData",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "postBridgeMessage",
-      "accounts": [
-        {
-          "name": "owner",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "relayData",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "params",
-          "type": {
-            "defined": "PostBridgeDataParams"
-          }
-        }
-      ]
-    },
-    {
-      "name": "postSwapMessage",
-      "accounts": [
-        {
-          "name": "owner",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "relayData",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "params",
-          "type": {
-            "defined": "PostSwapDataParams"
-          }
-        }
-      ]
-    },
-    {
-      "name": "relayBridge",
-      "accounts": [
-        {
-          "name": "payer",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "caller",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "tmAuthorityPda",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "messageTransmitterProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "messageTransmitter",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "usedNonces",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "tokenMessengerMinterProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "valueRouterProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "messageTransmitterEventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenMessengerEventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "relayParams",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenMessenger",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "remoteTokenMessenger",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenMinter",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "localToken",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "tokenPair",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "custodyTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "programUsdcAccount",
-          "isMut": true,
-          "isSigner": false,
-          "docs": ["Program usdc token account"]
-        },
-        {
-          "name": "usdcMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "programAuthority",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "params",
-          "type": {
-            "defined": "RelayBridgeParams"
-          }
-        }
-      ]
-    },
-    {
-      "name": "relaySwap",
-      "accounts": [
-        {
-          "name": "payer",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "caller",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vrAuthorityPda",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "messageTransmitterProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "messageTransmitter",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "usedNonces",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "valueRouterProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "messageTransmitterEventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "relayParams",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "recipientTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "programUsdcAccount",
-          "isMut": true,
-          "isSigner": false,
-          "docs": ["Program usdc token account"]
-        },
-        {
-          "name": "usdcMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "programAuthority",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "jupiterProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "params",
-          "type": {
-            "defined": "RelaySwapParams"
-          }
-        }
-      ]
-    },
-    {
-      "name": "handleReceiveMessage",
-      "accounts": [
-        {
-          "name": "authorityPda",
-          "isMut": false,
-          "isSigner": true
-        }
-      ],
-      "args": [
-        {
-          "name": "params",
-          "type": {
-            "defined": "HandleReceiveMessageParams"
-          }
-        }
-      ]
     }
   ],
   "accounts": [
@@ -488,6 +190,10 @@
           {
             "name": "authorityBump",
             "type": "u8"
+          },
+          {
+            "name": "receiver",
+            "type": "publicKey"
           }
         ]
       }
@@ -568,53 +274,6 @@
       }
     },
     {
-      "name": "PostBridgeDataParams",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "bridgeMessage",
-            "type": {
-              "defined": "ReceiveMessageParams"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "PostSwapDataParams",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "swapMessage",
-            "type": {
-              "defined": "ReceiveMessageParams"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "RelayBridgeParams",
-      "type": {
-        "kind": "struct",
-        "fields": []
-      }
-    },
-    {
-      "name": "RelaySwapParams",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "jupiterSwapData",
-            "type": "bytes"
-          }
-        ]
-      }
-    },
-    {
       "name": "ReceiveMessageParams",
       "type": {
         "kind": "struct",
@@ -626,30 +285,6 @@
           {
             "name": "attestation",
             "type": "bytes"
-          }
-        ]
-      }
-    },
-    {
-      "name": "HandleReceiveMessageParams",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "remoteDomain",
-            "type": "u32"
-          },
-          {
-            "name": "sender",
-            "type": "publicKey"
-          },
-          {
-            "name": "messageBody",
-            "type": "bytes"
-          },
-          {
-            "name": "authorityBump",
-            "type": "u8"
           }
         ]
       }
@@ -720,6 +355,6 @@
     }
   ],
   "metadata": {
-    "address": "7NN3BwRpAy3a8vb68Yo3kNJxkh3NMNBWFPDSXuXqk68F"
+    "address": "GnckNAJcBhbe5rBuf9EMGxePzEJ8vssyNazzKor7vnyG"
   }
 }

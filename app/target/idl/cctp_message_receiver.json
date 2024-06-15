@@ -21,6 +21,32 @@
       ]
     }
   ],
+  "types":[
+    {
+      "name": "HandleReceiveMessageParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "remoteDomain",
+            "type": "u32"
+          },
+          {
+            "name": "sender",
+            "type": "publicKey"
+          },
+          {
+            "name": "messageBody",
+            "type": "bytes"
+          },
+          {
+            "name": "authorityBump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ],
   "metadata": {
     "address": "7KFgUWtjK1t3ZSeTRfC9W9pmrXhUwAJ3WiUdyEq4zJDK"
   }
