@@ -73,9 +73,9 @@ const {
 } = getPrograms(provider);
 
 const main = async () => {
-  //let txID = await sendSwapAndBridgeTx();
-  let txID =
-    "66jRmWbuopkgRhWEgmE4pYkeHVHgvSYdCYyFpERX3zXsSvZ2cPPEtggaH2146ZoSWL8qye3opu2k45ShTzjAkULX";
+  let txID = await sendSwapAndBridgeTx();
+  /*let txID =
+    "66jRmWbuopkgRhWEgmE4pYkeHVHgvSYdCYyFpERX3zXsSvZ2cPPEtggaH2146ZoSWL8qye3opu2k45ShTzjAkULX";*/
   let { bridgeMessage, swapMessage } = await getCCTPAttestations(txID);
   /*reclaim(
     bridgeMessage,
@@ -210,6 +210,8 @@ const sendSwapAndBridgeTx = async () => {
     ownerInputAta: userTokenAccount,
   };
 
+  console.log("programAuthority: ", accounts.programAuthority);
+
   console.log("remaining length: ", swapInstruction.keys.length);
 
   // accounts 去重处理，不用了
@@ -257,7 +259,7 @@ const sendSwapAndBridgeTx = async () => {
         guaranteedBuyAmount: guaranteedBuyAmount,
       },
       bridgeUsdcAmount: bridgeUsdcAmount,
-      destDomain: 0,
+      destDomain: destinationDomain,
       recipient: mintRecipient,
     })
     // eventAuthority and program accounts are implicitly added by Anchor
