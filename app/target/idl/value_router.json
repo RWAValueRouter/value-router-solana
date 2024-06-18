@@ -288,6 +288,30 @@
           }
         ]
       }
+    },
+    {
+      "name": "HandleReceiveMessageParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "remoteDomain",
+            "type": "u32"
+          },
+          {
+            "name": "sender",
+            "type": "publicKey"
+          },
+          {
+            "name": "messageBody",
+            "type": "bytes"
+          },
+          {
+            "name": "authorityBump",
+            "type": "u8"
+          }
+        ]
+      }
     }
   ],
   "events": [

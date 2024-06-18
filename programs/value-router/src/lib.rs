@@ -16,9 +16,7 @@ use {
     anchor_spl::token::{Mint, Token, TokenAccount},
     message_transmitter::{
         cpi::accounts::{ReceiveMessageContext, SendMessageContext},
-        instructions::{
-            HandleReceiveMessageParams, ReceiveMessageParams, SendMessageWithCallerParams,
-        },
+        instructions::{ReceiveMessageParams, SendMessageWithCallerParams},
         state::{MessageTransmitter, UsedNonces},
     },
     token_messenger_minter::{
@@ -61,7 +59,7 @@ pub mod value_router {
         #[account(
             init_if_needed,
             payer = payer,
-            space = 10,
+            space = 50,
             seeds = [b"value_router"],
             bump
         )]
@@ -70,23 +68,24 @@ pub mod value_router {
         pub system_program: Program<'info, System>,
 
         pub token_program: Program<'info, Token>,
+
+        pub cctp_message_receiver:
+            Program<'info, cctp_message_receiver::program::CctpMessageReceiver>,
     }
 
     // Instruction parameters
     #[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone)]
-    pub struct InitializeParams {
-        receiver: Pubkey,
-    }
+    pub struct InitializeParams {}
 
     // Instruction handler
     pub fn initialize(ctx: Context<InitializeContext>, _params: InitializeParams) -> Result<()> {
-        let value_router = ctx.accounts.value_router.as_mut();
+        let mut value_router = ctx.accounts.value_router.as_mut();
         value_router.authority_bump = *ctx
             .bumps
             .get("authority_pda")
             .ok_or(ProgramError::InvalidSeeds)?;
 
-        value_router.receiver = _params.receiver;
+        value_router.receiver = ctx.accounts.cctp_message_receiver.key();
         Ok(())
     }
 

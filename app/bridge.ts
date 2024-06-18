@@ -44,7 +44,7 @@ const inputToken = usdtAddress;
 //const inputToken = wsolAddress;
 
 const sellTokenAmount = Number(process.env.SELL_AMOUNT ?? 1);
-const bridgeUsdcAmount = new anchor.BN(process.env.BRIDGE_USDC_AMOUNT ?? 1);
+const bridgeUsdcAmount = new anchor.BN(process.env.BUY_AMOUNT ?? 1);
 const destinationDomain = Number(process.env.DEST_DOMAIN!);
 
 // mintRecipient is a bytes32 type so pad with 0's then convert to a solana PublicKey
@@ -52,9 +52,9 @@ const mintRecipient = new PublicKey(
   getBytes(evmAddressToBytes32(process.env.MINT_RECIPIENT_HEX!))
 );
 const buyToken = new PublicKey(
-  getBytes(evmAddressToBytes32(process.env.DEST_BUY_TOKEN!))
+  getBytes(evmAddressToBytes32(process.env.BUY_TOKEN!))
 );
-let guaranteedBuyAmount_num = new anchor.BN(process.env.DEST_BUY_AMOUNT ?? 1);
+let guaranteedBuyAmount_num = new anchor.BN(process.env.BUY_AMOUNT ?? 1);
 const guaranteedBuyAmount_hex = guaranteedBuyAmount_num.toString(16);
 const paddedHexString: string = guaranteedBuyAmount_hex.padStart(64, "0");
 const guaranteedBuyAmount: Buffer = Buffer.from(paddedHexString, "hex");
@@ -73,9 +73,9 @@ const {
 } = getPrograms(provider);
 
 const main = async () => {
-  // swap + bridge
-  let txID = await sendSwapAndBridgeTx();
-  //let txID = "5Pk7tpFKL14YWKebh1ySWMjTdQcVfQi7w6E28aKHMoZXBmMMwazMDzeFoVrCUECg6ZkMVSi8YUJxGvWoZsEqDyfG";
+  // bridge usdc
+  let txID = await sendBridgeTx();
+  //let txID = "5fzhPwGvw4HnFpmxfY4TZuZk29DUDwyEhg4jvDAPPCoY7nPKzfd19G5fxfkmPVBVMQMW6VpT3fQkF6USLR2mgDiM";
   if (txID) {
     let { bridgeMessage, swapMessage } = await getCCTPAttestations(txID);
     /*reclaim(
@@ -87,54 +87,12 @@ const main = async () => {
   }
 };
 
-/**
- * 发起 Solana -> EVM/Noble swapAndBridge transaction
- *
- * 调用 value_router program swap_and_bridge 指令
- * 合约功能:
- * 1. 调用 Jupiter，把 SPL token 兑换为 local token (USDC)
- * 2. 调用 CCTP token messenger，发送 bridge message
- * 3. 根据 swap args 参数生成 swap message body，调用 CCTP messenger transmitter，发送 swap message
- *
- * 此脚本功能:
- * 1. 获取 Jupiter 报价
- * 2. 获取 Local swap 的指令 data 和 accounts
- * 3. 计算 context accounts
- * 4. 归集 address lookup table
- *  swapIx 中包含的多个 ALT
- *  value_router 合约专用 ALT
- * 5. 构建 swap_and_bridge instruction
- * 6. 发送交易
- */
-const sendSwapAndBridgeTx = async () => {
+const sendBridgeTx = async () => {
   const programUsdcAccount = PublicKey.findProgramAddressSync(
     [Buffer.from("usdc")],
     valueRouterProgram.programId
   )[0];
   console.log("programUsdcAccount: ", programUsdcAccount);
-
-  /// 1. 获取 Jupiter 报价
-  let quote = await getQuote(
-    inputToken.toBase58(),
-    process.env.USDC_ADDRESS,
-    sellTokenAmount
-  );
-
-  console.log("quote: ", JSON.stringify(quote));
-
-  /// 2. 获取 local swap 的 data 和 accounts
-  const swapIx = await getSwapIx(
-    provider.wallet.publicKey,
-    programUsdcAccount,
-    quote
-  );
-  let addressLookupTableAddresses = swapIx.addressLookupTableAddresses;
-
-  let swapInstruction = instructionDataToTransactionInstruction(
-    swapIx.swapInstruction
-  );
-
-  let computeBudgetInstructions = swapIx.computeBudgetInstructions;
 
   /// 3. Get accounts
   const pdas = getSwapAndBridgePdas(
@@ -181,8 +139,8 @@ const sendSwapAndBridgeTx = async () => {
     senderAuthorityPda: pdas.authorityPda.publicKey,
     senderAuthorityPda2: pdas.authorityPda2.publicKey,
 
-    //payerInputAta: userTokenAccount,
-    //payerUsdcAta: userTokenAccount,
+    payerInputAta: userTokenAccount,
+    payerUsdcAta: userTokenAccount,
     remoteTokenMessenger: pdas.remoteTokenMessengerKey.publicKey,
     localToken: pdas.localToken.publicKey,
     burnTokenMint: usdcAddress,
@@ -209,12 +167,10 @@ const sendSwapAndBridgeTx = async () => {
     jupiterProgram: jupiterProgramId,
 
     // other
-    //ownerInputAta: userTokenAccount,
+    ownerInputAta: userTokenAccount,
   };
 
   console.log("programAuthority: ", accounts.programAuthority);
-
-  console.log("remaining length: ", swapInstruction.keys.length);
 
   // accounts 去重处理，不用了
   /*
@@ -238,15 +194,16 @@ const sendSwapAndBridgeTx = async () => {
 
   /// 4. Organize accounts in address lookup tables
   /// 4.1 Jupiter ALT
-  const addressLookupTableAccounts = await getAdressLookupTableAccounts(
-    provider.connection,
-    addressLookupTableAddresses
-  );
 
   /// 4.2 ValueRouter ALT
   const lookupTable2 = (
     await provider.connection.getAddressLookupTable(LOOKUP_TABLE_2_ADDRESS)
   ).value;
+
+  const addressLookupTableAccounts = await getAdressLookupTableAccounts(
+    provider.connection,
+    []
+  );
 
   addressLookupTableAccounts.push(lookupTable2);
 
@@ -255,7 +212,7 @@ const sendSwapAndBridgeTx = async () => {
   /// 5. Call swapAndBridge
   const swapAndBridgeInstruction = await valueRouterProgram.methods
     .swapAndBridge({
-      jupiterSwapData: swapInstruction.data,
+      jupiterSwapData: new Buffer(""),
       buyArgs: {
         buyToken: buyToken,
         guaranteedBuyAmount: guaranteedBuyAmount,
@@ -266,7 +223,6 @@ const sendSwapAndBridgeTx = async () => {
     })
     // eventAuthority and program accounts are implicitly added by Anchor
     .accounts(accounts)
-    .remainingAccounts(swapInstruction.keys)
     //.remainingAccounts(dedupKeys)
     // messageSentEventAccountKeypair must be a signer so the MessageTransmitter program can take control of it and write to it.
     // provider.wallet is also an implicit signer
@@ -274,10 +230,7 @@ const sendSwapAndBridgeTx = async () => {
     //.rpc();
     .instruction();
 
-  const instructions = [
-    ...computeBudgetInstructions.map(instructionDataToTransactionInstruction),
-    swapAndBridgeInstruction,
-  ];
+  const instructions = [swapAndBridgeInstruction];
 
   /// 6. Send transaction
   const blockhash = (await provider.connection.getLatestBlockhash()).blockhash;
