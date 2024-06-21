@@ -30,7 +30,6 @@ const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
 const usdtAddress = new PublicKey(process.env.USDT_ADDRESS);
 const wsolAddress = new PublicKey(process.env.WSOL_ADDRESS);
 const sourceMint = new PublicKey(process.env.USDT_ADDRESS);
-const userTokenAccount = new PublicKey(process.env.USER_USDC_ACCOUNT);
 const jupiterProgramId = new PublicKey(process.env.JUPITER_ADDRESS);
 const remoteValueRouter = new PublicKey(
   getBytes(evmAddressToBytes32(process.env.REMOTE_VALUE_ROUTER!))

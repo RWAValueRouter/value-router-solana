@@ -16,6 +16,10 @@ const main = async () => {
     "cctpMessageReceiverProgram id: ",
     cctpMessageReceiverProgram.programId.toString()
   );
+  console.log(
+    "cctpMessageReceiverProgram id: ",
+    cctpMessageReceiverProgram.programId.toBuffer()
+  );
 
   const pdas = getInitializePdas({
     valueRouterProgram,

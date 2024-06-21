@@ -16,9 +16,10 @@ let addresses = {
   wsol: "So11111111111111111111111111111111111111112",
   wallet: "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt",
   walletUsdc: "9h2CxvWshcJaNAJ9BqrzL5Y849wQXkZdMF6nQMf6c4cY",
-  valueRouter: "7NN3BwRpAy3a8vb68Yo3kNJxkh3NMNBWFPDSXuXqk68F",
+  valueRouter: "A22nXmDP7rtFdgsmnUTeu1csftJ6kxrpwpeioZkwnTgY",
   caller: "",
   programUsdcAccount: "",
+  receiver: "5XoeLoER5SFFcGeFsvEa4a4QyEZXgCEWTFhESS43ExLX",
 };
 
 addresses.caller = PublicKey.findProgramAddressSync(

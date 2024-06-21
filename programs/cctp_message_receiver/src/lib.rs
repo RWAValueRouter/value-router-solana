@@ -1,12 +1,6 @@
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("5XoeLoER5SFFcGeFsvEa4a4QyEZXgCEWTFhESS43ExLX");
 
-use {
-    anchor_lang::prelude::*,
-    message_transmitter::{
-        cpi::accounts::ReceiveMessageContext,
-        instructions::{HandleReceiveMessageParams, ReceiveMessageParams},
-    },
-};
+use {anchor_lang::prelude::*, message_transmitter::instructions::HandleReceiveMessageParams};
 
 #[program]
 pub mod cctp_message_receiver {
@@ -33,7 +27,6 @@ pub mod cctp_message_receiver {
         _ctx: Context<HandleReceiveMessageContext>,
         params: HandleReceiveMessageParams,
     ) -> Result<()> {
-        // TODO params.sender == remote_value_router
         msg!(
             "cctp_message_receiver: receive message {:?}, {:?}, {:?}, {:?}",
             params.remote_domain,

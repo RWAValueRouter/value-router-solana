@@ -275,12 +275,12 @@ export const getRelayPdas = async (
     messageTransmitterProgram,
     tokenMessengerMinterProgram,
     valueRouterProgram,
+    cctpMessageReceiverProgram,
   }: ReturnType<typeof getPrograms>,
   solUsdcAddress: PublicKey,
   remoteUsdcAddressHex: string,
   remoteDomain: string,
-  nonce1: string,
-  nonce2: string
+  nonce: string
 ) => {
   const tokenMessengerAccount = findProgramAddress(
     "token_messenger",
@@ -323,26 +323,24 @@ export const getRelayPdas = async (
   const vrAuthorityPda = findProgramAddress(
     "message_transmitter_authority",
     messageTransmitterProgram.programId,
-    [valueRouterProgram.programId]
+    [cctpMessageReceiverProgram.programId]
   ).publicKey;
   const tokenMessengerEventAuthority = findProgramAddress(
     "__event_authority",
     tokenMessengerMinterProgram.programId
   );
+  const cctpReceiverEventAuthority = findProgramAddress(
+    "__event_authority",
+    cctpMessageReceiverProgram.programId
+  );
+  const valueRouter = findProgramAddress(
+    "value_router",
+    valueRouterProgram.programId
+  );
 
-  const usedNonces1 = await messageTransmitterProgram.methods
+  const usedNonces = await messageTransmitterProgram.methods
     .getNoncePda({
-      nonce: new anchor.BN(nonce1),
-      sourceDomain: Number(remoteDomain),
-    })
-    .accounts({
-      messageTransmitter: messageTransmitterAccount.publicKey,
-    })
-    .view();
-
-  const usedNonces2 = await messageTransmitterProgram.methods
-    .getNoncePda({
-      nonce: new anchor.BN(nonce2),
+      nonce: new anchor.BN(nonce),
       sourceDomain: Number(remoteDomain),
     })
     .accounts({
@@ -362,8 +360,9 @@ export const getRelayPdas = async (
     tmAuthorityPda,
     vrAuthorityPda,
     tokenMessengerEventAuthority,
-    usedNonces1,
-    usedNonces2,
+    cctpReceiverEventAuthority,
+    usedNonces,
+    valueRouter,
   };
 };
 

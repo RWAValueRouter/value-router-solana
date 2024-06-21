@@ -46,7 +46,74 @@ export type ValueRouter = {
       ]
     },
     {
-      "name": "swapAndBridge",
+      "name": "createRelayData",
+      "accounts": [
+        {
+          "name": "eventRentPayer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "relayData",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "postBridgeMessage",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "relayData",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": "PostBridgeDataParams"
+          }
+        }
+      ]
+    },
+    {
+      "name": "postSwapMessage",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "relayData",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": "PostSwapDataParams"
+          }
+        }
+      ]
+    },
+    {
+      "name": "relay",
       "accounts": [
         {
           "name": "payer",
@@ -54,9 +121,19 @@ export type ValueRouter = {
           "isSigner": true
         },
         {
-          "name": "eventRentPayer",
+          "name": "caller",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
+        },
+        {
+          "name": "tmAuthorityPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vrAuthorityPda",
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "messageTransmitterProgram",
@@ -64,12 +141,17 @@ export type ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "tokenMessengerMinterProgram",
+          "name": "messageTransmitter",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "tokenProgram",
+          "name": "usedNonces",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMessengerMinterProgram",
           "isMut": false,
           "isSigner": false
         },
@@ -79,52 +161,47 @@ export type ValueRouter = {
           "isSigner": false
         },
         {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "messageTransmitter",
-          "isMut": true,
+          "name": "messageTransmitterEventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMessengerEventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cctpReceiverEventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "relayParams",
+          "isMut": false,
           "isSigner": false
         },
         {
           "name": "tokenMessenger",
-          "isMut": true,
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "remoteTokenMessenger",
+          "isMut": false,
           "isSigner": false
         },
         {
           "name": "tokenMinter",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "valueRouter",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "senderAuthorityPda",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "senderAuthorityPda2",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "messageSentEventData1",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "messageSentEventData2",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "remoteTokenMessenger",
           "isMut": false,
           "isSigner": false
         },
@@ -134,18 +211,28 @@ export type ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "burnTokenMint",
+          "name": "tokenPair",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "recipientTokenAccount",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "remoteValueRouter",
-          "isMut": false,
+          "name": "custodyTokenAccount",
+          "isMut": true,
           "isSigner": false
         },
         {
-          "name": "eventAuthority",
-          "isMut": false,
+          "name": "programUsdcAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "usdcMint",
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -154,20 +241,12 @@ export type ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "programUsdcAccount",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Program usdc token account"
-          ]
-        },
-        {
-          "name": "sourceMint",
+          "name": "jupiterProgram",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "jupiterProgram",
+          "name": "cctpMessageReceiver",
           "isMut": false,
           "isSigner": false
         }
@@ -176,7 +255,7 @@ export type ValueRouter = {
         {
           "name": "params",
           "type": {
-            "defined": "SwapAndBridgeParams"
+            "defined": "RelayParams"
           }
         }
       ]
@@ -232,47 +311,41 @@ export type ValueRouter = {
       }
     },
     {
-      "name": "BuyArgs",
+      "name": "PostBridgeDataParams",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "buyToken",
-            "type": "publicKey"
-          },
-          {
-            "name": "guaranteedBuyAmount",
-            "type": "bytes"
+            "name": "bridgeMessage",
+            "type": {
+              "defined": "ReceiveMessageParams"
+            }
           }
         ]
       }
     },
     {
-      "name": "SwapAndBridgeParams",
+      "name": "PostSwapDataParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "swapMessage",
+            "type": {
+              "defined": "ReceiveMessageParams"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "RelayParams",
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "jupiterSwapData",
             "type": "bytes"
-          },
-          {
-            "name": "buyArgs",
-            "type": {
-              "defined": "BuyArgs"
-            }
-          },
-          {
-            "name": "bridgeUsdcAmount",
-            "type": "u64"
-          },
-          {
-            "name": "destDomain",
-            "type": "u32"
-          },
-          {
-            "name": "recipient",
-            "type": "publicKey"
           }
         ]
       }
@@ -323,23 +396,33 @@ export type ValueRouter = {
   "errors": [
     {
       "code": 6000,
-      "name": "InvalidReturnData"
+      "name": "InvalidReturnData",
+      "msg": "invalid return data"
     },
     {
       "code": 6001,
-      "name": "InvalidJupiterProgram"
+      "name": "InvalidJupiterProgram",
+      "msg": "invalid jupiter program"
     },
     {
       "code": 6002,
-      "name": "IncorrectOwner"
+      "name": "IncorrectOwner",
+      "msg": "incorrect owner"
     },
     {
       "code": 6003,
-      "name": "InsufficientLengthForU64Conversion"
+      "name": "InsufficientLengthForU64Conversion",
+      "msg": "insufficient length for u64 conversion"
     },
     {
       "code": 6004,
-      "name": "USDCInAccountNotClosed"
+      "name": "USDCInAccountNotClosed",
+      "msg": "USDC in account not closed"
+    },
+    {
+      "code": 6005,
+      "name": "CctpReceiverMismatch",
+      "msg": "CCTP receiver mismatch"
     }
   ]
 };
@@ -392,7 +475,74 @@ export const IDL: ValueRouter = {
       ]
     },
     {
-      "name": "swapAndBridge",
+      "name": "createRelayData",
+      "accounts": [
+        {
+          "name": "eventRentPayer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "relayData",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "postBridgeMessage",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "relayData",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": "PostBridgeDataParams"
+          }
+        }
+      ]
+    },
+    {
+      "name": "postSwapMessage",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "relayData",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": "PostSwapDataParams"
+          }
+        }
+      ]
+    },
+    {
+      "name": "relay",
       "accounts": [
         {
           "name": "payer",
@@ -400,9 +550,19 @@ export const IDL: ValueRouter = {
           "isSigner": true
         },
         {
-          "name": "eventRentPayer",
+          "name": "caller",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
+        },
+        {
+          "name": "tmAuthorityPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vrAuthorityPda",
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "messageTransmitterProgram",
@@ -410,12 +570,17 @@ export const IDL: ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "tokenMessengerMinterProgram",
+          "name": "messageTransmitter",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "tokenProgram",
+          "name": "usedNonces",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMessengerMinterProgram",
           "isMut": false,
           "isSigner": false
         },
@@ -425,52 +590,47 @@ export const IDL: ValueRouter = {
           "isSigner": false
         },
         {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "messageTransmitter",
-          "isMut": true,
+          "name": "messageTransmitterEventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMessengerEventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cctpReceiverEventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "relayParams",
+          "isMut": false,
           "isSigner": false
         },
         {
           "name": "tokenMessenger",
-          "isMut": true,
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "remoteTokenMessenger",
+          "isMut": false,
           "isSigner": false
         },
         {
           "name": "tokenMinter",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "valueRouter",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "senderAuthorityPda",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "senderAuthorityPda2",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "messageSentEventData1",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "messageSentEventData2",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "remoteTokenMessenger",
           "isMut": false,
           "isSigner": false
         },
@@ -480,18 +640,28 @@ export const IDL: ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "burnTokenMint",
+          "name": "tokenPair",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "recipientTokenAccount",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "remoteValueRouter",
-          "isMut": false,
+          "name": "custodyTokenAccount",
+          "isMut": true,
           "isSigner": false
         },
         {
-          "name": "eventAuthority",
-          "isMut": false,
+          "name": "programUsdcAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "usdcMint",
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -500,20 +670,12 @@ export const IDL: ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "programUsdcAccount",
-          "isMut": true,
-          "isSigner": false,
-          "docs": [
-            "Program usdc token account"
-          ]
-        },
-        {
-          "name": "sourceMint",
+          "name": "jupiterProgram",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "jupiterProgram",
+          "name": "cctpMessageReceiver",
           "isMut": false,
           "isSigner": false
         }
@@ -522,7 +684,7 @@ export const IDL: ValueRouter = {
         {
           "name": "params",
           "type": {
-            "defined": "SwapAndBridgeParams"
+            "defined": "RelayParams"
           }
         }
       ]
@@ -578,47 +740,41 @@ export const IDL: ValueRouter = {
       }
     },
     {
-      "name": "BuyArgs",
+      "name": "PostBridgeDataParams",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "buyToken",
-            "type": "publicKey"
-          },
-          {
-            "name": "guaranteedBuyAmount",
-            "type": "bytes"
+            "name": "bridgeMessage",
+            "type": {
+              "defined": "ReceiveMessageParams"
+            }
           }
         ]
       }
     },
     {
-      "name": "SwapAndBridgeParams",
+      "name": "PostSwapDataParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "swapMessage",
+            "type": {
+              "defined": "ReceiveMessageParams"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "RelayParams",
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "jupiterSwapData",
             "type": "bytes"
-          },
-          {
-            "name": "buyArgs",
-            "type": {
-              "defined": "BuyArgs"
-            }
-          },
-          {
-            "name": "bridgeUsdcAmount",
-            "type": "u64"
-          },
-          {
-            "name": "destDomain",
-            "type": "u32"
-          },
-          {
-            "name": "recipient",
-            "type": "publicKey"
           }
         ]
       }
@@ -669,23 +825,33 @@ export const IDL: ValueRouter = {
   "errors": [
     {
       "code": 6000,
-      "name": "InvalidReturnData"
+      "name": "InvalidReturnData",
+      "msg": "invalid return data"
     },
     {
       "code": 6001,
-      "name": "InvalidJupiterProgram"
+      "name": "InvalidJupiterProgram",
+      "msg": "invalid jupiter program"
     },
     {
       "code": 6002,
-      "name": "IncorrectOwner"
+      "name": "IncorrectOwner",
+      "msg": "incorrect owner"
     },
     {
       "code": 6003,
-      "name": "InsufficientLengthForU64Conversion"
+      "name": "InsufficientLengthForU64Conversion",
+      "msg": "insufficient length for u64 conversion"
     },
     {
       "code": 6004,
-      "name": "USDCInAccountNotClosed"
+      "name": "USDCInAccountNotClosed",
+      "msg": "USDC in account not closed"
+    },
+    {
+      "code": 6005,
+      "name": "CctpReceiverMismatch",
+      "msg": "CCTP receiver mismatch"
     }
   ]
 };

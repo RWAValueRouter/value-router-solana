@@ -32,7 +32,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("7NN3BwRpAy3a8vb68Yo3kNJxkh3NMNBWFPDSXuXqk68F");
+declare_id!("A22nXmDP7rtFdgsmnUTeu1csftJ6kxrpwpeioZkwnTgY");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -79,7 +79,8 @@ pub mod value_router {
 
     // Instruction handler
     pub fn initialize(ctx: Context<InitializeContext>, _params: InitializeParams) -> Result<()> {
-        let mut value_router = ctx.accounts.value_router.as_mut();
+        // TODO only admin
+        let value_router = ctx.accounts.value_router.as_mut();
         value_router.authority_bump = *ctx
             .bumps
             .get("authority_pda")
@@ -90,8 +91,9 @@ pub mod value_router {
     }
 
     /*
+    /*
     Instruction 2: SwapAndBridge
-     */
+    */
     // Instruction accounts
     #[derive(Accounts)]
     #[instruction(params: SwapAndBridgeParams)]
@@ -434,6 +436,8 @@ pub mod value_router {
         Ok(())
     }
 
+    */
+
     /*
     Instruction 3: create_relay_data
      */
@@ -520,12 +524,12 @@ pub mod value_router {
     // TODO reclaim
 
     /*
-    Instruction 6: relay_bridge
+    Instruction 6: relay
      */
     // Instruction accounts
     #[derive(Accounts)]
-    #[instruction(params: RelayBridgeParams)]
-    pub struct RelayBridgeInstruction<'info> {
+    #[instruction(params: RelayParams)]
+    pub struct RelayInstruction<'info> {
         #[account(mut)]
         pub payer: Signer<'info>,
 
@@ -537,9 +541,13 @@ pub mod value_router {
         )]
         pub caller: UncheckedAccount<'info>,
 
-        /// CHECK: token messenger authority pda
+        /// CHECK:
         #[account()]
         pub tm_authority_pda: UncheckedAccount<'info>,
+
+        /// CHECK:
+        #[account()]
+        pub vr_authority_pda: UncheckedAccount<'info>,
 
         pub message_transmitter_program:
             Program<'info, message_transmitter::program::MessageTransmitter>,
@@ -548,7 +556,6 @@ pub mod value_router {
         pub message_transmitter: Box<Account<'info, MessageTransmitter>>,
 
         // Used nonces state, see UsedNonces struct for more details
-        /// CHECK:
         #[account(mut)]
         pub used_nonces: Box<Account<'info, UsedNonces>>,
 
@@ -560,13 +567,18 @@ pub mod value_router {
 
         pub system_program: Program<'info, System>,
 
-        /// CHECK: unsafe
+        /// CHECK:
         #[account()]
         pub message_transmitter_event_authority: UncheckedAccount<'info>,
 
-        /// CHECK: unsafe
+        /// CHECK:
         #[account()]
         pub token_messenger_event_authority: UncheckedAccount<'info>,
+
+        /// CHECK:
+        #[account()]
+        pub cctp_receiver_event_authority: UncheckedAccount<'info>,
+
         // remaining accounts: additional accounts to be passed to the receiver
         #[account()]
         pub relay_params: Box<Account<'info, RelayData>>,
@@ -583,10 +595,12 @@ pub mod value_router {
         pub token_pair: Box<Account<'info, TokenPair>>,
 
         #[account(mut)]
+        pub recipient_token_account: Box<Account<'info, TokenAccount>>,
+
+        #[account(mut)]
         pub custody_token_account: Box<Account<'info, TokenAccount>>,
 
-        /// Program usdc token account
-        /// CHECK:
+        /// CHECK: Program usdc token account
         #[account(
             mut,
             seeds = [constants::USDC_IN_SEED],
@@ -594,7 +608,7 @@ pub mod value_router {
         )]
         pub program_usdc_account: UncheckedAccount<'info>,
 
-        /// CHECK: usdc mint
+        /// CHECK:
         #[account(mut)]
         pub usdc_mint: UncheckedAccount<'info>,
 
@@ -605,22 +619,33 @@ pub mod value_router {
             bump
         )]
         pub program_authority: UncheckedAccount<'info>,
+
+        pub jupiter_program: Program<'info, Jupiter>,
+
+        #[account()]
+        pub cctp_message_receiver:
+            Program<'info, cctp_message_receiver::program::CctpMessageReceiver>,
+        /*
+        #[account(
+            seeds = [b"value_router"],
+            bump,
+            constraint = receiver_matches(&value_router, &cctp_message_receiver) @ ErrorCode::CctpReceiverMismatch,
+        )]
+        pub value_router: Box<Account<'info, ValueRouter>>,
+        */
     }
 
     // Instruction parameters
-    #[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone)]
-    pub struct RelayBridgeParams {}
+    #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+    pub struct RelayParams {
+        pub jupiter_swap_data: Vec<u8>,
+    }
 
-    pub fn relay_bridge<'a>(
-        ctx: Context<'_, '_, '_, 'a, RelayBridgeInstruction<'a>>,
-        params: RelayBridgeParams,
+    pub fn relay<'a>(
+        ctx: Context<'_, '_, '_, 'a, RelayInstruction<'a>>,
+        params: RelayParams,
     ) -> Result<()> {
-        msg!("relay-1");
-
-        require!(
-            ctx.accounts.program_usdc_account.data_is_empty(),
-            ErrorCode::USDCInAccountNotClosed
-        );
+        msg!("relay");
 
         utils::create_usdc_token_idempotent(
             ctx.accounts.program_authority.clone(),
@@ -691,107 +716,6 @@ pub mod value_router {
         )?;
         msg!("receive bridge msg success");
 
-        Ok(())
-    }
-
-    /*
-    Instruction 7: relay_swap
-     */
-    // Instruction accounts
-    #[derive(Accounts)]
-    #[instruction(params: RelaySwapParams)]
-    pub struct RelaySwapInstruction<'info> {
-        #[account(mut)]
-        pub payer: Signer<'info>,
-
-        /// CHECK:
-        #[account(
-            mut,
-            seeds = [constants::CCTP_CALLER_SEED],
-            bump
-        )]
-        pub caller: UncheckedAccount<'info>,
-
-        /// CHECK:
-        #[account(
-            constraint = cctp_message_receiver.key().eq(&value_router.receiver)
-        )]
-        pub cctp_message_receiver: UncheckedAccount<'info>,
-
-        #[account(
-            seeds = [b"value_router"],
-            bump
-        )]
-        pub value_router: Box<Account<'info, ValueRouter>>,
-
-        /// CHECK: value router authority pda
-        #[account()]
-        pub vr_authority_pda: UncheckedAccount<'info>,
-
-        pub message_transmitter_program:
-            Program<'info, message_transmitter::program::MessageTransmitter>,
-
-        #[account()]
-        pub message_transmitter: Box<Account<'info, MessageTransmitter>>,
-
-        // Used nonces state, see UsedNonces struct for more details
-        /// CHECK:
-        #[account(mut)]
-        pub used_nonces: Box<Account<'info, UsedNonces>>,
-
-        pub value_router_program: Program<'info, program::ValueRouter>,
-
-        pub token_program: Program<'info, Token>,
-
-        pub system_program: Program<'info, System>,
-
-        /// CHECK: unsafe
-        #[account()]
-        pub message_transmitter_event_authority: UncheckedAccount<'info>,
-
-        // remaining accounts: additional accounts to be passed to the receiver
-        #[account()]
-        pub relay_params: Box<Account<'info, RelayData>>,
-
-        #[account(mut)]
-        pub recipient_token_account: Box<Account<'info, TokenAccount>>,
-
-        /// Program usdc token account
-        /// CHECK:
-        #[account(
-            mut,
-            seeds = [constants::USDC_IN_SEED],
-            bump
-        )]
-        pub program_usdc_account: UncheckedAccount<'info>,
-
-        /// CHECK: usdc mint
-        #[account(mut)]
-        pub usdc_mint: UncheckedAccount<'info>,
-
-        /// CHECK:
-        #[account(
-            mut,
-            seeds = [constants::AUTHORITY_SEED],
-            bump
-        )]
-        pub program_authority: UncheckedAccount<'info>,
-
-        pub jupiter_program: Program<'info, Jupiter>,
-    }
-
-    // Instruction parameters
-    #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-    pub struct RelaySwapParams {
-        pub jupiter_swap_data: Vec<u8>,
-    }
-
-    pub fn relay_swap<'a>(
-        ctx: Context<'_, '_, '_, 'a, RelaySwapInstruction<'a>>,
-        params: RelaySwapParams,
-    ) -> Result<()> {
-        msg!("relay-2");
-
         // check usdc balance change of usdc_vault;
         //let token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
         let usdc_balance = TokenAccount::try_deserialize(
@@ -818,10 +742,11 @@ pub mod value_router {
             program: ctx.accounts.value_router_program.to_account_info(),
         };
 
-        let seeds: &[&[&[u8]]] = &[&[
-            constants::CCTP_CALLER_SEED,
-            &[*ctx.bumps.get("caller").unwrap()],
-        ]];
+        let remaining_2: Vec<AccountInfo> = [
+            ctx.accounts.cctp_receiver_event_authority.to_account_info(),
+            ctx.accounts.message_transmitter_program.to_account_info(),
+        ]
+        .to_vec();
 
         let cpi_ctx_2 = CpiContext::new_with_signer(
             ctx.accounts
@@ -830,7 +755,8 @@ pub mod value_router {
                 .to_account_info(),
             accounts_2,
             seeds,
-        );
+        )
+        .with_remaining_accounts(remaining_2);
 
         message_transmitter::cpi::receive_message(
             cpi_ctx_2,
@@ -897,3 +823,12 @@ pub mod value_router {
         Ok(())
     }
 }
+
+/*
+fn receiver_matches<'info>(
+    value_router: &Account<ValueRouter>,
+    cctp_message_receiver: &Program<'info, cctp_message_receiver::program::CctpMessageReceiver>,
+) -> bool {
+    value_router.receiver == cctp_message_receiver.key()
+}
+*/

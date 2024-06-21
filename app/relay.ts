@@ -31,11 +31,9 @@ import {
  *
  * 3. 构建 relay 交易，包含3个指令
  *  3.1 准备 address lookup table
- *  3.2 构建 relay1 tx
- *  3.3 构建 relay2 tx
- *  3.4 构建 compute budget instruction
- *  3.5 发送 relay1 tx
- *  3.6 发送 relay2 tx
+ *  3.2 构建 relay instruction
+ *  3.3 构建 compute budget instruction
+ *  3.4 发送 relay tx
  */
 const main = async () => {
   const provider = getAnchorConnection();
@@ -45,11 +43,12 @@ const main = async () => {
     messageTransmitterProgram,
     tokenMessengerMinterProgram,
     valueRouterProgram,
+    cctpMessageReceiverProgram,
   } = getPrograms(provider);
 
   // Init needed variables
   const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
-  const userTokenAccount = new PublicKey(process.env.USER_TOKEN_ACCOUNT);
+  const userTokenAccount = new PublicKey(process.env.USER_USDC_ACCOUNT);
   const remoteTokenAddressHex = process.env.REMOTE_TOKEN_HEX!;
   const remoteDomain = process.env.REMOTE_DOMAIN!;
   const messageHex1 = process.env.MESSAGE_HEX_BRIDGE!;
@@ -94,6 +93,20 @@ const main = async () => {
 
   console.log("relay data account: ", relayDataKeypair.publicKey);
 
+  const valueRouter = PublicKey.findProgramAddressSync(
+    [Buffer.from("value_router")],
+    valueRouterProgram.programId
+  )[0];
+
+  const accountInfo = await provider.connection.getAccountInfo(valueRouter);
+
+  const authorityBump = accountInfo.data.readUInt8(8);
+  const receiver = new PublicKey(accountInfo.data.slice(9, 41));
+
+  console.log("valueRouter: ", valueRouter);
+  console.log("authorityBump: ", authorityBump);
+  console.log("receiver: ", receiver);
+
   /// 1. Create RelayData account transaction
   await createDataAccount(provider, valueRouterProgram, relayDataKeypair);
 
@@ -115,6 +128,7 @@ const main = async () => {
     messageTransmitterProgram,
     tokenMessengerMinterProgram,
     valueRouterProgram,
+    cctpMessageReceiverProgram,
     usdcAddress,
     remoteTokenAddressHex,
     remoteDomain,
@@ -369,6 +383,7 @@ export const relay = async (
   messageTransmitterProgram,
   tokenMessengerMinterProgram,
   valueRouterProgram,
+  cctpMessageReceiverProgram,
   usdcAddress,
   remoteTokenAddressHex,
   remoteDomain,
@@ -397,15 +412,13 @@ export const relay = async (
       messageTransmitterProgram,
       tokenMessengerMinterProgram,
       valueRouterProgram,
+      cctpMessageReceiverProgram,
     },
     usdcAddress,
     remoteTokenAddressHex,
     remoteDomain,
-    nonce1,
     nonce2
   );
-
-  console.log("pdas: ", pdas);
 
   const [cctpCaller, bump] = PublicKey.findProgramAddressSync(
     [Buffer.from("cctp_caller")],
@@ -415,7 +428,7 @@ export const relay = async (
   console.log("cctpCaller: ", cctpCaller);
   console.log("bump: ", bump);
 
-  /// 3.2 Relay 1 instruction
+  /// 3.2 Relay instruction
   const seed = Buffer.from("__event_authority");
   let eventAuthority = (() => {
     for (let b = 255; b > 0; b--) {
@@ -436,82 +449,61 @@ export const relay = async (
     [Buffer.from("usdc_in")],
     valueRouterProgram.programId
   )[0];
+
   console.log("programUsdcAccount: ", programUsdcAccount);
 
   const programAuthority = PublicKey.findProgramAddressSync(
     [Buffer.from("authority")],
     valueRouterProgram.programId
   )[0];
+
   console.log("programAuthority: ", programAuthority);
 
   const jupiterProgramId = new PublicKey(process.env.JUPITER_ADDRESS);
 
-  const relay1Ix = await valueRouterProgram.methods
-    .relayBridge({})
+  const relayIx = await valueRouterProgram.methods
+    .relay({
+      jupiterSwapData: new Buffer(""),
+    })
     .accounts({
       payer: provider.wallet.publicKey,
       caller: cctpCaller,
       tmAuthorityPda: pdas.tmAuthorityPda,
+      vrAuthorityPda: pdas.vrAuthorityPda,
       messageTransmitterProgram: messageTransmitterProgram.programId,
       messageTransmitter: pdas.messageTransmitterAccount.publicKey,
-      usedNonces: pdas.usedNonces1,
+      usedNonces: pdas.usedNonces,
       tokenMessengerMinterProgram: tokenMessengerMinterProgram.programId,
       valueRouterProgram: valueRouterProgram.programId,
       tokenProgram: TOKEN_PROGRAM_ID,
       systemProgram: SystemProgram.programId,
       messageTransmitterEventAuthority: eventAuthority,
       tokenMessengerEventAuthority: pdas.tokenMessengerEventAuthority.publicKey,
+      cctpReceiverEventAuthority: pdas.cctpReceiverEventAuthority.publicKey,
       relayParams: relayDataKeypair.publicKey,
       tokenMessenger: pdas.tokenMessengerAccount.publicKey,
       remoteTokenMessenger: pdas.remoteTokenMessengerKey.publicKey,
       tokenMinter: pdas.tokenMinterAccount.publicKey,
       localToken: pdas.localToken.publicKey,
       tokenPair: pdas.tokenPair.publicKey,
+      recipientTokenAccount: recipientTokenAccount,
       custodyTokenAccount: pdas.custodyTokenAccount.publicKey,
       programUsdcAccount: programUsdcAccount,
       usdcMint: usdcAddress,
       programAuthority: programAuthority,
-    })
-    .instruction();
-
-  console.log("relay1Ix: ", relay1Ix);
-
-  /// 3.3 Relay 2 instruction
-  const relay2Ix = await valueRouterProgram.methods
-    .relaySwap({
-      jupiterSwapData: new Buffer(""),
-    })
-    .accounts({
-      payer: provider.wallet.publicKey,
-      caller: cctpCaller,
-      vrAuthorityPda: pdas.vrAuthorityPda,
-      messageTransmitterProgram: messageTransmitterProgram.programId,
-      messageTransmitter: pdas.messageTransmitterAccount.publicKey,
-      usedNonces: pdas.usedNonces1,
-      valueRouterProgram: valueRouterProgram.programId,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      systemProgram: SystemProgram.programId,
-      messageTransmitterEventAuthority: eventAuthority,
-      relayParams: relayDataKeypair.publicKey,
-      recipientTokenAccount: recipientTokenAccount,
-      programUsdcAccount: programUsdcAccount,
-      usdcMint: usdcAddress,
-      programAuthority: programAuthority,
       jupiterProgram: jupiterProgramId,
+      cctpMessageReceiver: cctpMessageReceiverProgram.programId,
     })
     .instruction();
 
-  console.log("relay2Ix: ", relay2Ix);
-
-  /// 3.4 Computte budget instructions
+  /// 3.3 Computte budget instructions
   const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
     units: 2000000,
   });
 
-  const relayInstructions_1 = [computeBudgetIx, relay1Ix];
-  const relayInstructions_2 = [computeBudgetIx, relay2Ix];
+  const relayInstructions = [computeBudgetIx, relayIx];
 
-  /// 3.5 Send relay transactions
+  /// 3.4 Send relay transactions
   const sendTx = async (relayInstructions: any) => {
     let txID = null;
     let attempts = 0;
@@ -572,8 +564,7 @@ export const relay = async (
     }
   };
 
-  //await sendTx(relayInstructions_1);
-  await sendTx(relayInstructions_2);
+  await sendTx(relayInstructions);
 };
 
 main();
