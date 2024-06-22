@@ -521,6 +521,8 @@ export const relay = async (
 
       const relayTransaction = new VersionedTransaction(relayMessageV0);
 
+      //relayTransaction.serialize();
+
       try {
         txID = await provider.sendAndConfirm(relayTransaction, null, TIMEOUT);
         console.log(

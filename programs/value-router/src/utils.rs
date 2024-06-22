@@ -42,13 +42,13 @@ pub fn create_usdc_token_idempotent<'info>(
     usdc_bump: &[u8],
 ) -> Result<TokenAccount> {
     if program_usdc_account.data_is_empty() {
-        msg!("program_usdc_account data is empty");
+        //msg!("program_usdc_account data is empty");
         let signer_seeds: &[&[&[u8]]] = &[
             &[constants::AUTHORITY_SEED, authority_bump.as_ref()],
             &[usdc_seed.as_ref(), usdc_bump.as_ref()],
         ];
 
-        msg!("Create program usdc token account");
+        //msg!("Create program usdc token account");
         let rent = Rent::get()?;
         let space = TokenAccount::LEN;
         let lamports = rent.minimum_balance(space);
@@ -66,7 +66,7 @@ pub fn create_usdc_token_idempotent<'info>(
             token_program.key,
         )?;
 
-        msg!("Initialize program usdc token account");
+        //msg!("Initialize program usdc token account");
         token::initialize_account3(CpiContext::new(
             token_program.to_account_info(),
             token::InitializeAccount3 {
@@ -81,9 +81,9 @@ pub fn create_usdc_token_idempotent<'info>(
 
         Ok(usdc_token_account)
     } else {
-        msg!("program_usdc_account has data");
+        //msg!("program_usdc_account has data");
 
-        msg!("Initialize program usdc token account");
+        //msg!("Initialize program usdc token account");
         token::initialize_account3(CpiContext::new(
             token_program.to_account_info(),
             token::InitializeAccount3 {
@@ -111,7 +111,7 @@ pub fn close_program_usdc<'info>(
 ) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[constants::AUTHORITY_SEED, authority_bump.as_ref()]];
 
-    msg!("Close program usdc token account");
+    //msg!("Close program usdc token account");
     token::close_account(CpiContext::new_with_signer(
         token_program.to_account_info(),
         token::CloseAccount {

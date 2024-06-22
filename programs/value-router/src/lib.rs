@@ -32,7 +32,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("A22nXmDP7rtFdgsmnUTeu1csftJ6kxrpwpeioZkwnTgY");
+declare_id!("GmVJ4F9g2GFqQtTXvFAmWFYn6wNL13HfQwSptFXdg8aw");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -594,6 +594,7 @@ pub mod value_router {
 
         pub token_pair: Box<Account<'info, TokenPair>>,
 
+        // TODO check with recipient in swap message
         #[account(mut)]
         pub recipient_token_account: Box<Account<'info, TokenAccount>>,
 
@@ -645,7 +646,7 @@ pub mod value_router {
         ctx: Context<'_, '_, '_, 'a, RelayInstruction<'a>>,
         params: RelayParams,
     ) -> Result<()> {
-        msg!("relay");
+        //msg!("relay");
 
         utils::create_usdc_token_idempotent(
             ctx.accounts.program_authority.clone(),
@@ -658,7 +659,7 @@ pub mod value_router {
             &ctx.bumps.get("program_usdc_account").unwrap().to_le_bytes(),
         )?;
 
-        let accounts_1 = ReceiveMessageContext {
+        let accounts_1 = Box::new(ReceiveMessageContext {
             payer: ctx.accounts.payer.to_account_info(),
             caller: ctx.accounts.caller.to_account_info(),
             authority_pda: ctx.accounts.tm_authority_pda.to_account_info(),
@@ -674,7 +675,7 @@ pub mod value_router {
                 .message_transmitter_event_authority
                 .to_account_info(),
             program: ctx.accounts.value_router_program.to_account_info(),
-        };
+        });
 
         let remaining: Vec<AccountInfo> = [
             ctx.accounts.token_messenger.to_account_info(),
@@ -705,7 +706,7 @@ pub mod value_router {
                 .message_transmitter_program
                 .clone()
                 .to_account_info(),
-            accounts_1,
+            *accounts_1,
             seeds,
         )
         .with_remaining_accounts(remaining);
@@ -714,20 +715,22 @@ pub mod value_router {
             cpi_ctx_1,
             ctx.accounts.relay_params.bridge_message.clone(),
         )?;
-        msg!("receive bridge msg success");
+        //msg!("receive bridge msg success");
 
         // check usdc balance change of usdc_vault;
         //let token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
-        let usdc_balance = TokenAccount::try_deserialize(
-            &mut ctx
-                .accounts
-                .program_usdc_account
-                .try_borrow_data()?
-                .as_ref(),
-        )?
-        .amount;
+        let usdc_balance: Box<u64> = Box::new(
+            TokenAccount::try_deserialize(
+                &mut ctx
+                    .accounts
+                    .program_usdc_account
+                    .try_borrow_data()?
+                    .as_ref(),
+            )?
+            .amount,
+        );
 
-        let accounts_2 = ReceiveMessageContext {
+        let accounts_2 = Box::new(ReceiveMessageContext {
             payer: ctx.accounts.payer.to_account_info(),
             caller: ctx.accounts.caller.to_account_info(),
             authority_pda: ctx.accounts.vr_authority_pda.to_account_info(),
@@ -740,7 +743,7 @@ pub mod value_router {
                 .message_transmitter_event_authority
                 .to_account_info(),
             program: ctx.accounts.value_router_program.to_account_info(),
-        };
+        });
 
         let remaining_2: Vec<AccountInfo> = [
             ctx.accounts.cctp_receiver_event_authority.to_account_info(),
@@ -753,7 +756,7 @@ pub mod value_router {
                 .message_transmitter_program
                 .clone()
                 .to_account_info(),
-            accounts_2,
+            *accounts_2,
             seeds,
         )
         .with_remaining_accounts(remaining_2);
@@ -762,26 +765,33 @@ pub mod value_router {
             cpi_ctx_2,
             ctx.accounts.relay_params.swap_message.clone(),
         )?;
-        msg!("receive swap msg success");
+        //msg!("receive swap msg success");
+
+        //msg!("value_router relay: program usdc_balance: {}", *usdc_balance);
 
         // decode message
-        let swap_message = SwapMessage::new(1, &ctx.accounts.relay_params.swap_message.message)?;
-        let buy_token = swap_message.get_buy_token()?;
-        //msg!("value_router swap: buy_token: {:?}", buy_token);
-        //let recipient = swap_message.get_recipient()?;
-        //msg!("value_router swap: recipient: {:?}", recipient);
-        let guaranteed_buy_amount = swap_message.get_guaranteed_buy_amount()?;
+        let swap_message = Box::new(SwapMessage::new(
+            1,
+            &ctx.accounts.relay_params.swap_message.message[116..], //.message_body,
+        )?);
+        //msg!("value_router relay: program usdc_balance: {}", *usdc_balance);
         /*msg!(
-            "value_router swap: guaranteed_buy_amount: {:?}",
-            guaranteed_buy_amount
+            "value_router relay: buy_token: {}",
+            swap_message.get_buy_token()?
         );*/
-        if buy_token != ctx.accounts.usdc_mint.key() {
+        /*msg!(
+            "value_router relay: sell_amount: {}",
+            swap_message.get_sell_amount()?
+        );*/
+        //msg!("value_router swap: recipient: {:?}", recipient);
+        //let guaranteed_buy_amount = *swap_message.get_guaranteed_buy_amount()?;
+        if swap_message.get_buy_token()? != ctx.accounts.usdc_mint.key() {
             assert!(
-                usdc_balance >= swap_message.get_sell_amount()?,
+                *usdc_balance >= swap_message.get_sell_amount()?,
                 "value_router: no enough usdc amount to swap"
             );
             // swap
-            msg!("value_router: swap on jupiter");
+            //msg!("value_router: swap on jupiter");
             let token_balance_before = ctx.accounts.recipient_token_account.amount;
             swap_on_jupiter(
                 ctx.remaining_accounts,
@@ -790,7 +800,7 @@ pub mod value_router {
             )?;
             assert!(
                 ctx.accounts.recipient_token_account.amount - token_balance_before
-                    >= guaranteed_buy_amount,
+                    >= swap_message.get_guaranteed_buy_amount()?,
                 "value_router: swap output not enough"
             );
         } else {
@@ -808,7 +818,7 @@ pub mod value_router {
                 ctx.accounts.program_authority.clone(),
                 &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
                 ctx.accounts.token_program.clone(),
-                usdc_balance,
+                *usdc_balance,
             );
         }
 

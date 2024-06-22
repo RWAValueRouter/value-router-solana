@@ -16,7 +16,7 @@ let addresses = {
   wsol: "So11111111111111111111111111111111111111112",
   wallet: "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt",
   walletUsdc: "9h2CxvWshcJaNAJ9BqrzL5Y849wQXkZdMF6nQMf6c4cY",
-  valueRouter: "A22nXmDP7rtFdgsmnUTeu1csftJ6kxrpwpeioZkwnTgY",
+  valueRouter: "GmVJ4F9g2GFqQtTXvFAmWFYn6wNL13HfQwSptFXdg8aw",
   caller: "",
   programUsdcAccount: "",
   receiver: "5XoeLoER5SFFcGeFsvEa4a4QyEZXgCEWTFhESS43ExLX",
