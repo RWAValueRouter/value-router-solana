@@ -16,6 +16,12 @@ import {
   getPrograms,
   getRelayPdas,
 } from "./utils";
+import {
+  getQuote,
+  getSwapIx,
+  instructionDataToTransactionInstruction,
+  getAdressLookupTableAccounts,
+} from "./jupiter";
 
 /**
  * EVM/Noble -> Solana relay 任务在 Solana 上执行的部分
@@ -48,7 +54,9 @@ const main = async () => {
 
   // Init needed variables
   const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
-  const userTokenAccount = new PublicKey(process.env.USER_USDC_ACCOUNT);
+  // TODO 根据 swap message 指定的 output token 计算出 user token account
+  const userTokenAccount = new PublicKey(process.env.USER_USDT_ACCOUNT);
+  //const userTokenAccount = new PublicKey(process.env.USER_USDC_ACCOUNT);
   const remoteTokenAddressHex = process.env.REMOTE_TOKEN_HEX!;
   const remoteDomain = process.env.REMOTE_DOMAIN!;
   const messageHex1 = process.env.MESSAGE_HEX_BRIDGE!;
@@ -397,11 +405,12 @@ export const relay = async (
     "CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq"
   );
 
-  const lookupTable = (
+  // value router 专用的 lookup table 列表
+  // 用于缩减交易长度
+  // 包含常用的固定的账户
+  const vrLookupTable = (
     await provider.connection.getAddressLookupTable(LOOKUP_TABLE_ADDRESS)
   ).value;
-
-  const addressLookupTableAccounts = [lookupTable];
 
   const nonce1 = decodeEventNonceFromMessage(messages[0]);
   const nonce2 = decodeEventNonceFromMessage(messages[1]);
@@ -461,9 +470,44 @@ export const relay = async (
 
   const jupiterProgramId = new PublicKey(process.env.JUPITER_ADDRESS);
 
+  // 构建 jupiter swap 参数
+  // 1. 获取 quote
+  // TODO 从 swap message 中解码 output token 地址和 sell token amount (usdc bridge amount)
+  // token 地址由 hex bytes32 转成 base58
+  let outputToken = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
+  let sellTokenAmount = 321;
+  let quote = await getQuote(
+    process.env.USDC_ADDRESS,
+    outputToken,
+    sellTokenAmount
+  );
+
+  console.log("quote: ", quote);
+
+  // 2. 通过 api 获取 swap instruction
+  const swapIx = await getSwapIx(
+    provider.wallet.publicKey,
+    recipientTokenAccount,
+    quote
+  );
+
+  let swapInstruction = instructionDataToTransactionInstruction(
+    swapIx.swapInstruction
+  );
+
+  // 3. 获取 swap instruction 中的 lookup table 列表
+  // 由 jupiter api 提供，可能有多个
+  let addressLookupTableAccounts = await getAdressLookupTableAccounts(
+    provider.connection,
+    swapIx.addressLookupTableAddresses
+  );
+
+  // 把 vr lookup table 也加入 lookup table 列表
+  addressLookupTableAccounts.push(vrLookupTable);
+
   const relayIx = await valueRouterProgram.methods
     .relay({
-      jupiterSwapData: new Buffer(""),
+      jupiterSwapData: swapInstruction.data,
     })
     .accounts({
       payer: provider.wallet.publicKey,
@@ -494,6 +538,7 @@ export const relay = async (
       jupiterProgram: jupiterProgramId,
       cctpMessageReceiver: cctpMessageReceiverProgram.programId,
     })
+    .remainingAccounts(swapInstruction.keys)
     .instruction();
 
   /// 3.3 Computte budget instructions

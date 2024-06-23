@@ -79,7 +79,6 @@ pub mod value_router {
 
     // Instruction handler
     pub fn initialize(ctx: Context<InitializeContext>, _params: InitializeParams) -> Result<()> {
-        // TODO only admin
         let value_router = ctx.accounts.value_router.as_mut();
         value_router.authority_bump = *ctx
             .bumps
@@ -596,7 +595,10 @@ pub mod value_router {
 
         // TODO check with recipient in swap message
         #[account(mut)]
-        pub recipient_token_account: Box<Account<'info, TokenAccount>>,
+        pub recipient_usdc_account: Box<Account<'info, TokenAccount>>,
+
+        #[account(mut)]
+        pub recipient_output_token_account: Box<Account<'info, TokenAccount>>,
 
         #[account(mut)]
         pub custody_token_account: Box<Account<'info, TokenAccount>>,
@@ -646,8 +648,6 @@ pub mod value_router {
         ctx: Context<'_, '_, '_, 'a, RelayInstruction<'a>>,
         params: RelayParams,
     ) -> Result<()> {
-        //msg!("relay");
-
         utils::create_usdc_token_idempotent(
             ctx.accounts.program_authority.clone(),
             ctx.accounts.program_usdc_account.clone(),
@@ -715,11 +715,9 @@ pub mod value_router {
             cpi_ctx_1,
             ctx.accounts.relay_params.bridge_message.clone(),
         )?;
-        //msg!("receive bridge msg success");
 
         // check usdc balance change of usdc_vault;
-        //let token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
-        let usdc_balance: Box<u64> = Box::new(
+        let mut usdc_balance: Box<u64> = Box::new(
             TokenAccount::try_deserialize(
                 &mut ctx
                     .accounts
@@ -765,62 +763,84 @@ pub mod value_router {
             cpi_ctx_2,
             ctx.accounts.relay_params.swap_message.clone(),
         )?;
-        //msg!("receive swap msg success");
-
-        //msg!("value_router relay: program usdc_balance: {}", *usdc_balance);
 
         // decode message
         let swap_message = Box::new(SwapMessage::new(
             1,
             &ctx.accounts.relay_params.swap_message.message[116..], //.message_body,
         )?);
-        //msg!("value_router relay: program usdc_balance: {}", *usdc_balance);
-        /*msg!(
-            "value_router relay: buy_token: {}",
-            swap_message.get_buy_token()?
-        );*/
-        /*msg!(
-            "value_router relay: sell_amount: {}",
-            swap_message.get_sell_amount()?
-        );*/
-        //msg!("value_router swap: recipient: {:?}", recipient);
-        //let guaranteed_buy_amount = *swap_message.get_guaranteed_buy_amount()?;
+
         if swap_message.get_buy_token()? != ctx.accounts.usdc_mint.key() {
+            // 1. need to swap
+
+            // check recipient output token account matches recipient in swap message
+            assert!(
+                ctx.accounts.recipient_output_token_account.key()
+                    == swap_message.get_recipient()?,
+                "value_router: incorrect recipient token account"
+            );
+
+            assert!(
+                ctx.accounts.recipient_usdc_account.owner
+                    == ctx.accounts.recipient_output_token_account.owner,
+                "value_router: recipient token account and usdc account not match"
+            );
+
             assert!(
                 *usdc_balance >= swap_message.get_sell_amount()?,
                 "value_router: no enough usdc amount to swap"
             );
             // swap
             //msg!("value_router: swap on jupiter");
-            let token_balance_before = ctx.accounts.recipient_token_account.amount;
+            let token_balance_before = ctx.accounts.recipient_output_token_account.amount;
             swap_on_jupiter(
                 ctx.remaining_accounts,
                 ctx.accounts.jupiter_program.clone(),
                 params.jupiter_swap_data,
             )?;
             assert!(
-                ctx.accounts.recipient_token_account.amount - token_balance_before
+                ctx.accounts.recipient_output_token_account.amount - token_balance_before
                     >= swap_message.get_guaranteed_buy_amount()?,
                 "value_router: swap output not enough"
             );
+
+            // update remaining usdc balance
+            usdc_balance = Box::new(
+                TokenAccount::try_deserialize(
+                    &mut ctx
+                        .accounts
+                        .program_usdc_account
+                        .try_borrow_data()?
+                        .as_ref(),
+                )?
+                .amount,
+            );
         } else {
-            // transfer to recipient
-            let _ = utils::transfer_token(
-                Account::<TokenAccount>::try_from(
-                    &ctx.accounts.program_usdc_account.clone().to_account_info(),
-                )?,
-                Account::<TokenAccount>::try_from(
-                    &ctx.accounts
-                        .recipient_token_account
-                        .clone()
-                        .to_account_info(),
-                )?,
-                ctx.accounts.program_authority.clone(),
-                &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
-                ctx.accounts.token_program.clone(),
-                *usdc_balance,
+            // 2. no need to swap
+
+            // check recipient usdc account matches recipient in swap message
+            assert!(
+                ctx.accounts.recipient_usdc_account.key() == swap_message.get_recipient()?,
+                "value_router: incorrect recipient usdc account"
             );
         }
+
+        // transfer usdc to recipient
+        let _ = utils::transfer_token(
+            Account::<TokenAccount>::try_from(
+                &ctx.accounts.program_usdc_account.clone().to_account_info(),
+            )?,
+            Account::<TokenAccount>::try_from(
+                &ctx.accounts
+                    .recipient_usdc_account
+                    .clone()
+                    .to_account_info(),
+            )?,
+            ctx.accounts.program_authority.clone(),
+            &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
+            ctx.accounts.token_program.clone(),
+            *usdc_balance,
+        );
 
         utils::close_program_usdc(
             ctx.accounts.program_authority.clone(),
@@ -828,7 +848,6 @@ pub mod value_router {
             ctx.accounts.token_program.clone(),
             &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
         )?;
-        //msg!("program usdc account closed");
 
         Ok(())
     }
