@@ -8,7 +8,10 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import {
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import {
   SOLANA_USDC_ADDRESS,
   decodeEventNonceFromMessage,
@@ -54,21 +57,77 @@ const main = async () => {
 
   // Init needed variables
   const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
-  // TODO 根据 swap message 指定的 output token 计算出 user token account
-  const userTokenAccount = new PublicKey(process.env.USER_USDT_ACCOUNT);
-  //const userTokenAccount = new PublicKey(process.env.USER_USDC_ACCOUNT);
   const remoteTokenAddressHex = process.env.REMOTE_TOKEN_HEX!;
-  const remoteDomain = process.env.REMOTE_DOMAIN!;
   const messageHex1 = process.env.MESSAGE_HEX_BRIDGE!;
   const attestationHex1 = process.env.ATTESTATION_HEX_BRIDGE!;
   const messageHex2 = process.env.MESSAGE_HEX_SWAP!;
   const attestationHex2 = process.env.ATTESTATION_HEX_SWAP!;
 
+  let recipientWalletAddress = new PublicKey(
+    Buffer.from(messageHex2.slice(2), "hex").subarray(248)
+  );
+  /*let recipientWalletAddress = new PublicKey(
+    "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt"
+  );*/
+
+  let outputTokenAddress = new PublicKey(
+    Buffer.from(messageHex2.slice(2), "hex").subarray(184, 184 + 32)
+  );
+
+  let sellTokenAmount = BigInt(
+    "0x" +
+      Buffer.from(messageHex2.slice(2), "hex")
+        .subarray(152, 184)
+        .toString("hex")
+  );
+
+  let guaranteedBuyAmount = BigInt(
+    "0x" +
+      Buffer.from(messageHex2.slice(2), "hex")
+        .subarray(216, 248)
+        .toString("hex")
+  );
+
+  const sourceDomain = Buffer.from(messageHex2.slice(2), "hex")
+    .subarray(4, 8)
+    .readUIntBE(0, 4)
+    .toString();
+
+  // 计算 recipient 的 usdc 账户
+  // swap 失败或 usdc 有剩余时会收到 usdc
+  const [userUsdcAccount] = await PublicKey.findProgramAddressSync(
+    [
+      recipientWalletAddress.toBuffer(),
+      TOKEN_PROGRAM_ID.toBuffer(),
+      usdcAddress.toBuffer(),
+    ],
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+
+  // 计算 recipient 的 output token 账户
+  const [userOutputTokenAccount] = await PublicKey.findProgramAddressSync(
+    [
+      recipientWalletAddress.toBuffer(),
+      TOKEN_PROGRAM_ID.toBuffer(),
+      outputTokenAddress.toBuffer(),
+    ],
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+
+  // 获取 nonce account，用 message1 和 message 2 获取都可以
+  const nonce = decodeEventNonceFromMessage(messageHex2);
+
   console.log({
+    sourceDomain: sourceDomain,
     usdc: usdcAddress,
-    userTokenAccount: userTokenAccount,
+    sellTokenAmount: sellTokenAmount,
+    outputTokenAddress: outputTokenAddress,
+    guaranteedBuyAmount: guaranteedBuyAmount,
+    recipientWalletAddress: recipientWalletAddress,
+    userOutputTokenAccount: userOutputTokenAccount,
+    userUsdcAccount: userUsdcAccount,
     remoteTokenAddressHex: remoteTokenAddressHex,
-    remoteDomain: remoteDomain,
+    nonce: nonce,
     messageHex1: messageHex1,
     attestationHex1: attestationHex1,
     messageHex2: messageHex2,
@@ -108,11 +167,9 @@ const main = async () => {
 
   const accountInfo = await provider.connection.getAccountInfo(valueRouter);
 
-  const authorityBump = accountInfo.data.readUInt8(8);
   const receiver = new PublicKey(accountInfo.data.slice(9, 41));
 
   console.log("valueRouter: ", valueRouter);
-  console.log("authorityBump: ", authorityBump);
   console.log("receiver: ", receiver);
 
   /// 1. Create RelayData account transaction
@@ -139,9 +196,12 @@ const main = async () => {
     cctpMessageReceiverProgram,
     usdcAddress,
     remoteTokenAddressHex,
-    remoteDomain,
-    [messageHex1, messageHex2],
-    userTokenAccount,
+    sourceDomain,
+    nonce,
+    userOutputTokenAccount,
+    userUsdcAccount,
+    outputTokenAddress,
+    sellTokenAmount,
     relayDataKeypair
   );
 };
@@ -386,6 +446,21 @@ export const postMessages = async (
   }
 };
 
+/**
+ *
+ * @param provider
+ * @param messageTransmitterProgram
+ * @param tokenMessengerMinterProgram
+ * @param valueRouterProgram
+ * @param cctpMessageReceiverProgram
+ * @param usdcAddress
+ * @param remoteTokenAddressHex
+ * @param sourceDomain
+ * @param nonce
+ * @param recipientOutputTokenAccount recipient 的 output token 账户，要和 swap message 指定的 recipient 匹配
+ * @param recipientUsdcAccount recipient 的 usdc 账户，要和 swap message 指定的 recipient 匹配
+ * @param relayDataKeypair
+ */
 export const relay = async (
   provider,
   messageTransmitterProgram,
@@ -394,9 +469,12 @@ export const relay = async (
   cctpMessageReceiverProgram,
   usdcAddress,
   remoteTokenAddressHex,
-  remoteDomain,
-  messages,
-  recipientTokenAccount,
+  sourceDomain,
+  nonce,
+  recipientOutputTokenAccount,
+  recipientUsdcAccount,
+  outputToken,
+  sellTokenAmount,
   relayDataKeypair
 ) => {
   console.log("\n\n3. Relay\n");
@@ -412,9 +490,6 @@ export const relay = async (
     await provider.connection.getAddressLookupTable(LOOKUP_TABLE_ADDRESS)
   ).value;
 
-  const nonce1 = decodeEventNonceFromMessage(messages[0]);
-  const nonce2 = decodeEventNonceFromMessage(messages[1]);
-
   // Get PDAs
   const pdas = await getRelayPdas(
     {
@@ -425,8 +500,8 @@ export const relay = async (
     },
     usdcAddress,
     remoteTokenAddressHex,
-    remoteDomain,
-    nonce2
+    sourceDomain,
+    nonce
   );
 
   const [cctpCaller, bump] = PublicKey.findProgramAddressSync(
@@ -470,44 +545,49 @@ export const relay = async (
 
   const jupiterProgramId = new PublicKey(process.env.JUPITER_ADDRESS);
 
-  // 构建 jupiter swap 参数
-  // 1. 获取 quote
-  // TODO 从 swap message 中解码 output token 地址和 sell token amount (usdc bridge amount)
-  // token 地址由 hex bytes32 转成 base58
-  let outputToken = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
-  let sellTokenAmount = 321;
-  let quote = await getQuote(
-    process.env.USDC_ADDRESS,
-    outputToken,
-    sellTokenAmount
-  );
+  let remainingAccounts = [];
+  let jupiterSwapData = new Buffer("");
+  let addressLookupTableAccounts = [];
 
-  console.log("quote: ", quote);
+  if (usdcAddress == outputToken) {
+    // 构建 jupiter swap 参数
+    // 1. 获取 quote
+    let quote = await getQuote(
+      process.env.USDC_ADDRESS, // USDC Mint account (USDC 代币地址)
+      outputToken, // Output token Mint account (输出代币地址)
+      sellTokenAmount
+    );
 
-  // 2. 通过 api 获取 swap instruction
-  const swapIx = await getSwapIx(
-    provider.wallet.publicKey,
-    recipientTokenAccount,
-    quote
-  );
+    console.log("quote: ", quote);
 
-  let swapInstruction = instructionDataToTransactionInstruction(
-    swapIx.swapInstruction
-  );
+    // 2. 通过 api 获取 swap instruction
+    const swapIx = await getSwapIx(
+      provider.wallet.publicKey,
+      recipientOutputTokenAccount,
+      quote
+    );
 
-  // 3. 获取 swap instruction 中的 lookup table 列表
-  // 由 jupiter api 提供，可能有多个
-  let addressLookupTableAccounts = await getAdressLookupTableAccounts(
-    provider.connection,
-    swapIx.addressLookupTableAddresses
-  );
+    let swapInstruction = instructionDataToTransactionInstruction(
+      swapIx.swapInstruction
+    );
+
+    remainingAccounts = swapInstruction.keys;
+    jupiterSwapData = swapInstruction.data;
+
+    // 3. 获取 swap instruction 中的 lookup table 列表
+    // 由 jupiter api 提供，可能有多个
+    addressLookupTableAccounts = await getAdressLookupTableAccounts(
+      provider.connection,
+      swapIx.addressLookupTableAddresses
+    );
+  }
 
   // 把 vr lookup table 也加入 lookup table 列表
   addressLookupTableAccounts.push(vrLookupTable);
 
   const relayIx = await valueRouterProgram.methods
     .relay({
-      jupiterSwapData: swapInstruction.data,
+      jupiterSwapData: jupiterSwapData,
     })
     .accounts({
       payer: provider.wallet.publicKey,
@@ -530,7 +610,8 @@ export const relay = async (
       tokenMinter: pdas.tokenMinterAccount.publicKey,
       localToken: pdas.localToken.publicKey,
       tokenPair: pdas.tokenPair.publicKey,
-      recipientTokenAccount: recipientTokenAccount,
+      recipientUsdcAccount: recipientUsdcAccount,
+      recipientOutputTokenAccount: recipientOutputTokenAccount,
       custodyTokenAccount: pdas.custodyTokenAccount.publicKey,
       programUsdcAccount: programUsdcAccount,
       usdcMint: usdcAddress,
@@ -538,7 +619,7 @@ export const relay = async (
       jupiterProgram: jupiterProgramId,
       cctpMessageReceiver: cctpMessageReceiverProgram.programId,
     })
-    .remainingAccounts(swapInstruction.keys)
+    .remainingAccounts(remainingAccounts)
     .instruction();
 
   /// 3.3 Computte budget instructions

@@ -216,7 +216,12 @@ export type ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "recipientTokenAccount",
+          "name": "recipientUsdcAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recipientOutputTokenAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -645,7 +650,12 @@ export const IDL: ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "recipientTokenAccount",
+          "name": "recipientUsdcAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recipientOutputTokenAccount",
           "isMut": true,
           "isSigner": false
         },

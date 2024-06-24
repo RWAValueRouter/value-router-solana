@@ -13,6 +13,7 @@ use {
         swap_message::SwapMessage,
     },
     anchor_lang::prelude::*,
+    anchor_spl::associated_token::get_associated_token_address,
     anchor_spl::token::{Mint, Token, TokenAccount},
     message_transmitter::{
         cpi::accounts::{ReceiveMessageContext, SendMessageContext},
@@ -32,7 +33,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("GmVJ4F9g2GFqQtTXvFAmWFYn6wNL13HfQwSptFXdg8aw");
+declare_id!("DvPwXfMH9uMrdv8s9NCEkQPhqpV1r1xNTrPSVYEmaRwU");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -593,7 +594,6 @@ pub mod value_router {
 
         pub token_pair: Box<Account<'info, TokenPair>>,
 
-        // TODO check with recipient in swap message
         #[account(mut)]
         pub recipient_usdc_account: Box<Account<'info, TokenAccount>>,
 
@@ -770,22 +770,26 @@ pub mod value_router {
             &ctx.accounts.relay_params.swap_message.message[116..], //.message_body,
         )?);
 
+        // swap_message.get_recipient() is recipient's wallet address
+        assert!(
+            ctx.accounts.recipient_output_token_account.owner
+                == get_associated_token_address(
+                    &swap_message.get_recipient()?,
+                    &swap_message.get_buy_token()?,
+                ),
+            "value_router: incorrect recipient's output token account"
+        );
+
+        assert!(
+            ctx.accounts.recipient_usdc_account.owner
+                == get_associated_token_address(
+                    &swap_message.get_recipient()?,
+                    ctx.accounts.usdc_mint.key,
+                ),
+            "value_router: incorrect recipient's usdc account"
+        );
+
         if swap_message.get_buy_token()? != ctx.accounts.usdc_mint.key() {
-            // 1. need to swap
-
-            // check recipient output token account matches recipient in swap message
-            assert!(
-                ctx.accounts.recipient_output_token_account.key()
-                    == swap_message.get_recipient()?,
-                "value_router: incorrect recipient token account"
-            );
-
-            assert!(
-                ctx.accounts.recipient_usdc_account.owner
-                    == ctx.accounts.recipient_output_token_account.owner,
-                "value_router: recipient token account and usdc account not match"
-            );
-
             assert!(
                 *usdc_balance >= swap_message.get_sell_amount()?,
                 "value_router: no enough usdc amount to swap"
@@ -814,14 +818,6 @@ pub mod value_router {
                         .as_ref(),
                 )?
                 .amount,
-            );
-        } else {
-            // 2. no need to swap
-
-            // check recipient usdc account matches recipient in swap message
-            assert!(
-                ctx.accounts.recipient_usdc_account.key() == swap_message.get_recipient()?,
-                "value_router: incorrect recipient usdc account"
             );
         }
 

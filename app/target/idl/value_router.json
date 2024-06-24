@@ -216,7 +216,12 @@
           "isSigner": false
         },
         {
-          "name": "recipientTokenAccount",
+          "name": "recipientUsdcAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recipientOutputTokenAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -464,6 +469,6 @@
     }
   ],
   "metadata": {
-    "address": "GmVJ4F9g2GFqQtTXvFAmWFYn6wNL13HfQwSptFXdg8aw"
+    "address": "DvPwXfMH9uMrdv8s9NCEkQPhqpV1r1xNTrPSVYEmaRwU"
   }
 }
