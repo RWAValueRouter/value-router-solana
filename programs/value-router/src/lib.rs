@@ -33,7 +33,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("DvPwXfMH9uMrdv8s9NCEkQPhqpV1r1xNTrPSVYEmaRwU");
+declare_id!("DMXBZKMyDGU96PQz7V6ZCbKjBpjsYeAidacCaP8oJvnA");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -772,7 +772,7 @@ pub mod value_router {
 
         // swap_message.get_recipient() is recipient's wallet address
         assert!(
-            ctx.accounts.recipient_output_token_account.owner
+            ctx.accounts.recipient_output_token_account.key()
                 == get_associated_token_address(
                     &swap_message.get_recipient()?,
                     &swap_message.get_buy_token()?,
@@ -781,7 +781,7 @@ pub mod value_router {
         );
 
         assert!(
-            ctx.accounts.recipient_usdc_account.owner
+            ctx.accounts.recipient_usdc_account.key()
                 == get_associated_token_address(
                     &swap_message.get_recipient()?,
                     ctx.accounts.usdc_mint.key,

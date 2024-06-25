@@ -549,7 +549,8 @@ export const relay = async (
   let jupiterSwapData = new Buffer("");
   let addressLookupTableAccounts = [];
 
-  if (usdcAddress == outputToken) {
+  if (usdcAddress !== outputToken) {
+    console.log("Build jupiter swap instruction");
     // 构建 jupiter swap 参数
     // 1. 获取 quote
     let quote = await getQuote(
