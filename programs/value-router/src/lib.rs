@@ -34,7 +34,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("DMXBZKMyDGU96PQz7V6ZCbKjBpjsYeAidacCaP8oJvnA");
+declare_id!("7hDkNZCc3y1xxhiU52W5avw2NmQcmRFdj1Pns5AUTEGA");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -50,13 +50,6 @@ pub mod value_router {
     pub struct InitializeContext<'info> {
         #[account(mut)]
         pub payer: Signer<'info>,
-
-        /// CHECK: empty PDA
-        #[account(
-            seeds = [b"sender_authority"],
-            bump
-        )]
-        pub authority_pda: UncheckedAccount<'info>,
 
         #[account(
             init_if_needed,

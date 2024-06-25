@@ -6,20 +6,7 @@ const main = async () => {
   const provider = getAnchorConnection();
   provider.opts.expire = 4294967295;
 
-  const { valueRouterProgram, cctpMessageReceiverProgram } =
-    getPrograms(provider);
-  console.log(
-    "valueRouterProgram id: ",
-    valueRouterProgram.programId.toString()
-  );
-  console.log(
-    "cctpMessageReceiverProgram id: ",
-    cctpMessageReceiverProgram.programId.toString()
-  );
-  console.log(
-    "cctpMessageReceiverProgram id: ",
-    cctpMessageReceiverProgram.programId.toBuffer()
-  );
+  const { valueRouterProgram } = getPrograms(provider);
 
   const pdas = getInitializePdas({
     valueRouterProgram,

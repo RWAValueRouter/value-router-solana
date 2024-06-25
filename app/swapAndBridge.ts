@@ -26,6 +26,9 @@ import {
   getPrograms,
 } from "./utils";
 
+const feeReceiver = new PublicKey(
+  "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt"
+);
 const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
 const usdtAddress = new PublicKey(process.env.USDT_ADDRESS);
 const wsolAddress = new PublicKey(process.env.WSOL_ADDRESS);
@@ -207,8 +210,7 @@ const sendSwapAndBridgeTx = async () => {
 
     jupiterProgram: jupiterProgramId,
 
-    // other
-    //ownerInputAta: userTokenAccount,
+    feeReceiver: feeReceiver,
   };
 
   console.log("programAuthority: ", accounts.programAuthority);

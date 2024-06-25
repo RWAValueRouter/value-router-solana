@@ -24,16 +24,6 @@ export type ValueRouter = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "cctpMessageReceiver",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -46,74 +36,53 @@ export type ValueRouter = {
       ]
     },
     {
-      "name": "createRelayData",
+      "name": "setValueRouter",
       "accounts": [
         {
-          "name": "eventRentPayer",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "relayData",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "postBridgeMessage",
-      "accounts": [
-        {
-          "name": "owner",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "relayData",
+          "name": "valueRouter",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
         }
       ],
       "args": [
         {
           "name": "params",
           "type": {
-            "defined": "PostBridgeDataParams"
+            "defined": "SetValueRouterParams"
           }
         }
       ]
     },
     {
-      "name": "postSwapMessage",
+      "name": "setAdmin",
       "accounts": [
         {
-          "name": "owner",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "relayData",
+          "name": "valueRouter",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
         }
       ],
       "args": [
         {
           "name": "params",
           "type": {
-            "defined": "PostSwapDataParams"
+            "defined": "SetAdminParams"
           }
         }
       ]
     },
     {
-      "name": "relay",
+      "name": "swapAndBridge",
       "accounts": [
         {
           "name": "payer",
@@ -121,19 +90,9 @@ export type ValueRouter = {
           "isSigner": true
         },
         {
-          "name": "caller",
+          "name": "eventRentPayer",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "tmAuthorityPda",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "vrAuthorityPda",
-          "isMut": false,
-          "isSigner": false
+          "isSigner": true
         },
         {
           "name": "messageTransmitterProgram",
@@ -141,22 +100,7 @@ export type ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "messageTransmitter",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "usedNonces",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "tokenMessengerMinterProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "valueRouterProgram",
           "isMut": false,
           "isSigner": false
         },
@@ -166,42 +110,57 @@ export type ValueRouter = {
           "isSigner": false
         },
         {
+          "name": "valueRouterProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "messageTransmitterEventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenMessengerEventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "cctpReceiverEventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "relayParams",
-          "isMut": false,
+          "name": "messageTransmitter",
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "tokenMessenger",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "remoteTokenMessenger",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "tokenMinter",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "valueRouter",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "senderAuthorityPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "senderAuthorityPda2",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "messageSentEventData1",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "messageSentEventData2",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "remoteTokenMessenger",
           "isMut": false,
           "isSigner": false
         },
@@ -211,33 +170,18 @@ export type ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "tokenPair",
+          "name": "burnTokenMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "remoteValueRouter",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "recipientUsdcAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "recipientOutputTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "custodyTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "programUsdcAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "usdcMint",
-          "isMut": true,
+          "name": "eventAuthority",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -246,12 +190,25 @@ export type ValueRouter = {
           "isSigner": false
         },
         {
+          "name": "programUsdcAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Program usdc token account"
+          ]
+        },
+        {
+          "name": "sourceMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "jupiterProgram",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "cctpMessageReceiver",
+          "name": "feeReceiver",
           "isMut": false,
           "isSigner": false
         }
@@ -260,7 +217,7 @@ export type ValueRouter = {
         {
           "name": "params",
           "type": {
-            "defined": "RelayParams"
+            "defined": "SwapAndBridgeParams"
           }
         }
       ]
@@ -276,11 +233,29 @@ export type ValueRouter = {
         "kind": "struct",
         "fields": [
           {
-            "name": "authorityBump",
-            "type": "u8"
+            "name": "admin",
+            "type": "publicKey"
           },
           {
-            "name": "receiver",
+            "name": "bridgeFees",
+            "type": {
+              "array": [
+                "u64",
+                10
+              ]
+            }
+          },
+          {
+            "name": "swapFees",
+            "type": {
+              "array": [
+                "u64",
+                10
+              ]
+            }
+          },
+          {
+            "name": "feeReceiver",
             "type": "publicKey"
           }
         ]
@@ -316,41 +291,89 @@ export type ValueRouter = {
       }
     },
     {
-      "name": "PostBridgeDataParams",
+      "name": "SetValueRouterParams",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "bridgeMessage",
+            "name": "bridgeFees",
             "type": {
-              "defined": "ReceiveMessageParams"
+              "array": [
+                "u64",
+                10
+              ]
             }
+          },
+          {
+            "name": "swapFees",
+            "type": {
+              "array": [
+                "u64",
+                10
+              ]
+            }
+          },
+          {
+            "name": "feeReceiver",
+            "type": "publicKey"
           }
         ]
       }
     },
     {
-      "name": "PostSwapDataParams",
+      "name": "SetAdminParams",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "swapMessage",
-            "type": {
-              "defined": "ReceiveMessageParams"
-            }
+            "name": "admin",
+            "type": "publicKey"
           }
         ]
       }
     },
     {
-      "name": "RelayParams",
+      "name": "BuyArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "buyToken",
+            "type": "publicKey"
+          },
+          {
+            "name": "guaranteedBuyAmount",
+            "type": "bytes"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapAndBridgeParams",
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "jupiterSwapData",
             "type": "bytes"
+          },
+          {
+            "name": "buyArgs",
+            "type": {
+              "defined": "BuyArgs"
+            }
+          },
+          {
+            "name": "bridgeUsdcAmount",
+            "type": "u64"
+          },
+          {
+            "name": "destDomain",
+            "type": "u32"
+          },
+          {
+            "name": "recipient",
+            "type": "publicKey"
           }
         ]
       }
@@ -458,16 +481,6 @@ export const IDL: ValueRouter = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "cctpMessageReceiver",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -480,74 +493,53 @@ export const IDL: ValueRouter = {
       ]
     },
     {
-      "name": "createRelayData",
+      "name": "setValueRouter",
       "accounts": [
         {
-          "name": "eventRentPayer",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "relayData",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
-      "name": "postBridgeMessage",
-      "accounts": [
-        {
-          "name": "owner",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "relayData",
+          "name": "valueRouter",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
         }
       ],
       "args": [
         {
           "name": "params",
           "type": {
-            "defined": "PostBridgeDataParams"
+            "defined": "SetValueRouterParams"
           }
         }
       ]
     },
     {
-      "name": "postSwapMessage",
+      "name": "setAdmin",
       "accounts": [
         {
-          "name": "owner",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "relayData",
+          "name": "valueRouter",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
         }
       ],
       "args": [
         {
           "name": "params",
           "type": {
-            "defined": "PostSwapDataParams"
+            "defined": "SetAdminParams"
           }
         }
       ]
     },
     {
-      "name": "relay",
+      "name": "swapAndBridge",
       "accounts": [
         {
           "name": "payer",
@@ -555,19 +547,9 @@ export const IDL: ValueRouter = {
           "isSigner": true
         },
         {
-          "name": "caller",
+          "name": "eventRentPayer",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "tmAuthorityPda",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "vrAuthorityPda",
-          "isMut": false,
-          "isSigner": false
+          "isSigner": true
         },
         {
           "name": "messageTransmitterProgram",
@@ -575,22 +557,7 @@ export const IDL: ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "messageTransmitter",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "usedNonces",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "tokenMessengerMinterProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "valueRouterProgram",
           "isMut": false,
           "isSigner": false
         },
@@ -600,42 +567,57 @@ export const IDL: ValueRouter = {
           "isSigner": false
         },
         {
+          "name": "valueRouterProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "messageTransmitterEventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenMessengerEventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "cctpReceiverEventAuthority",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "relayParams",
-          "isMut": false,
+          "name": "messageTransmitter",
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "tokenMessenger",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "remoteTokenMessenger",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "tokenMinter",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "valueRouter",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "senderAuthorityPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "senderAuthorityPda2",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "messageSentEventData1",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "messageSentEventData2",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "remoteTokenMessenger",
           "isMut": false,
           "isSigner": false
         },
@@ -645,33 +627,18 @@ export const IDL: ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "tokenPair",
+          "name": "burnTokenMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "remoteValueRouter",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "recipientUsdcAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "recipientOutputTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "custodyTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "programUsdcAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "usdcMint",
-          "isMut": true,
+          "name": "eventAuthority",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -680,12 +647,25 @@ export const IDL: ValueRouter = {
           "isSigner": false
         },
         {
+          "name": "programUsdcAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Program usdc token account"
+          ]
+        },
+        {
+          "name": "sourceMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "jupiterProgram",
           "isMut": false,
           "isSigner": false
         },
         {
-          "name": "cctpMessageReceiver",
+          "name": "feeReceiver",
           "isMut": false,
           "isSigner": false
         }
@@ -694,7 +674,7 @@ export const IDL: ValueRouter = {
         {
           "name": "params",
           "type": {
-            "defined": "RelayParams"
+            "defined": "SwapAndBridgeParams"
           }
         }
       ]
@@ -710,11 +690,29 @@ export const IDL: ValueRouter = {
         "kind": "struct",
         "fields": [
           {
-            "name": "authorityBump",
-            "type": "u8"
+            "name": "admin",
+            "type": "publicKey"
           },
           {
-            "name": "receiver",
+            "name": "bridgeFees",
+            "type": {
+              "array": [
+                "u64",
+                10
+              ]
+            }
+          },
+          {
+            "name": "swapFees",
+            "type": {
+              "array": [
+                "u64",
+                10
+              ]
+            }
+          },
+          {
+            "name": "feeReceiver",
             "type": "publicKey"
           }
         ]
@@ -750,41 +748,89 @@ export const IDL: ValueRouter = {
       }
     },
     {
-      "name": "PostBridgeDataParams",
+      "name": "SetValueRouterParams",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "bridgeMessage",
+            "name": "bridgeFees",
             "type": {
-              "defined": "ReceiveMessageParams"
+              "array": [
+                "u64",
+                10
+              ]
             }
+          },
+          {
+            "name": "swapFees",
+            "type": {
+              "array": [
+                "u64",
+                10
+              ]
+            }
+          },
+          {
+            "name": "feeReceiver",
+            "type": "publicKey"
           }
         ]
       }
     },
     {
-      "name": "PostSwapDataParams",
+      "name": "SetAdminParams",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "swapMessage",
-            "type": {
-              "defined": "ReceiveMessageParams"
-            }
+            "name": "admin",
+            "type": "publicKey"
           }
         ]
       }
     },
     {
-      "name": "RelayParams",
+      "name": "BuyArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "buyToken",
+            "type": "publicKey"
+          },
+          {
+            "name": "guaranteedBuyAmount",
+            "type": "bytes"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SwapAndBridgeParams",
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "jupiterSwapData",
             "type": "bytes"
+          },
+          {
+            "name": "buyArgs",
+            "type": {
+              "defined": "BuyArgs"
+            }
+          },
+          {
+            "name": "bridgeUsdcAmount",
+            "type": "u64"
+          },
+          {
+            "name": "destDomain",
+            "type": "u32"
+          },
+          {
+            "name": "recipient",
+            "type": "publicKey"
           }
         ]
       }
