@@ -20,6 +20,7 @@ use {
         instructions::{ReceiveMessageParams, SendMessageWithCallerParams},
         state::{MessageTransmitter, UsedNonces},
     },
+    solana_program::system_instruction,
     token_messenger_minter::{
         cpi::accounts::DepositForBurnContext,
         program::TokenMessengerMinter,
@@ -222,6 +223,10 @@ pub mod value_router {
         pub source_mint: Box<Account<'info, Mint>>,
 
         pub jupiter_program: Program<'info, Jupiter>,
+
+        /// CHECK:
+        #[account()]
+        pub fee_receiver: UncheckedAccount<'info>,
     }
 
     #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -244,7 +249,11 @@ pub mod value_router {
         ctx: Context<SwapAndBridgeInstruction>,
         params: SwapAndBridgeParams,
     ) -> Result<()> {
-        msg!("valuerouter: swap_and_bridge");
+        assert!(
+            ctx.accounts.value_router.fee_receiver.key() == ctx.accounts.fee_receiver.key(),
+            "wrong fee receiver"
+        );
+
         let message_transmitter = &ctx.accounts.message_transmitter;
 
         let authority_bump = ctx.bumps.get("program_authority").unwrap().to_le_bytes();
@@ -297,6 +306,30 @@ pub mod value_router {
             msg!("valuerouter: no local swap");
             final_balance = params.bridge_usdc_amount;
         }
+
+        let mut fee_amount: u64 = 0;
+        if params.buy_args.buy_token == Pubkey::new_from_array([0; 32]) {
+            // no dest swap
+            fee_amount += ctx.accounts.value_router.bridge_fees[params.dest_domain as usize];
+        } else {
+            // need dest swap
+            fee_amount += ctx.accounts.value_router.swap_fees[params.dest_domain as usize];
+        }
+
+        let fee_ix = system_instruction::transfer(
+            &ctx.accounts.payer.key(),
+            &ctx.accounts.value_router.fee_receiver.key(),
+            fee_amount,
+        );
+
+        anchor_lang::solana_program::program::invoke(
+            &fee_ix,
+            &[
+                ctx.accounts.payer.to_account_info(),
+                ctx.accounts.fee_receiver.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+            ],
+        )?;
 
         // cpi depositForBurnWithCaller
         let deposit_for_burn_accounts = Box::new(DepositForBurnContext {
