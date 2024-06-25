@@ -7,8 +7,10 @@ use {anchor_lang::prelude::*, message_transmitter::instructions::ReceiveMessageP
 #[derive(Debug, InitSpace)]
 /// Main state of the MessageTransmitter program
 pub struct ValueRouter {
-    pub authority_bump: u8, // 奇怪但是能用
-    pub receiver: Pubkey,
+    pub admin: Pubkey,
+    pub bridge_fees: [u64; 10],
+    pub swap_fees: [u64; 10],
+    pub fee_receiver: Pubkey,
 }
 
 #[account]

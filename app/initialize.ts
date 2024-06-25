@@ -29,11 +29,8 @@ const main = async () => {
 
   const accounts = {
     payer: provider.wallet.publicKey,
-    authorityPda: pdas.authorityPda.publicKey,
     valueRouter: pdas.valueRouterAccount.publicKey,
     systemProgram: SystemProgram.programId,
-    tokenProgram: TOKEN_PROGRAM_ID,
-    cctpMessageReceiver: cctpMessageReceiverProgram.programId,
   };
 
   const initializeTx = await valueRouterProgram.methods
