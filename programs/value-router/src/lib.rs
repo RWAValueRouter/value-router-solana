@@ -34,7 +34,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("7hDkNZCc3y1xxhiU52W5avw2NmQcmRFdj1Pns5AUTEGA");
+declare_id!("Hc8fh8kCZ2t9SCFLE6cMjwcNUwcBgmEbDzzv6sTzm2Pd");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -186,7 +186,10 @@ pub mod value_router {
         pub local_token: Box<Account<'info, LocalToken>>,
 
         /// CHECK: usdc mint
-        #[account(mut)]
+        #[account(
+            mut,
+            constraint = burn_token_mint.key() == solana_program::pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+        )]
         pub burn_token_mint: UncheckedAccount<'info>,
 
         /// CHECK:
@@ -252,7 +255,7 @@ pub mod value_router {
         let authority_bump = ctx.bumps.get("program_authority").unwrap().to_le_bytes();
         let usdc_bump = ctx.bumps.get("program_usdc_account").unwrap().to_le_bytes();
 
-        let initial_program_usdc_account = utils::create_usdc_token_idempotent(
+        let initial_program_usdc_account = utils::create_spl_token_idempotent(
             ctx.accounts.program_authority.clone(),
             ctx.accounts.program_usdc_account.clone(),
             Box::new(Account::try_from(&ctx.accounts.burn_token_mint)?),
@@ -393,9 +396,10 @@ pub mod value_router {
 
         msg!("closing program usdc account");
         if flagLocalSwap {
-            utils::close_program_usdc(
+            utils::close_program_spl_account(
                 ctx.accounts.program_authority.clone(),
                 ctx.accounts.program_usdc_account.clone(),
+                ctx.accounts.program_authority.clone(),
                 ctx.accounts.token_program.clone(),
                 &authority_bump,
             )?;
@@ -493,7 +497,6 @@ pub mod value_router {
         Ok(())
     }
 
-    /*
     /*
     Instruction 3: create_relay_data
      */
@@ -656,6 +659,10 @@ pub mod value_router {
         #[account(mut)]
         pub recipient_output_token_account: Box<Account<'info, TokenAccount>>,
 
+        /// CHECK: recipient wallet account
+        #[account(mut)]
+        pub recipient_wallet_account: UncheckedAccount<'info>,
+
         #[account(mut)]
         pub custody_token_account: Box<Account<'info, TokenAccount>>,
 
@@ -667,9 +674,27 @@ pub mod value_router {
         )]
         pub program_usdc_account: UncheckedAccount<'info>,
 
+        /// CHECK: Program usdc token account
+        #[account(
+            mut,
+            seeds = [constants::WSOL_IN_SEED],
+            bump
+        )]
+        pub program_wsol_account: UncheckedAccount<'info>,
+
         /// CHECK:
-        #[account(mut)]
+        #[account(
+            mut,
+            constraint = usdc_mint.key() == solana_program::pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+        )]
         pub usdc_mint: UncheckedAccount<'info>,
+
+        /// CHECK:
+        #[account(
+            mut,
+            constraint = wsol_mint.key() == solana_program::pubkey!("So11111111111111111111111111111111111111112")
+        )]
+        pub wsol_mint: UncheckedAccount<'info>,
 
         /// CHECK:
         #[account(
@@ -696,7 +721,7 @@ pub mod value_router {
         ctx: Context<'_, '_, '_, 'a, RelayInstruction<'a>>,
         params: RelayParams,
     ) -> Result<()> {
-        utils::create_usdc_token_idempotent(
+        utils::create_spl_token_idempotent(
             ctx.accounts.program_authority.clone(),
             ctx.accounts.program_usdc_account.clone(),
             Box::new(Account::try_from(&ctx.accounts.usdc_mint)?),
@@ -820,12 +845,8 @@ pub mod value_router {
 
         // swap_message.get_recipient() is recipient's wallet address
         assert!(
-            ctx.accounts.recipient_output_token_account.key()
-                == get_associated_token_address(
-                    &swap_message.get_recipient()?,
-                    &swap_message.get_buy_token()?,
-                ),
-            "value_router: incorrect recipient's output token account"
+            ctx.accounts.recipient_wallet_account.key() == swap_message.get_recipient()?,
+            "value_router: incorrect recipient wallet account"
         );
 
         assert!(
@@ -836,6 +857,38 @@ pub mod value_router {
                 ),
             "value_router: incorrect recipient's usdc account"
         );
+
+        if swap_message.get_buy_token()?
+            == solana_program::pubkey!("H5hM4fqRjygvCYXnp6dgFLgZ6o4uJ8Q9z7dAsTfapHmF")
+        {
+            // buy token is native sol
+            assert!(
+                ctx.accounts.recipient_output_token_account.key()
+                    == *ctx.accounts.program_wsol_account.key,
+                "value_router: incorrect recipient's output token account"
+            );
+            // initialize program usdc account
+            utils::create_spl_token_idempotent(
+                ctx.accounts.program_authority.clone(),
+                ctx.accounts.program_wsol_account.clone(),
+                Box::new(Account::try_from(&ctx.accounts.wsol_mint)?),
+                ctx.accounts.token_program.clone(),
+                ctx.accounts.system_program.clone(),
+                &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
+                &constants::USDC_IN_SEED,
+                &ctx.bumps.get("program_wsol_account").unwrap().to_le_bytes(),
+            );
+        } else {
+            // buy token is spl token
+            assert!(
+                ctx.accounts.recipient_output_token_account.key()
+                    == get_associated_token_address(
+                        &swap_message.get_recipient()?,
+                        &swap_message.get_buy_token()?,
+                    ),
+                "value_router: incorrect recipient's output token account"
+            );
+        }
 
         if swap_message.get_buy_token()? != ctx.accounts.usdc_mint.key() {
             assert!(
@@ -869,6 +922,21 @@ pub mod value_router {
             );
         }
 
+        if swap_message.get_buy_token()?
+            == solana_program::pubkey!("H5hM4fqRjygvCYXnp6dgFLgZ6o4uJ8Q9z7dAsTfapHmF")
+        {
+            // buy token is native sol
+            // close program wsol account
+            // transfer sol to recipient
+            utils::close_program_spl_account(
+                ctx.accounts.program_authority.clone(),
+                ctx.accounts.program_wsol_account.clone(),
+                ctx.accounts.recipient_wallet_account.clone(),
+                ctx.accounts.token_program.clone(),
+                &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
+            )?;
+        }
+
         // transfer usdc to recipient
         let _ = utils::transfer_token(
             Account::<TokenAccount>::try_from(
@@ -886,14 +954,14 @@ pub mod value_router {
             *usdc_balance,
         );
 
-        utils::close_program_usdc(
+        utils::close_program_spl_account(
             ctx.accounts.program_authority.clone(),
             ctx.accounts.program_usdc_account.clone(),
+            ctx.accounts.program_authority.clone(),
             ctx.accounts.token_program.clone(),
             &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
         )?;
 
         Ok(())
     }
-    */
 }

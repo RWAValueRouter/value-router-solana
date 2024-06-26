@@ -13,6 +13,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import {
+  SOLANA_WSOL_ADDRESS,
   SOLANA_USDC_ADDRESS,
   decodeEventNonceFromMessage,
   getAnchorConnection,
@@ -25,6 +26,13 @@ import {
   instructionDataToTransactionInstruction,
   getAdressLookupTableAccounts,
 } from "./jupiter";
+
+const nativeSol = new PublicKey(
+  Buffer.from(
+    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "hex"
+  )
+); // H5hM4fqRjygvCYXnp6dgFLgZ6o4uJ8Q9z7dAsTfapHmF
 
 /**
  * EVM/Noble -> Solana relay 任务在 Solana 上执行的部分
@@ -57,6 +65,7 @@ const main = async () => {
 
   // Init needed variables
   const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
+  const wsolAddress = new PublicKey(SOLANA_WSOL_ADDRESS);
   const remoteTokenAddressHex = process.env.REMOTE_TOKEN_HEX!;
   const messageHex1 = process.env.MESSAGE_HEX_BRIDGE!;
   const attestationHex1 = process.env.ATTESTATION_HEX_BRIDGE!;
@@ -195,6 +204,7 @@ const main = async () => {
     valueRouterProgram,
     cctpMessageReceiverProgram,
     usdcAddress,
+    wsolAddress,
     remoteTokenAddressHex,
     sourceDomain,
     nonce,
@@ -454,11 +464,14 @@ export const postMessages = async (
  * @param valueRouterProgram
  * @param cctpMessageReceiverProgram
  * @param usdcAddress
+ * @param wsolAddress
  * @param remoteTokenAddressHex
  * @param sourceDomain
  * @param nonce
  * @param recipientOutputTokenAccount recipient 的 output token 账户，要和 swap message 指定的 recipient 匹配
  * @param recipientUsdcAccount recipient 的 usdc 账户，要和 swap message 指定的 recipient 匹配
+ * @param outputToken
+ * @param sellTokenAmount
  * @param relayDataKeypair
  */
 export const relay = async (
@@ -468,6 +481,7 @@ export const relay = async (
   valueRouterProgram,
   cctpMessageReceiverProgram,
   usdcAddress,
+  wsolAddress,
   remoteTokenAddressHex,
   sourceDomain,
   nonce,
@@ -536,6 +550,13 @@ export const relay = async (
 
   console.log("programUsdcAccount: ", programUsdcAccount);
 
+  const programWsolAccount = PublicKey.findProgramAddressSync(
+    [Buffer.from("wsol_in")],
+    valueRouterProgram.programId
+  )[0];
+
+  console.log("programWsolAccount: ", programWsolAccount);
+
   const programAuthority = PublicKey.findProgramAddressSync(
     [Buffer.from("authority")],
     valueRouterProgram.programId
@@ -549,13 +570,25 @@ export const relay = async (
   let jupiterSwapData = new Buffer("");
   let addressLookupTableAccounts = [];
 
-  if (usdcAddress !== outputToken) {
+  let jupiterOutput = outputToken;
+  let jupiterReceiver = recipientOutputTokenAccount;
+
+  if (!usdcAddress.equals(outputToken)) {
     console.log("Build jupiter swap instruction");
+
+    // 判断 output token 是不是 native SOL
+    // 如果是 native SOL，jupiter swap 把 usdc 兑换为 wsol，
+    // 由 program_wsol_account 接收，再由合约转换为 native SOL 发送给用户
+    if (outputToken.equals(nativeSol)) {
+      jupiterOutput = wsolAddress;
+      jupiterReceiver = programWsolAccount;
+    }
+
     // 构建 jupiter swap 参数
     // 1. 获取 quote
     let quote = await getQuote(
       process.env.USDC_ADDRESS, // USDC Mint account (USDC 代币地址)
-      outputToken, // Output token Mint account (输出代币地址)
+      jupiterOutput, // Output token Mint account (输出代币地址)
       sellTokenAmount
     );
 
@@ -564,7 +597,7 @@ export const relay = async (
     // 2. 通过 api 获取 swap instruction
     const swapIx = await getSwapIx(
       provider.wallet.publicKey,
-      recipientOutputTokenAccount,
+      jupiterReceiver,
       quote
     );
 
@@ -585,6 +618,9 @@ export const relay = async (
 
   // 把 vr lookup table 也加入 lookup table 列表
   addressLookupTableAccounts.push(vrLookupTable);
+
+  if (outputToken.equals(nativeSol)) {
+  }
 
   const relayIx = await valueRouterProgram.methods
     .relay({
@@ -612,9 +648,13 @@ export const relay = async (
       localToken: pdas.localToken.publicKey,
       tokenPair: pdas.tokenPair.publicKey,
       recipientUsdcAccount: recipientUsdcAccount,
-      recipientOutputTokenAccount: recipientOutputTokenAccount,
+      /// 这里分情况:
+      /// 1. output 是 native sol，jupiterReceiver 是 program_wsol_account
+      /// 2. output 是 usdc, wsol, 其他 spl token)，jupiterReceiver 是用户的 usdc/wsol/spl account
+      recipientOutputTokenAccount: jupiterReceiver,
       custodyTokenAccount: pdas.custodyTokenAccount.publicKey,
       programUsdcAccount: programUsdcAccount,
+      programWsolAccount: programWsolAccount,
       usdcMint: usdcAddress,
       programAuthority: programAuthority,
       jupiterProgram: jupiterProgramId,

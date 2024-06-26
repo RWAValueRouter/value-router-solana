@@ -11,11 +11,6 @@ export type ValueRouter = {
           "isSigner": true
         },
         {
-          "name": "authorityPda",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "valueRouter",
           "isMut": true,
           "isSigner": false
@@ -466,11 +461,6 @@ export const IDL: ValueRouter = {
           "name": "payer",
           "isMut": true,
           "isSigner": true
-        },
-        {
-          "name": "authorityPda",
-          "isMut": false,
-          "isSigner": false
         },
         {
           "name": "valueRouter",

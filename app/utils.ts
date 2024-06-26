@@ -34,8 +34,9 @@ export const IRIS_API_URL =
   process.env.IRIS_API_URL ?? "https://iris-api.circle.com";
 export const SOLANA_SRC_DOMAIN_ID = 5;
 export const SOLANA_USDC_ADDRESS =
-  process.env.SOLANA_USDC_ADDRESS ??
-  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+  process.env.USDC_ADDRESS ?? "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+export const SOLANA_WSOL_ADDRESS =
+  process.env.WSOL_ADDRESS ?? "So11111111111111111111111111111111111111112";
 
 export interface FindProgramAddressResponse {
   publicKey: anchor.web3.PublicKey;
