@@ -7,6 +7,7 @@ import {
   Keypair,
   TransactionMessage,
   VersionedTransaction,
+  SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import {
   TOKEN_PROGRAM_ID,
@@ -471,6 +472,7 @@ export const postMessages = async (
  * @param nonce
  * @param recipientOutputTokenAccount recipient 的 output token 账户，要和 swap message 指定的 recipient 匹配
  * @param recipientUsdcAccount recipient 的 usdc 账户，要和 swap message 指定的 recipient 匹配
+ * @param recipientWalletAddress
  * @param outputToken
  * @param sellTokenAmount
  * @param relayDataKeypair
@@ -621,9 +623,6 @@ export const relay = async (
   // 把 vr lookup table 也加入 lookup table 列表
   addressLookupTableAccounts.push(vrLookupTable);
 
-  if (outputToken.equals(nativeSol)) {
-  }
-
   const relayIx = await valueRouterProgram.methods
     .relay({
       jupiterSwapData: jupiterSwapData,
@@ -659,11 +658,10 @@ export const relay = async (
       programUsdcAccount: programUsdcAccount,
       programWsolAccount: programWsolAccount,
       usdcMint: usdcAddress,
-      wsolMint: wsolAddress,
+      tokenOutputMint: jupiterOutput,
       programAuthority: programAuthority,
       jupiterProgram: jupiterProgramId,
       cctpMessageReceiver: cctpMessageReceiverProgram.programId,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
     })
     .remainingAccounts(remainingAccounts)
     .instruction();

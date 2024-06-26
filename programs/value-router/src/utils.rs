@@ -47,7 +47,7 @@ pub fn create_spl_token_idempotent<'info>(
             &[usdc_seed.as_ref(), usdc_bump.as_ref()],
         ];
 
-        //msg!("Create program spl token account");
+        msg!("Create program spl token account");
         let rent = Rent::get()?;
         let space = TokenAccount::LEN;
         let lamports = rent.minimum_balance(space);
@@ -65,7 +65,7 @@ pub fn create_spl_token_idempotent<'info>(
             token_program.key,
         )?;
 
-        //msg!("Initialize program spl token account");
+        msg!("Initialize program spl token account");
         token::initialize_account3(CpiContext::new(
             token_program.to_account_info(),
             token::InitializeAccount3 {
@@ -76,11 +76,11 @@ pub fn create_spl_token_idempotent<'info>(
         ))?;
 
         let data = program_spl_account.try_borrow_data()?;
-        let usdc_token_account = TokenAccount::try_deserialize(&mut data.as_ref())?;
+        let spl_token_account = TokenAccount::try_deserialize(&mut data.as_ref())?;
 
-        Ok(usdc_token_account)
+        Ok(spl_token_account)
     } else {
-        //msg!("Initialize program spl token account");
+        msg!("Initialize program spl token account");
         token::initialize_account3(CpiContext::new(
             token_program.to_account_info(),
             token::InitializeAccount3 {
