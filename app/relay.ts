@@ -210,6 +210,7 @@ const main = async () => {
     nonce,
     userOutputTokenAccount,
     userUsdcAccount,
+    recipientWalletAddress,
     outputTokenAddress,
     sellTokenAmount,
     relayDataKeypair
@@ -487,6 +488,7 @@ export const relay = async (
   nonce,
   recipientOutputTokenAccount,
   recipientUsdcAccount,
+  recipientWalletAddress,
   outputToken,
   sellTokenAmount,
   relayDataKeypair
@@ -652,13 +654,16 @@ export const relay = async (
       /// 1. output 是 native sol，jupiterReceiver 是 program_wsol_account
       /// 2. output 是 usdc, wsol, 其他 spl token)，jupiterReceiver 是用户的 usdc/wsol/spl account
       recipientOutputTokenAccount: jupiterReceiver,
+      recipientWalletAccount: recipientWalletAddress,
       custodyTokenAccount: pdas.custodyTokenAccount.publicKey,
       programUsdcAccount: programUsdcAccount,
       programWsolAccount: programWsolAccount,
       usdcMint: usdcAddress,
+      wsolMint: wsolAddress,
       programAuthority: programAuthority,
       jupiterProgram: jupiterProgramId,
       cctpMessageReceiver: cctpMessageReceiverProgram.programId,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
     })
     .remainingAccounts(remainingAccounts)
     .instruction();

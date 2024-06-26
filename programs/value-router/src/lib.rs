@@ -13,7 +13,7 @@ use {
         swap_message::SwapMessage,
     },
     anchor_lang::prelude::*,
-    anchor_spl::associated_token::get_associated_token_address,
+    anchor_spl::associated_token::{get_associated_token_address, AssociatedToken},
     anchor_spl::token::{Mint, Token, TokenAccount},
     message_transmitter::{
         cpi::accounts::{ReceiveMessageContext, SendMessageContext},
@@ -653,10 +653,20 @@ pub mod value_router {
 
         pub token_pair: Box<Account<'info, TokenPair>>,
 
-        #[account(mut)]
+        #[account(
+            init_if_needed,
+            payer = payer,
+            associated_token::mint = usdc_mint,
+            associated_token::authority = recipient_wallet_account,
+        )]
         pub recipient_usdc_account: Box<Account<'info, TokenAccount>>,
 
-        #[account(mut)]
+        #[account(
+            init_if_needed,
+            payer = payer,
+            associated_token::mint = token_output_mint,
+            associated_token::authority = recipient_wallet_account,
+        )]
         pub recipient_output_token_account: Box<Account<'info, TokenAccount>>,
 
         /// CHECK: recipient wallet account
@@ -697,6 +707,10 @@ pub mod value_router {
         pub wsol_mint: UncheckedAccount<'info>,
 
         /// CHECK:
+        #[account()]
+        pub token_output_mint: UncheckedAccount<'info>,
+
+        /// CHECK:
         #[account(
             mut,
             seeds = [constants::AUTHORITY_SEED],
@@ -709,6 +723,9 @@ pub mod value_router {
         #[account()]
         pub cctp_message_receiver:
             Program<'info, cctp_message_receiver::program::CctpMessageReceiver>,
+
+        #[account()]
+        pub associated_token_program: Program<'info, AssociatedToken>,
     }
 
     // Instruction parameters

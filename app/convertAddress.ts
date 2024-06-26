@@ -3,11 +3,18 @@ import { hexlify } from "ethers";
 
 import { PublicKey } from "@solana/web3.js";
 
+import { getPrograms, getAnchorConnection } from "./utils";
+
 export const solanaAddressToHex = (solanaAddress) =>
   hexlify(bs58.decode(solanaAddress));
 
 export const solanaAddressToArray = (solanaAddress) =>
   bs58.decode(solanaAddress);
+
+const provider = getAnchorConnection();
+
+const { valueRouterProgram, cctpMessageReceiverProgram } =
+  getPrograms(provider);
 
 let addresses = {
   tokenMessengerMinter: "CCTPiPYPc6AsJuwueEnWgSgucamXDZwBd53dQ11YiKX3",
@@ -16,11 +23,17 @@ let addresses = {
   wsol: "So11111111111111111111111111111111111111112",
   wallet: "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt",
   walletUsdc: "9h2CxvWshcJaNAJ9BqrzL5Y849wQXkZdMF6nQMf6c4cY",
-  valueRouter: "DMXBZKMyDGU96PQz7V6ZCbKjBpjsYeAidacCaP8oJvnA",
+  valueRouter: valueRouterProgram.programId.toBase58(),
   caller: "",
   programUsdcAccount: "",
-  receiver: "5XoeLoER5SFFcGeFsvEa4a4QyEZXgCEWTFhESS43ExLX",
+  programAuthority: "",
+  receiver: cctpMessageReceiverProgram.programId.toBase58(),
 };
+
+addresses.programAuthority = PublicKey.findProgramAddressSync(
+  [Buffer.from("authority")],
+  valueRouterProgram.programId
+)[0].toBase58();
 
 addresses.caller = PublicKey.findProgramAddressSync(
   [Buffer.from("cctp_caller")],
