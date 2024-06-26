@@ -574,11 +574,11 @@ export const relay = async (
   let jupiterSwapData = new Buffer("");
   let addressLookupTableAccounts = [];
 
-  let jupiterOutput = outputToken;
   let jupiterReceiver = recipientOutputTokenAccount;
 
   if (!usdcAddress.equals(outputToken)) {
     console.log("Build jupiter swap instruction");
+    let jupiterOutput = outputToken;
 
     // 判断 output token 是不是 native SOL
     // 如果是 native SOL，jupiter swap 把 usdc 兑换为 wsol，
@@ -623,6 +623,8 @@ export const relay = async (
   // 把 vr lookup table 也加入 lookup table 列表
   addressLookupTableAccounts.push(vrLookupTable);
 
+  console.log("jupiterReceiver: ", jupiterReceiver);
+
   const relayIx = await valueRouterProgram.methods
     .relay({
       jupiterSwapData: jupiterSwapData,
@@ -658,7 +660,6 @@ export const relay = async (
       programUsdcAccount: programUsdcAccount,
       programWsolAccount: programWsolAccount,
       usdcMint: usdcAddress,
-      tokenOutputMint: jupiterOutput,
       programAuthority: programAuthority,
       jupiterProgram: jupiterProgramId,
       cctpMessageReceiver: cctpMessageReceiverProgram.programId,
