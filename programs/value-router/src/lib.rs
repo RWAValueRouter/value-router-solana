@@ -74,428 +74,425 @@ pub mod value_router {
         value_router.admin = ctx.accounts.payer.key();
         Ok(())
     }
+/*
+    #[derive(Accounts)]
+    #[instruction(params: SetValueRouterParams)]
+    pub struct SetValueRouterContext<'info> {
+        #[account(mut, has_one = admin)]
+        pub value_router: Box<Account<'info, ValueRouter>>,
+        pub admin: Signer<'info>,
+    }
+
+    #[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone)]
+    pub struct SetValueRouterParams {
+        pub bridge_fees: [u64; 10],
+        pub swap_fees: [u64; 10],
+        pub fee_receiver: Pubkey,
+    }
+
+    pub fn set_value_router(
+        ctx: Context<SetValueRouterContext>,
+        _params: SetValueRouterParams,
+    ) -> Result<()> {
+        let value_router = ctx.accounts.value_router.as_mut();
+        value_router.bridge_fees = _params.bridge_fees;
+        value_router.swap_fees = _params.swap_fees;
+        value_router.fee_receiver = _params.fee_receiver;
+
+        Ok(())
+    }
+
+    #[derive(Accounts)]
+    #[instruction(params: SetAdminParams)]
+    pub struct SetAdminContext<'info> {
+        #[account(mut, has_one = admin)]
+        pub value_router: Box<Account<'info, ValueRouter>>,
+        pub admin: Signer<'info>,
+    }
+
+    #[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone)]
+    pub struct SetAdminParams {
+        pub admin: Pubkey,
+    }
+
+    pub fn set_admin(ctx: Context<SetAdminContext>, _params: SetAdminParams) -> Result<()> {
+        let value_router = ctx.accounts.value_router.as_mut();
+        value_router.admin = _params.admin;
+
+        Ok(())
+    }
+
     /*
-        #[derive(Accounts)]
-        #[instruction(params: SetValueRouterParams)]
-        pub struct SetValueRouterContext<'info> {
-            #[account(mut, has_one = admin)]
-            pub value_router: Box<Account<'info, ValueRouter>>,
-            pub admin: Signer<'info>,
-        }
+    Instruction 2: SwapAndBridge
+    */
+    // Instruction accounts
+    #[derive(Accounts)]
+    #[instruction(params: SwapAndBridgeParams)]
+    pub struct SwapAndBridgeInstruction<'info> {
+        // Signers
+        #[account(mut)]
+        pub payer: Signer<'info>,
 
-        #[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone)]
-        pub struct SetValueRouterParams {
-            pub bridge_fees: [u64; 10],
-            pub swap_fees: [u64; 10],
-            pub fee_receiver: Pubkey,
-        }
+        #[account(mut)]
+        pub event_rent_payer: Signer<'info>,
 
-        pub fn set_value_router(
-            ctx: Context<SetValueRouterContext>,
-            _params: SetValueRouterParams,
-        ) -> Result<()> {
-            let value_router = ctx.accounts.value_router.as_mut();
-            value_router.bridge_fees = _params.bridge_fees;
-            value_router.swap_fees = _params.swap_fees;
-            value_router.fee_receiver = _params.fee_receiver;
+        // Programs
+        pub message_transmitter_program:
+            Program<'info, message_transmitter::program::MessageTransmitter>,
 
-            Ok(())
-        }
+        pub token_messenger_minter_program: Program<'info, TokenMessengerMinter>,
 
-        #[derive(Accounts)]
-        #[instruction(params: SetAdminParams)]
-        pub struct SetAdminContext<'info> {
-            #[account(mut, has_one = admin)]
-            pub value_router: Box<Account<'info, ValueRouter>>,
-            pub admin: Signer<'info>,
-        }
+        pub token_program: Program<'info, Token>,
 
-        #[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone)]
-        pub struct SetAdminParams {
-            pub admin: Pubkey,
-        }
+        pub value_router_program: Program<'info, program::ValueRouter>,
 
-        pub fn set_admin(ctx: Context<SetAdminContext>, _params: SetAdminParams) -> Result<()> {
-            let value_router = ctx.accounts.value_router.as_mut();
-            value_router.admin = _params.admin;
+        pub system_program: Program<'info, System>,
 
-            Ok(())
-        }
+        // Program accounts
+        #[account(mut)]
+        pub message_transmitter: Box<Account<'info, MessageTransmitter>>,
 
-        /*
-        Instruction 2: SwapAndBridge
-        */
-        // Instruction accounts
-        #[derive(Accounts)]
-        #[instruction(params: SwapAndBridgeParams)]
-        pub struct SwapAndBridgeInstruction<'info> {
-            // Signers
-            #[account(mut)]
-            pub payer: Signer<'info>,
+        #[account(mut)]
+        pub token_messenger: Box<Account<'info, TokenMessenger>>,
 
-            #[account(mut)]
-            pub event_rent_payer: Signer<'info>,
+        #[account(mut)]
+        pub token_minter: Box<Account<'info, TokenMinter>>,
 
-            // Programs
-            pub message_transmitter_program:
-                Program<'info, message_transmitter::program::MessageTransmitter>,
+        #[account(mut)]
+        pub value_router: Box<Account<'info, ValueRouter>>,
 
-            pub token_messenger_minter_program: Program<'info, TokenMessengerMinter>,
+        // Pdas
+        /// CHECK: empty PDA
+        pub sender_authority_pda: UncheckedAccount<'info>,
 
-            pub token_program: Program<'info, Token>,
+        /// CHECK: empty PDA
+        #[account(
+            seeds = [b"sender_authority"],
+            bump,
+        )]
+        pub sender_authority_pda_2: UncheckedAccount<'info>,
 
-            pub value_router_program: Program<'info, program::ValueRouter>,
+        // other
+        #[account(mut)]
+        pub message_sent_event_data_1: Signer<'info>,
 
-            pub system_program: Program<'info, System>,
+        #[account(mut)]
+        pub message_sent_event_data_2: Signer<'info>,
 
-            // Program accounts
-            #[account(mut)]
-            pub message_transmitter: Box<Account<'info, MessageTransmitter>>,
+        #[account()]
+        pub remote_token_messenger: Box<Account<'info, RemoteTokenMessenger>>,
 
-            #[account(mut)]
-            pub token_messenger: Box<Account<'info, TokenMessenger>>,
+        #[account(mut)]
+        pub local_token: Box<Account<'info, LocalToken>>,
 
-            #[account(mut)]
-            pub token_minter: Box<Account<'info, TokenMinter>>,
+        /// CHECK: usdc mint
+        #[account(mut)]
+        pub burn_token_mint: UncheckedAccount<'info>,
 
-            #[account(mut)]
-            pub value_router: Box<Account<'info, ValueRouter>>,
+        /// CHECK:
+        pub remote_value_router: UncheckedAccount<'info>,
 
-            // Pdas
-            /// CHECK: empty PDA
-            pub sender_authority_pda: UncheckedAccount<'info>,
+        /// CHECK:
+        #[account()]
+        pub event_authority: UncheckedAccount<'info>,
 
-            /// CHECK: empty PDA
-            #[account(
-                seeds = [b"sender_authority"],
-                bump,
-            )]
-            pub sender_authority_pda_2: UncheckedAccount<'info>,
+        /// CHECK:
+        #[account(
+            mut,
+            seeds = [constants::AUTHORITY_SEED],
+            bump
+        )]
+        pub program_authority: UncheckedAccount<'info>,
 
-            // other
-            #[account(mut)]
-            pub message_sent_event_data_1: Signer<'info>,
+        /// Program usdc token account
+        /// CHECK:
+        #[account(
+            mut,
+            seeds = [constants::USDC_SEED],
+            bump
+        )]
+        pub program_usdc_account: UncheckedAccount<'info>,
 
-            #[account(mut)]
-            pub message_sent_event_data_2: Signer<'info>,
+        pub source_mint: Box<Account<'info, Mint>>,
 
-            #[account()]
-            pub remote_token_messenger: Box<Account<'info, RemoteTokenMessenger>>,
+        pub jupiter_program: Program<'info, Jupiter>,
 
-            #[account(mut)]
-            pub local_token: Box<Account<'info, LocalToken>>,
+        /// CHECK:
+        #[account()]
+        pub fee_receiver: UncheckedAccount<'info>,
+    }
 
-            /// CHECK: usdc mint
-            #[account(
-                mut,
-                constraint = burn_token_mint.key() == solana_program::pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
-            )]
-            pub burn_token_mint: UncheckedAccount<'info>,
+    #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+    pub struct BuyArgs {
+        pub buy_token: Pubkey,
+        pub guaranteed_buy_amount: Vec<u8>,
+    }
 
-            /// CHECK:
-            pub remote_value_router: UncheckedAccount<'info>,
+    // Instruction parameters
+    #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+    pub struct SwapAndBridgeParams {
+        pub jupiter_swap_data: Vec<u8>,
+        pub buy_args: BuyArgs,
+        pub bridge_usdc_amount: u64,
+        pub dest_domain: u32,
+        pub recipient: Pubkey,
+    }
 
-            /// CHECK:
-            #[account()]
-            pub event_authority: UncheckedAccount<'info>,
+    pub fn swap_and_bridge(
+        ctx: Context<SwapAndBridgeInstruction>,
+        params: SwapAndBridgeParams,
+    ) -> Result<()> {
+        assert!(
+            ctx.accounts.value_router.fee_receiver.key() == ctx.accounts.fee_receiver.key(),
+            "wrong fee receiver"
+        );
 
-            /// CHECK:
-            #[account(
-                mut,
-                seeds = [constants::AUTHORITY_SEED],
-                bump
-            )]
-            pub program_authority: UncheckedAccount<'info>,
+        let message_transmitter = &ctx.accounts.message_transmitter;
 
-            /// Program usdc token account
-            /// CHECK:
-            #[account(
-                mut,
-                seeds = [constants::USDC_SEED],
-                bump
-            )]
-            pub program_usdc_account: UncheckedAccount<'info>,
+        let authority_bump = ctx.bumps.get("program_authority").unwrap().to_le_bytes();
+        let usdc_bump = ctx.bumps.get("program_usdc_account").unwrap().to_le_bytes();
 
-            pub source_mint: Box<Account<'info, Mint>>,
+        let initial_program_usdc_account = utils::create_usdc_token_idempotent(
+            ctx.accounts.program_authority.clone(),
+            ctx.accounts.program_usdc_account.clone(),
+            Box::new(Account::try_from(&ctx.accounts.burn_token_mint)?),
+            ctx.accounts.token_program.clone(),
+            ctx.accounts.system_program.clone(),
+            &authority_bump,
+            &constants::USDC_SEED,
+            &usdc_bump,
+        )?;
 
-            pub jupiter_program: Program<'info, Jupiter>,
+        msg!(
+            "valuerouter: initial_program_usdc_account: {:?}",
+            initial_program_usdc_account
+        );
 
-            /// CHECK:
-            #[account()]
-            pub fee_receiver: UncheckedAccount<'info>,
-        }
+        let mut flagLocalSwap = false;
+        let mut final_balance: u64 = 0;
+        if ctx.accounts.source_mint.clone().key() != ctx.accounts.burn_token_mint.key() {
+            msg!("valuerouter: handling local swap");
+            flagLocalSwap = true;
 
-        #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-        pub struct BuyArgs {
-            pub buy_token: Pubkey,
-            pub guaranteed_buy_amount: Vec<u8>,
-        }
+            swap_on_jupiter(
+                ctx.remaining_accounts,
+                ctx.accounts.jupiter_program.clone(),
+                params.jupiter_swap_data,
+            )?;
 
-        // Instruction parameters
-        #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-        pub struct SwapAndBridgeParams {
-            pub jupiter_swap_data: Vec<u8>,
-            pub buy_args: BuyArgs,
-            pub bridge_usdc_amount: u64,
-            pub dest_domain: u32,
-            pub recipient: Pubkey,
-        }
+            //let final_token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
+            let final_program_usdc_account = TokenAccount::try_deserialize(
+                &mut ctx
+                    .accounts
+                    .program_usdc_account
+                    .try_borrow_data()?
+                    .as_ref(),
+            )?;
 
-        pub fn swap_and_bridge(
-            ctx: Context<SwapAndBridgeInstruction>,
-            params: SwapAndBridgeParams,
-        ) -> Result<()> {
+            final_balance = final_program_usdc_account.amount;
+            msg!("valuerouter: swap output {:?}", final_balance);
             assert!(
-                ctx.accounts.value_router.fee_receiver.key() == ctx.accounts.fee_receiver.key(),
-                "wrong fee receiver"
+                final_program_usdc_account.amount >= params.bridge_usdc_amount,
+                "value_router: no enough swap output"
             );
+        } else {
+            msg!("valuerouter: no local swap");
+            final_balance = params.bridge_usdc_amount;
+        }
 
-            let message_transmitter = &ctx.accounts.message_transmitter;
+        let mut fee_amount: u64 = 0;
+        if params.buy_args.buy_token == Pubkey::new_from_array([0; 32]) {
+            // no dest swap
+            fee_amount += ctx.accounts.value_router.bridge_fees[params.dest_domain as usize];
+        } else {
+            // need dest swap
+            fee_amount += ctx.accounts.value_router.swap_fees[params.dest_domain as usize];
+        }
 
-            let authority_bump = ctx.bumps.get("program_authority").unwrap().to_le_bytes();
-            let usdc_bump = ctx.bumps.get("program_usdc_account").unwrap().to_le_bytes();
+        let fee_ix = system_instruction::transfer(
+            &ctx.accounts.payer.key(),
+            &ctx.accounts.value_router.fee_receiver.key(),
+            fee_amount,
+        );
 
-            let initial_program_usdc_account = utils::create_spl_token_idempotent(
+        anchor_lang::solana_program::program::invoke(
+            &fee_ix,
+            &[
+                ctx.accounts.payer.to_account_info(),
+                ctx.accounts.fee_receiver.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+            ],
+        )?;
+
+        // cpi depositForBurnWithCaller
+        let deposit_for_burn_accounts = Box::new(DepositForBurnContext {
+            owner: ctx.accounts.program_authority.to_account_info(),
+            event_rent_payer: ctx.accounts.event_rent_payer.clone().to_account_info(),
+            sender_authority_pda: ctx.accounts.sender_authority_pda.to_account_info(),
+            burn_token_account: ctx.accounts.program_usdc_account.clone().to_account_info(),
+            message_transmitter: message_transmitter.clone().to_account_info(),
+            token_messenger: ctx.accounts.token_messenger.to_account_info(),
+            remote_token_messenger: ctx.accounts.remote_token_messenger.to_account_info(),
+            token_minter: ctx.accounts.token_minter.to_account_info(),
+            local_token: ctx.accounts.local_token.to_account_info(),
+            burn_token_mint: ctx.accounts.burn_token_mint.to_account_info(),
+            message_sent_event_data: ctx
+                .accounts
+                .message_sent_event_data_1
+                .clone()
+                .to_account_info(),
+            message_transmitter_program: ctx.accounts.message_transmitter_program.to_account_info(),
+            token_messenger_minter_program: ctx
+                .accounts
+                .token_messenger_minter_program
+                .clone()
+                .to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
+            system_program: ctx.accounts.system_program.clone().to_account_info(),
+            event_authority: ctx.accounts.event_authority.to_account_info(),
+            program: ctx.accounts.value_router_program.to_account_info(),
+        });
+
+        let deposit_for_burn_params = DepositForBurnWithCallerParams {
+            amount: final_balance,
+            destination_domain: params.dest_domain,
+            mint_recipient: *ctx
+                .accounts
+                .remote_value_router
+                .clone()
+                .to_account_info()
+                .key,
+            destination_caller: *ctx
+                .accounts
+                .remote_value_router
+                .clone()
+                .to_account_info()
+                .key,
+        };
+
+        let signer_seeds: &[&[&[u8]]] = &[&[constants::AUTHORITY_SEED, authority_bump.as_ref()]];
+
+        let deposit_for_burn_ctx = CpiContext::new_with_signer(
+            ctx.accounts
+                .token_messenger_minter_program
+                .clone()
+                .to_account_info(),
+            *deposit_for_burn_accounts,
+            signer_seeds,
+        );
+
+        msg!("swap_and_bridge: cpi deposit_for_burn_with_caller");
+
+        let nonce = token_messenger_minter::cpi::deposit_for_burn_with_caller(
+            deposit_for_burn_ctx,
+            deposit_for_burn_params,
+        )?
+        .get();
+
+        msg!("bridge nonce: {:?}", nonce);
+
+        msg!("closing program usdc account");
+        if flagLocalSwap {
+            utils::close_program_usdc(
                 ctx.accounts.program_authority.clone(),
                 ctx.accounts.program_usdc_account.clone(),
-                Box::new(Account::try_from(&ctx.accounts.burn_token_mint)?),
                 ctx.accounts.token_program.clone(),
-                ctx.accounts.system_program.clone(),
                 &authority_bump,
-                &constants::USDC_SEED,
-                &usdc_bump,
             )?;
-
-            msg!(
-                "valuerouter: initial_program_usdc_account: {:?}",
-                initial_program_usdc_account
-            );
-
-            let mut flagLocalSwap = false;
-            let mut final_balance: u64 = 0;
-            if ctx.accounts.source_mint.clone().key() != ctx.accounts.burn_token_mint.key() {
-                msg!("valuerouter: handling local swap");
-                flagLocalSwap = true;
-
-                swap_on_jupiter(
-                    ctx.remaining_accounts,
-                    ctx.accounts.jupiter_program.clone(),
-                    params.jupiter_swap_data,
-                )?;
-
-                //let final_token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
-                let final_program_usdc_account = TokenAccount::try_deserialize(
-                    &mut ctx
-                        .accounts
-                        .program_usdc_account
-                        .try_borrow_data()?
-                        .as_ref(),
-                )?;
-
-                final_balance = final_program_usdc_account.amount;
-                msg!("valuerouter: swap output {:?}", final_balance);
-                assert!(
-                    final_program_usdc_account.amount >= params.bridge_usdc_amount,
-                    "value_router: no enough swap output"
-                );
-            } else {
-                msg!("valuerouter: no local swap");
-                final_balance = params.bridge_usdc_amount;
-            }
-
-            let mut fee_amount: u64 = 0;
-            if params.buy_args.buy_token == Pubkey::new_from_array([0; 32]) {
-                // no dest swap
-                fee_amount += ctx.accounts.value_router.bridge_fees[params.dest_domain as usize];
-            } else {
-                // need dest swap
-                fee_amount += ctx.accounts.value_router.swap_fees[params.dest_domain as usize];
-            }
-
-            let fee_ix = system_instruction::transfer(
-                &ctx.accounts.payer.key(),
-                &ctx.accounts.value_router.fee_receiver.key(),
-                fee_amount,
-            );
-
-            anchor_lang::solana_program::program::invoke(
-                &fee_ix,
-                &[
-                    ctx.accounts.payer.to_account_info(),
-                    ctx.accounts.fee_receiver.to_account_info(),
-                    ctx.accounts.system_program.to_account_info(),
-                ],
-            )?;
-
-            // cpi depositForBurnWithCaller
-            let deposit_for_burn_accounts = Box::new(DepositForBurnContext {
-                owner: ctx.accounts.program_authority.to_account_info(),
-                event_rent_payer: ctx.accounts.event_rent_payer.clone().to_account_info(),
-                sender_authority_pda: ctx.accounts.sender_authority_pda.to_account_info(),
-                burn_token_account: ctx.accounts.program_usdc_account.clone().to_account_info(),
-                message_transmitter: message_transmitter.clone().to_account_info(),
-                token_messenger: ctx.accounts.token_messenger.to_account_info(),
-                remote_token_messenger: ctx.accounts.remote_token_messenger.to_account_info(),
-                token_minter: ctx.accounts.token_minter.to_account_info(),
-                local_token: ctx.accounts.local_token.to_account_info(),
-                burn_token_mint: ctx.accounts.burn_token_mint.to_account_info(),
-                message_sent_event_data: ctx
-                    .accounts
-                    .message_sent_event_data_1
-                    .clone()
-                    .to_account_info(),
-                message_transmitter_program: ctx.accounts.message_transmitter_program.to_account_info(),
-                token_messenger_minter_program: ctx
-                    .accounts
-                    .token_messenger_minter_program
-                    .clone()
-                    .to_account_info(),
-                token_program: ctx.accounts.token_program.to_account_info(),
-                system_program: ctx.accounts.system_program.clone().to_account_info(),
-                event_authority: ctx.accounts.event_authority.to_account_info(),
-                program: ctx.accounts.value_router_program.to_account_info(),
-            });
-
-            let deposit_for_burn_params = DepositForBurnWithCallerParams {
-                amount: final_balance,
-                destination_domain: params.dest_domain,
-                mint_recipient: *ctx
-                    .accounts
-                    .remote_value_router
-                    .clone()
-                    .to_account_info()
-                    .key,
-                destination_caller: *ctx
-                    .accounts
-                    .remote_value_router
-                    .clone()
-                    .to_account_info()
-                    .key,
-            };
-
-            let signer_seeds: &[&[&[u8]]] = &[&[constants::AUTHORITY_SEED, authority_bump.as_ref()]];
-
-            let deposit_for_burn_ctx = CpiContext::new_with_signer(
-                ctx.accounts
-                    .token_messenger_minter_program
-                    .clone()
-                    .to_account_info(),
-                *deposit_for_burn_accounts,
-                signer_seeds,
-            );
-
-            msg!("swap_and_bridge: cpi deposit_for_burn_with_caller");
-
-            let nonce = token_messenger_minter::cpi::deposit_for_burn_with_caller(
-                deposit_for_burn_ctx,
-                deposit_for_burn_params,
-            )?
-            .get();
-
-            msg!("bridge nonce: {:?}", nonce);
-
-            msg!("closing program usdc account");
-            if flagLocalSwap {
-                utils::close_program_spl_account(
-                    ctx.accounts.program_authority.clone(),
-                    ctx.accounts.program_usdc_account.clone(),
-                    ctx.accounts.program_authority.clone(),
-                    ctx.accounts.token_program.clone(),
-                    &authority_bump,
-                )?;
-            }
-            msg!("program usdc account closed");
-
-            //let nonce: u64 = 6677;
-
-            // solidity: bytes32 bridgeNonceHash = keccak256(abi.encodePacked(5, bridgeNonce))
-            let localdomain: u32 = 5;
-            let localdomain_bytes = localdomain.to_be_bytes();
-            let nonce_bytes = nonce.to_be_bytes();
-
-            let mut encoded_data = vec![0; 12];
-            encoded_data[..4].copy_from_slice(&localdomain_bytes);
-            encoded_data[4..].copy_from_slice(&nonce_bytes);
-            msg!("encoded_data: {:?}", encoded_data);
-            // 00 00 00 05 00 00 00 00 00 00 00 01
-            // [00, 00, 00, 05, 00, 00, 00, 00, 00, 00, 00, 01]
-            let bridge_nonce_hash: [u8; 32] =
-                anchor_lang::solana_program::keccak::hash(encoded_data.as_slice()).to_bytes();
-            msg!("bridge_nonce_hash: {:?}", bridge_nonce_hash);
-
-            // build swap message
-            msg!("swap_and_bridge: build message_body");
-
-            let message_body = Box::new(SwapMessage::format_message(
-                1u32,
-                bridge_nonce_hash.to_vec(),
-                final_balance,
-                &params.buy_args.buy_token,
-                params.buy_args.guaranteed_buy_amount.clone(),
-                &params.recipient.clone(),
-            )?);
-
-            msg!("swap_and_bridge: message_body: {:?}", *message_body);
-
-            msg!("swap_and_bridge: build send_message_accounts");
-
-            // cpi sendMessageWithCaller
-            let send_message_accounts = Box::new(SendMessageContext {
-                event_rent_payer: ctx.accounts.event_rent_payer.to_account_info(),
-                sender_authority_pda: ctx.accounts.sender_authority_pda_2.to_account_info(),
-                message_transmitter: message_transmitter.clone().to_account_info(),
-                message_sent_event_data: ctx.accounts.message_sent_event_data_2.to_account_info(),
-                sender_program: ctx.accounts.value_router_program.to_account_info(),
-                system_program: ctx.accounts.system_program.to_account_info(),
-            });
-
-            msg!("swap_and_bridge: build send_message_params");
-
-            let send_message_params = SendMessageWithCallerParams {
-                destination_domain: params.dest_domain,
-                recipient: *ctx.accounts.remote_value_router.to_account_info().key,
-                message_body: *message_body,
-                destination_caller: *ctx.accounts.remote_value_router.to_account_info().key,
-            };
-
-            let authority_seeds: &[&[&[u8]]] = &[&[
-                b"sender_authority",
-                &ctx.bumps
-                    .get("sender_authority_pda_2")
-                    .unwrap()
-                    .to_le_bytes(),
-            ]];
-
-            msg!("swap_and_bridge: build send_message_ctx");
-
-            let send_message_ctx = CpiContext::new_with_signer(
-                ctx.accounts.message_transmitter_program.to_account_info(),
-                *send_message_accounts,
-                authority_seeds,
-            );
-
-            msg!("swap_and_bridge: cpi send_message_with_caller");
-
-            let nonce2 = message_transmitter::cpi::send_message_with_caller(
-                send_message_ctx,
-                send_message_params,
-            )?
-            .get();
-
-            msg!("send message nonce: {:?}", nonce2);
-
-            emit!(SwapAndBridgeEvent {
-                bridge_usdc_amount: final_balance,
-                buy_token: params.buy_args.buy_token,
-                guaranteed_buy_amount: params.buy_args.guaranteed_buy_amount,
-                dest_domain: params.dest_domain,
-                recipient: params.recipient.clone(),
-                bridge_nonce: nonce,
-                swap_nonce: nonce2,
-            });
-
-            Ok(())
         }
+        msg!("program usdc account closed");
+
+        //let nonce: u64 = 6677;
+
+        // solidity: bytes32 bridgeNonceHash = keccak256(abi.encodePacked(5, bridgeNonce))
+        let localdomain: u32 = 5;
+        let localdomain_bytes = localdomain.to_be_bytes();
+        let nonce_bytes = nonce.to_be_bytes();
+
+        let mut encoded_data = vec![0; 12];
+        encoded_data[..4].copy_from_slice(&localdomain_bytes);
+        encoded_data[4..].copy_from_slice(&nonce_bytes);
+        msg!("encoded_data: {:?}", encoded_data);
+        // 00 00 00 05 00 00 00 00 00 00 00 01
+        // [00, 00, 00, 05, 00, 00, 00, 00, 00, 00, 00, 01]
+        let bridge_nonce_hash: [u8; 32] =
+            anchor_lang::solana_program::keccak::hash(encoded_data.as_slice()).to_bytes();
+        msg!("bridge_nonce_hash: {:?}", bridge_nonce_hash);
+
+        // build swap message
+        msg!("swap_and_bridge: build message_body");
+
+        let message_body = Box::new(SwapMessage::format_message(
+            1u32,
+            bridge_nonce_hash.to_vec(),
+            final_balance,
+            &params.buy_args.buy_token,
+            params.buy_args.guaranteed_buy_amount.clone(),
+            &params.recipient.clone(),
+        )?);
+
+        msg!("swap_and_bridge: message_body: {:?}", *message_body);
+
+        msg!("swap_and_bridge: build send_message_accounts");
+
+        // cpi sendMessageWithCaller
+        let send_message_accounts = Box::new(SendMessageContext {
+            event_rent_payer: ctx.accounts.event_rent_payer.to_account_info(),
+            sender_authority_pda: ctx.accounts.sender_authority_pda_2.to_account_info(),
+            message_transmitter: message_transmitter.clone().to_account_info(),
+            message_sent_event_data: ctx.accounts.message_sent_event_data_2.to_account_info(),
+            sender_program: ctx.accounts.value_router_program.to_account_info(),
+            system_program: ctx.accounts.system_program.to_account_info(),
+        });
+
+        msg!("swap_and_bridge: build send_message_params");
+
+        let send_message_params = SendMessageWithCallerParams {
+            destination_domain: params.dest_domain,
+            recipient: *ctx.accounts.remote_value_router.to_account_info().key,
+            message_body: *message_body,
+            destination_caller: *ctx.accounts.remote_value_router.to_account_info().key,
+        };
+
+        let authority_seeds: &[&[&[u8]]] = &[&[
+            b"sender_authority",
+            &ctx.bumps
+                .get("sender_authority_pda_2")
+                .unwrap()
+                .to_le_bytes(),
+        ]];
+
+        msg!("swap_and_bridge: build send_message_ctx");
+
+        let send_message_ctx = CpiContext::new_with_signer(
+            ctx.accounts.message_transmitter_program.to_account_info(),
+            *send_message_accounts,
+            authority_seeds,
+        );
+
+        msg!("swap_and_bridge: cpi send_message_with_caller");
+
+        let nonce2 = message_transmitter::cpi::send_message_with_caller(
+            send_message_ctx,
+            send_message_params,
+        )?
+        .get();
+
+        msg!("send message nonce: {:?}", nonce2);
+
+        emit!(SwapAndBridgeEvent {
+            bridge_usdc_amount: final_balance,
+            buy_token: params.buy_args.buy_token,
+            guaranteed_buy_amount: params.buy_args.guaranteed_buy_amount,
+            dest_domain: params.dest_domain,
+            recipient: params.recipient.clone(),
+            bridge_nonce: nonce,
+            swap_nonce: nonce2,
+        });
+
+        Ok(())
+    }
+*/
     /*
     Instruction 3: create_relay_data
      */
@@ -521,7 +518,6 @@ pub mod value_router {
         );
         Ok(())
     }
-    */
 
     /*
     Instruction 4: post_bridge_message
@@ -653,13 +649,21 @@ pub mod value_router {
 
         pub token_pair: Box<Account<'info, TokenPair>>,
 
-        /// CHECK: recipient usdc account
-        #[account(mut)]
-        pub recipient_usdc_account: UncheckedAccount<'info>,
+        #[account(
+            init_if_needed,
+            payer = payer,
+            associated_token::mint = usdc_mint,
+            associated_token::authority = recipient_wallet_account,
+        )]
+        pub recipient_usdc_account: Box<Account<'info, TokenAccount>>,
 
-        /// CHECK: recipient output token account
-        #[account(mut)]
-        pub recipient_output_token_account: UncheckedAccount<'info>,
+        #[account(
+            init_if_needed,
+            payer = payer,
+            associated_token::mint = output_mint,
+            associated_token::authority = recipient_wallet_account,
+        )]
+        pub recipient_output_token_account: Box<Account<'info, TokenAccount>>,
 
         /// CHECK: recipient wallet account
         #[account(mut)]
@@ -676,14 +680,6 @@ pub mod value_router {
         )]
         pub program_usdc_account: UncheckedAccount<'info>,
 
-        /// CHECK: Program usdc token account
-        #[account(
-            mut,
-            seeds = [constants::WSOL_IN_SEED],
-            bump
-        )]
-        pub program_wsol_account: UncheckedAccount<'info>,
-
         /// CHECK:
         #[account(
             mut,
@@ -692,11 +688,7 @@ pub mod value_router {
         pub usdc_mint: UncheckedAccount<'info>,
 
         /// CHECK:
-        /*#[account(
-            mut,
-            constraint = wsol_mint.key() == solana_program::pubkey!("So11111111111111111111111111111111111111112")
-        )]
-        pub wsol_mint: UncheckedAccount<'info>,*/
+        pub output_mint: UncheckedAccount<'info>,
 
         /// CHECK:
         #[account(
@@ -711,6 +703,10 @@ pub mod value_router {
         #[account()]
         pub cctp_message_receiver:
             Program<'info, cctp_message_receiver::program::CctpMessageReceiver>,
+
+        pub associated_token_program: Program<'info, AssociatedToken>,
+
+        pub rent: Sysvar<'info, Rent>,
     }
 
     // Instruction parameters
@@ -723,7 +719,7 @@ pub mod value_router {
         ctx: Context<'_, '_, '_, 'a, RelayInstruction<'a>>,
         params: RelayParams,
     ) -> Result<()> {
-        let _ = utils::create_spl_token_idempotent(
+        utils::create_usdc_token_idempotent(
             ctx.accounts.program_authority.clone(),
             ctx.accounts.program_usdc_account.clone(),
             Box::new(Account::try_from(&ctx.accounts.usdc_mint)?),
@@ -847,8 +843,12 @@ pub mod value_router {
 
         // swap_message.get_recipient() is recipient's wallet address
         assert!(
-            ctx.accounts.recipient_wallet_account.key() == swap_message.get_recipient()?,
-            "value_router: incorrect recipient wallet account"
+            ctx.accounts.recipient_output_token_account.key()
+                == get_associated_token_address(
+                    &swap_message.get_recipient()?,
+                    &swap_message.get_buy_token()?,
+                ),
+            "value_router: incorrect recipient's output token account"
         );
 
         assert!(
@@ -860,39 +860,6 @@ pub mod value_router {
             "value_router: incorrect recipient's usdc account"
         );
 
-        if swap_message.get_buy_token()?
-            == solana_program::pubkey!("H5hM4fqRjygvCYXnp6dgFLgZ6o4uJ8Q9z7dAsTfapHmF")
-        {
-            // buy token is native sol
-            assert!(
-                ctx.accounts.recipient_output_token_account.key()
-                    == *ctx.accounts.program_wsol_account.key,
-                "value_router: incorrect recipient's output token account"
-            );
-            // initialize program usdc account
-            // no, jupiter will do this
-            /*let _ = utils::create_spl_token_idempotent(
-                ctx.accounts.program_authority.clone(),
-                ctx.accounts.program_wsol_account.clone(),
-                Box::new(Account::try_from(&ctx.accounts.wsol_mint)?),
-                ctx.accounts.token_program.clone(),
-                ctx.accounts.system_program.clone(),
-                &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
-                &constants::USDC_IN_SEED,
-                &ctx.bumps.get("program_wsol_account").unwrap().to_le_bytes(),
-            );*/
-        } else {
-            // buy token is spl token
-            assert!(
-                ctx.accounts.recipient_output_token_account.key()
-                    == get_associated_token_address(
-                        &swap_message.get_recipient()?,
-                        &swap_message.get_buy_token()?,
-                    ),
-                "value_router: incorrect recipient's output token account"
-            );
-        }
-
         if swap_message.get_buy_token()? != ctx.accounts.usdc_mint.key() {
             assert!(
                 *usdc_balance >= swap_message.get_sell_amount()?,
@@ -900,43 +867,14 @@ pub mod value_router {
             );
             // swap
             //msg!("value_router: swap on jupiter");
-            let token_balance_before: u64;
-            if ctx
-                .accounts
-                .recipient_output_token_account
-                .to_account_info()
-                .data_is_empty()
-            {
-                token_balance_before = 0;
-            } else {
-                token_balance_before = *Box::new(
-                    TokenAccount::try_deserialize(
-                        &mut ctx
-                            .accounts
-                            .recipient_output_token_account
-                            .try_borrow_data()?
-                            .as_ref(),
-                    )?
-                    .amount,
-                );
-            }
-            // TODO try swap and catch error "swap output not enough"
+            let token_balance_before = ctx.accounts.recipient_output_token_account.amount;
             swap_on_jupiter(
                 ctx.remaining_accounts,
                 ctx.accounts.jupiter_program.clone(),
                 params.jupiter_swap_data,
             )?;
             assert!(
-                *Box::new(
-                    TokenAccount::try_deserialize(
-                        &mut ctx
-                            .accounts
-                            .recipient_output_token_account
-                            .try_borrow_data()?
-                            .as_ref(),
-                    )?
-                    .amount
-                ) - token_balance_before
+                ctx.accounts.recipient_output_token_account.amount - token_balance_before
                     >= swap_message.get_guaranteed_buy_amount()?,
                 "value_router: swap output not enough"
             );
@@ -954,44 +892,26 @@ pub mod value_router {
             );
         }
 
-        if swap_message.get_buy_token()?
-            == solana_program::pubkey!("H5hM4fqRjygvCYXnp6dgFLgZ6o4uJ8Q9z7dAsTfapHmF")
-        {
-            // buy token is native sol
-            // close program wsol account
-            // transfer sol to recipient
-            utils::close_program_spl_account(
-                ctx.accounts.program_authority.clone(),
-                ctx.accounts.program_wsol_account.clone(),
-                ctx.accounts.recipient_wallet_account.clone(),
-                ctx.accounts.token_program.clone(),
-                &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
-            )?;
-        }
-
         // transfer usdc to recipient
-        if *usdc_balance > 0 {
-            let _ = utils::transfer_token(
-                Account::<TokenAccount>::try_from(
-                    &ctx.accounts.program_usdc_account.clone().to_account_info(),
-                )?,
-                Account::<TokenAccount>::try_from(
-                    &ctx.accounts
-                        .recipient_usdc_account
-                        .clone()
-                        .to_account_info(),
-                )?,
-                ctx.accounts.program_authority.clone(),
-                &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
-                ctx.accounts.token_program.clone(),
-                *usdc_balance,
-            );
-        }
+        let _ = utils::transfer_token(
+            Account::<TokenAccount>::try_from(
+                &ctx.accounts.program_usdc_account.clone().to_account_info(),
+            )?,
+            Account::<TokenAccount>::try_from(
+                &ctx.accounts
+                    .recipient_usdc_account
+                    .clone()
+                    .to_account_info(),
+            )?,
+            ctx.accounts.program_authority.clone(),
+            &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
+            ctx.accounts.token_program.clone(),
+            *usdc_balance,
+        );
 
-        utils::close_program_spl_account(
+        utils::close_program_usdc(
             ctx.accounts.program_authority.clone(),
             ctx.accounts.program_usdc_account.clone(),
-            ctx.accounts.program_authority.clone(),
             ctx.accounts.token_program.clone(),
             &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
         )?;

@@ -575,10 +575,10 @@ export const relay = async (
   let addressLookupTableAccounts = [];
 
   let jupiterReceiver = recipientOutputTokenAccount;
+  let jupiterOutput = outputToken;
 
   if (!usdcAddress.equals(outputToken)) {
     console.log("Build jupiter swap instruction");
-    let jupiterOutput = outputToken;
 
     // 判断 output token 是不是 native SOL
     // 如果是 native SOL，jupiter swap 把 usdc 兑换为 wsol，
@@ -625,45 +625,48 @@ export const relay = async (
 
   console.log("jupiterReceiver: ", jupiterReceiver);
 
+  let accounts = {
+    payer: provider.wallet.publicKey,
+    caller: cctpCaller,
+    tmAuthorityPda: pdas.tmAuthorityPda,
+    vrAuthorityPda: pdas.vrAuthorityPda,
+    messageTransmitterProgram: messageTransmitterProgram.programId,
+    messageTransmitter: pdas.messageTransmitterAccount.publicKey,
+    usedNonces: pdas.usedNonces,
+    tokenMessengerMinterProgram: tokenMessengerMinterProgram.programId,
+    valueRouterProgram: valueRouterProgram.programId,
+    tokenProgram: TOKEN_PROGRAM_ID,
+    systemProgram: SystemProgram.programId,
+    messageTransmitterEventAuthority: eventAuthority,
+    tokenMessengerEventAuthority: pdas.tokenMessengerEventAuthority.publicKey,
+    cctpReceiverEventAuthority: pdas.cctpReceiverEventAuthority.publicKey,
+    relayParams: relayDataKeypair.publicKey,
+    tokenMessenger: pdas.tokenMessengerAccount.publicKey,
+    remoteTokenMessenger: pdas.remoteTokenMessengerKey.publicKey,
+    tokenMinter: pdas.tokenMinterAccount.publicKey,
+    localToken: pdas.localToken.publicKey,
+    tokenPair: pdas.tokenPair.publicKey,
+    recipientUsdcAccount: recipientUsdcAccount,
+    recipientOutputTokenAccount: jupiterReceiver,
+    recipientWalletAccount: recipientWalletAddress,
+    custodyTokenAccount: pdas.custodyTokenAccount.publicKey,
+    programUsdcAccount: programUsdcAccount,
+    programWsolAccount: programWsolAccount,
+    usdcMint: usdcAddress,
+    wsolMint: wsolAddress,
+    outputMint: jupiterOutput,
+    programAuthority: programAuthority,
+    jupiterProgram: jupiterProgramId,
+    cctpMessageReceiver: cctpMessageReceiverProgram.programId,
+    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+    rent: SYSVAR_RENT_PUBKEY,
+  };
+
   const relayIx = await valueRouterProgram.methods
     .relay({
       jupiterSwapData: jupiterSwapData,
     })
-    .accounts({
-      payer: provider.wallet.publicKey,
-      caller: cctpCaller,
-      tmAuthorityPda: pdas.tmAuthorityPda,
-      vrAuthorityPda: pdas.vrAuthorityPda,
-      messageTransmitterProgram: messageTransmitterProgram.programId,
-      messageTransmitter: pdas.messageTransmitterAccount.publicKey,
-      usedNonces: pdas.usedNonces,
-      tokenMessengerMinterProgram: tokenMessengerMinterProgram.programId,
-      valueRouterProgram: valueRouterProgram.programId,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      systemProgram: SystemProgram.programId,
-      messageTransmitterEventAuthority: eventAuthority,
-      tokenMessengerEventAuthority: pdas.tokenMessengerEventAuthority.publicKey,
-      cctpReceiverEventAuthority: pdas.cctpReceiverEventAuthority.publicKey,
-      relayParams: relayDataKeypair.publicKey,
-      tokenMessenger: pdas.tokenMessengerAccount.publicKey,
-      remoteTokenMessenger: pdas.remoteTokenMessengerKey.publicKey,
-      tokenMinter: pdas.tokenMinterAccount.publicKey,
-      localToken: pdas.localToken.publicKey,
-      tokenPair: pdas.tokenPair.publicKey,
-      recipientUsdcAccount: recipientUsdcAccount,
-      /// 这里分情况:
-      /// 1. output 是 native sol，jupiterReceiver 是 program_wsol_account
-      /// 2. output 是 usdc, wsol, 其他 spl token)，jupiterReceiver 是用户的 usdc/wsol/spl account
-      recipientOutputTokenAccount: jupiterReceiver,
-      recipientWalletAccount: recipientWalletAddress,
-      custodyTokenAccount: pdas.custodyTokenAccount.publicKey,
-      programUsdcAccount: programUsdcAccount,
-      programWsolAccount: programWsolAccount,
-      usdcMint: usdcAddress,
-      programAuthority: programAuthority,
-      jupiterProgram: jupiterProgramId,
-      cctpMessageReceiver: cctpMessageReceiverProgram.programId,
-    })
+    .accounts(accounts)
     .remainingAccounts(remainingAccounts)
     .instruction();
 

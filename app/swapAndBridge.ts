@@ -77,8 +77,15 @@ const {
 const main = async () => {
   // swap + bridge
   let txID = await sendSwapAndBridgeTx();
+  //let txID = "5Pk7tpFKL14YWKebh1ySWMjTdQcVfQi7w6E28aKHMoZXBmMMwazMDzeFoVrCUECg6ZkMVSi8YUJxGvWoZsEqDyfG";
   if (txID) {
     let { bridgeMessage, swapMessage } = await getCCTPAttestations(txID);
+    /*reclaim(
+        bridgeMessage,
+        swapMessage,
+        messageSentEventAccountKeypair1.publicKey,
+        messageSentEventAccountKeypair2.publicKey
+      );*/
   }
 };
 
