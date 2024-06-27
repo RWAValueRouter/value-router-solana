@@ -11,11 +11,6 @@ export type ValueRouter = {
           "isSigner": true
         },
         {
-          "name": "authorityPda",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "valueRouter",
           "isMut": true,
           "isSigner": false
@@ -196,6 +191,11 @@ export type ValueRouter = {
           "docs": [
             "Program usdc token account"
           ]
+        },
+        {
+          "name": "senderUsdcAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
           "name": "sourceMint",
@@ -468,11 +468,6 @@ export const IDL: ValueRouter = {
           "isSigner": true
         },
         {
-          "name": "authorityPda",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "valueRouter",
           "isMut": true,
           "isSigner": false
@@ -653,6 +648,11 @@ export const IDL: ValueRouter = {
           "docs": [
             "Program usdc token account"
           ]
+        },
+        {
+          "name": "senderUsdcAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
           "name": "sourceMint",

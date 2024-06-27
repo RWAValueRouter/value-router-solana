@@ -5,17 +5,18 @@ import {
   Keypair,
   SystemProgram,
   TransactionMessage,
+  ComputeBudgetProgram,
   VersionedTransaction,
 } from "@solana/web3.js";
 import * as spl from "@solana/spl-token";
 import { getBytes } from "ethers";
 
+import { getAdressLookupTableAccounts } from "./jupiter";
+
 import {
-  getQuote,
-  getSwapIx,
-  instructionDataToTransactionInstruction,
-  getAdressLookupTableAccounts,
-} from "./jupiter";
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 
 import {
   SOLANA_USDC_ADDRESS,
@@ -32,7 +33,7 @@ const feeReceiver = new PublicKey(
 const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
 const usdtAddress = new PublicKey(process.env.USDT_ADDRESS);
 const wsolAddress = new PublicKey(process.env.WSOL_ADDRESS);
-const sourceMint = new PublicKey(process.env.USDT_ADDRESS);
+const sourceMint = new PublicKey(process.env.USDC_ADDRESS);
 const userTokenAccount = new PublicKey(process.env.USER_USDC_ACCOUNT);
 const jupiterProgramId = new PublicKey(process.env.JUPITER_ADDRESS);
 const remoteValueRouter = new PublicKey(
@@ -46,8 +47,7 @@ const LOOKUP_TABLE_2_ADDRESS = new PublicKey(
 const inputToken = usdtAddress;
 //const inputToken = wsolAddress;
 
-const sellTokenAmount = Number(process.env.SELL_AMOUNT ?? 1);
-const bridgeUsdcAmount = new anchor.BN(process.env.BUY_AMOUNT ?? 1);
+const bridgeUsdcAmount = new anchor.BN(process.env.SELL_AMOUNT ?? 1);
 const destinationDomain = Number(process.env.DEST_DOMAIN!);
 
 // mintRecipient is a bytes32 type so pad with 0's then convert to a solana PublicKey
@@ -55,9 +55,9 @@ const mintRecipient = new PublicKey(
   getBytes(evmAddressToBytes32(process.env.MINT_RECIPIENT_HEX!))
 );
 const buyToken = new PublicKey(
-  getBytes(evmAddressToBytes32(process.env.BUY_TOKEN!))
+  getBytes(evmAddressToBytes32(process.env.DEST_BUY_TOKEN!))
 );
-let guaranteedBuyAmount_num = new anchor.BN(process.env.BUY_AMOUNT ?? 1);
+let guaranteedBuyAmount_num = new anchor.BN(process.env.DEST_BUY_AMOUNT ?? 1);
 const guaranteedBuyAmount_hex = guaranteedBuyAmount_num.toString(16);
 const paddedHexString: string = guaranteedBuyAmount_hex.padStart(64, "0");
 const guaranteedBuyAmount: Buffer = Buffer.from(paddedHexString, "hex");
@@ -96,6 +96,16 @@ const sendBridgeTx = async () => {
     valueRouterProgram.programId
   )[0];
   console.log("programUsdcAccount: ", programUsdcAccount);
+
+  const [userUsdcAccount] = await PublicKey.findProgramAddressSync(
+    [
+      provider.wallet.publicKey.toBuffer(),
+      TOKEN_PROGRAM_ID.toBuffer(),
+      usdcAddress.toBuffer(),
+    ],
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+  console.log("userUsdcAccount: ", userUsdcAccount);
 
   /// 3. Get accounts
   const pdas = getSwapAndBridgePdas(
@@ -165,6 +175,8 @@ const sendBridgeTx = async () => {
 
     programUsdcAccount: programUsdcAccount,
 
+    senderUsdcAccount: userUsdcAccount,
+
     sourceMint: sourceMint,
 
     jupiterProgram: jupiterProgramId,
@@ -232,7 +244,11 @@ const sendBridgeTx = async () => {
     //.rpc();
     .instruction();
 
-  const instructions = [swapAndBridgeInstruction];
+  const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
+    units: 2000000,
+  });
+
+  const instructions = [computeBudgetIx, swapAndBridgeInstruction];
 
   /// 6. Send transaction
   const blockhash = (await provider.connection.getLatestBlockhash()).blockhash;

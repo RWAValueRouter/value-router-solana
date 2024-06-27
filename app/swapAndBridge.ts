@@ -115,6 +115,16 @@ const sendSwapAndBridgeTx = async () => {
   )[0];
   console.log("programUsdcAccount: ", programUsdcAccount);
 
+  const [userUsdcAccount] = await PublicKey.findProgramAddressSync(
+    [
+      provider.wallet.publicKey.toBuffer(),
+      spl.TOKEN_PROGRAM_ID.toBuffer(),
+      usdcAddress.toBuffer(),
+    ],
+    spl.ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+  console.log("userUsdcAccount: ", userUsdcAccount);
+
   /// 1. 获取 Jupiter 报价
   let quote = await getQuote(
     inputToken.toBase58(),
@@ -205,6 +215,8 @@ const sendSwapAndBridgeTx = async () => {
     )[0],
 
     programUsdcAccount: programUsdcAccount,
+
+    senderUsdcAccount: userUsdcAccount,
 
     sourceMint: sourceMint,
 

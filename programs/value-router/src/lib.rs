@@ -14,7 +14,7 @@ use {
     },
     anchor_lang::prelude::*,
     anchor_spl::associated_token::{get_associated_token_address, AssociatedToken},
-    anchor_spl::token::{Mint, Token, TokenAccount},
+    anchor_spl::token::{transfer, Mint, Token, TokenAccount, Transfer},
     message_transmitter::{
         cpi::accounts::{ReceiveMessageContext, SendMessageContext},
         instructions::{ReceiveMessageParams, SendMessageWithCallerParams},
@@ -34,7 +34,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("Hc8fh8kCZ2t9SCFLE6cMjwcNUwcBgmEbDzzv6sTzm2Pd");
+declare_id!("AnK8iN9cYEsLmxWr79Z2LrEtMBXuucbcFa1tW3NAZpgx");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -74,7 +74,7 @@ pub mod value_router {
         value_router.admin = ctx.accounts.payer.key();
         Ok(())
     }
-/*
+
     #[derive(Accounts)]
     #[instruction(params: SetValueRouterParams)]
     pub struct SetValueRouterContext<'info> {
@@ -213,6 +213,9 @@ pub mod value_router {
         )]
         pub program_usdc_account: UncheckedAccount<'info>,
 
+        #[account(mut)]
+        pub sender_usdc_account: Account<'info, TokenAccount>,
+
         pub source_mint: Box<Account<'info, Mint>>,
 
         pub jupiter_program: Program<'info, Jupiter>,
@@ -279,26 +282,33 @@ pub mod value_router {
                 ctx.accounts.jupiter_program.clone(),
                 params.jupiter_swap_data,
             )?;
-
-            //let final_token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
-            let final_program_usdc_account = TokenAccount::try_deserialize(
-                &mut ctx
-                    .accounts
-                    .program_usdc_account
-                    .try_borrow_data()?
-                    .as_ref(),
-            )?;
-
-            final_balance = final_program_usdc_account.amount;
-            msg!("valuerouter: swap output {:?}", final_balance);
-            assert!(
-                final_program_usdc_account.amount >= params.bridge_usdc_amount,
-                "value_router: no enough swap output"
-            );
         } else {
             msg!("valuerouter: no local swap");
-            final_balance = params.bridge_usdc_amount;
+            let cpi_accounts = Transfer {
+                from: ctx.accounts.sender_usdc_account.to_account_info(),
+                to: ctx.accounts.program_usdc_account.to_account_info(),
+                authority: ctx.accounts.payer.to_account_info(),
+            };
+            let cpi_program = ctx.accounts.token_program.to_account_info();
+            let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+
+            transfer(cpi_ctx, params.bridge_usdc_amount)?;
         }
+        //let final_token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
+        let final_program_usdc_account = TokenAccount::try_deserialize(
+            &mut ctx
+                .accounts
+                .program_usdc_account
+                .try_borrow_data()?
+                .as_ref(),
+        )?;
+
+        final_balance = final_program_usdc_account.amount;
+        msg!("valuerouter: swap output {:?}", final_balance);
+        assert!(
+            final_program_usdc_account.amount >= params.bridge_usdc_amount,
+            "value_router: no enough swap output"
+        );
 
         let mut fee_amount: u64 = 0;
         if params.buy_args.buy_token == Pubkey::new_from_array([0; 32]) {
@@ -492,7 +502,7 @@ pub mod value_router {
 
         Ok(())
     }
-*/
+    /*
     /*
     Instruction 3: create_relay_data
      */
@@ -918,4 +928,5 @@ pub mod value_router {
 
         Ok(())
     }
+    */
 }

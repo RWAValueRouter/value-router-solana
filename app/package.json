@@ -4,6 +4,7 @@
   "description": "",
   "scripts": {
     "swapAndBridge": "tsx swapAndBridge.ts",
+    "bridge": "tsx bridge.ts",
     "relay": "tsx relay.ts",
     "initialize": "tsx initialize.ts",
     "receiveMessage": "tsx receiveMessage.ts",
