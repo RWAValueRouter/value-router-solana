@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes/index.js";
 import * as anchor from "@coral-xyz/anchor";
 import {
   PublicKey,
@@ -27,6 +28,8 @@ import {
   getPrograms,
 } from "./utils";
 
+const jito_url = process.env.JITO_URL;
+
 const feeReceiver = new PublicKey(
   "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt"
 );
@@ -34,7 +37,6 @@ const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
 const usdtAddress = new PublicKey(process.env.USDT_ADDRESS);
 const wsolAddress = new PublicKey(process.env.WSOL_ADDRESS);
 const sourceMint = new PublicKey(process.env.USDC_ADDRESS);
-const userTokenAccount = new PublicKey(process.env.USER_USDC_ACCOUNT);
 const jupiterProgramId = new PublicKey(process.env.JUPITER_ADDRESS);
 const remoteValueRouter = new PublicKey(
   getBytes(evmAddressToBytes32(process.env.REMOTE_VALUE_ROUTER!))
@@ -152,8 +154,6 @@ const sendBridgeTx = async () => {
     senderAuthorityPda: pdas.authorityPda.publicKey,
     senderAuthorityPda2: pdas.authorityPda2.publicKey,
 
-    payerInputAta: userTokenAccount,
-    payerUsdcAta: userTokenAccount,
     remoteTokenMessenger: pdas.remoteTokenMessengerKey.publicKey,
     localToken: pdas.localToken.publicKey,
     burnTokenMint: usdcAddress,
@@ -235,20 +235,22 @@ const sendBridgeTx = async () => {
       destDomain: destinationDomain,
       recipient: mintRecipient,
     })
-    // eventAuthority and program accounts are implicitly added by Anchor
     .accounts(accounts)
-    //.remainingAccounts(dedupKeys)
-    // messageSentEventAccountKeypair must be a signer so the MessageTransmitter program can take control of it and write to it.
-    // provider.wallet is also an implicit signer
-    //.signers([messageSentEventAccountKeypair1, messageSentEventAccountKeypair2])
-    //.rpc();
     .instruction();
 
   const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
-    units: 2000000,
+    units: 250000,
   });
 
-  const instructions = [computeBudgetIx, swapAndBridgeInstruction];
+  const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+    microLamports: 1,
+  });
+
+  const instructions = [
+    computeBudgetIx,
+    addPriorityFee,
+    swapAndBridgeInstruction,
+  ];
 
   /// 6. Send transaction
   const blockhash = (await provider.connection.getLatestBlockhash()).blockhash;
@@ -261,17 +263,36 @@ const sendBridgeTx = async () => {
   const transaction = new VersionedTransaction(messageV0);
 
   try {
-    /*await provider.simulate(transaction, [
-      messageSentEventAccountKeypair1,
-      messageSentEventAccountKeypair2,
-    ]);*/
-
-    const txID = await provider.sendAndConfirm(transaction, [
+    transaction.sign([
       messageSentEventAccountKeypair1,
       messageSentEventAccountKeypair2,
     ]);
-    console.log({ txID });
-    return txID;
+
+    await provider.wallet.signTransaction(transaction);
+
+    const serializedTx = bs58.encode(transaction.serialize());
+
+    const response = await fetch(jito_url + "transactions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "sendTransaction",
+        params: [serializedTx],
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error("Error sending transaction:", error);
+    } else {
+      const result = await response.json();
+      console.log("Transaction result:", result);
+      return result["result"];
+    }
   } catch (e) {
     console.log({ e: e });
   }

@@ -34,7 +34,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("AnK8iN9cYEsLmxWr79Z2LrEtMBXuucbcFa1tW3NAZpgx");
+declare_id!("BNNQs4WU5XqEMDW6hd7iJ5awmRNPfb3bAZNppMdPThxq");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -271,11 +271,9 @@ pub mod value_router {
             initial_program_usdc_account
         );
 
-        let mut flagLocalSwap = false;
         let mut final_balance: u64 = 0;
         if ctx.accounts.source_mint.clone().key() != ctx.accounts.burn_token_mint.key() {
             msg!("valuerouter: handling local swap");
-            flagLocalSwap = true;
 
             swap_on_jupiter(
                 ctx.remaining_accounts,
@@ -402,17 +400,13 @@ pub mod value_router {
         msg!("bridge nonce: {:?}", nonce);
 
         msg!("closing program usdc account");
-        if flagLocalSwap {
-            utils::close_program_usdc(
-                ctx.accounts.program_authority.clone(),
-                ctx.accounts.program_usdc_account.clone(),
-                ctx.accounts.token_program.clone(),
-                &authority_bump,
-            )?;
-        }
+        utils::close_program_usdc(
+            ctx.accounts.program_authority.clone(),
+            ctx.accounts.program_usdc_account.clone(),
+            ctx.accounts.token_program.clone(),
+            &authority_bump,
+        )?;
         msg!("program usdc account closed");
-
-        //let nonce: u64 = 6677;
 
         // solidity: bytes32 bridgeNonceHash = keccak256(abi.encodePacked(5, bridgeNonce))
         let localdomain: u32 = 5;

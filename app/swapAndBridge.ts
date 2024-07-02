@@ -1,10 +1,12 @@
 import "dotenv/config";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes/index.js";
 import * as anchor from "@coral-xyz/anchor";
 import {
   PublicKey,
   Keypair,
   SystemProgram,
   TransactionMessage,
+  ComputeBudgetProgram,
   VersionedTransaction,
 } from "@solana/web3.js";
 import * as spl from "@solana/spl-token";
@@ -25,6 +27,8 @@ import {
   getMessages,
   getPrograms,
 } from "./utils";
+
+const jito_url = process.env.JITO_URL;
 
 const feeReceiver = new PublicKey(
   "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt"
@@ -193,8 +197,6 @@ const sendSwapAndBridgeTx = async () => {
     senderAuthorityPda: pdas.authorityPda.publicKey,
     senderAuthorityPda2: pdas.authorityPda2.publicKey,
 
-    //payerInputAta: userTokenAccount,
-    //payerUsdcAta: userTokenAccount,
     remoteTokenMessenger: pdas.remoteTokenMessengerKey.publicKey,
     localToken: pdas.localToken.publicKey,
     burnTokenMint: usdcAddress,
@@ -229,26 +231,6 @@ const sendSwapAndBridgeTx = async () => {
 
   console.log("remaining length: ", swapInstruction.keys.length);
 
-  // accounts 去重处理，不用了
-  /*
-  const uniqueKeys = new Set(
-    swapInstruction.keys.map((publicKeyInfo) => publicKeyInfo.pubkey.toString())
-  );
-
-  const dedupKeys = Array.from(uniqueKeys).map((publicKeyString) => {
-    const originalObject = swapInstruction.keys.find(
-      (publicKeyInfo) => publicKeyInfo.pubkey.toString() === publicKeyString
-    );
-
-    return {
-      pubkey: new PublicKey(publicKeyString),
-      isSigner: originalObject!.isSigner,
-      isWritable: originalObject!.isWritable,
-    };
-  });
-  console.log("dedupKeys length: ", dedupKeys.length);
-  */
-
   /// 4. Organize accounts in address lookup tables
   /// 4.1 Jupiter ALT
   const addressLookupTableAccounts = await getAdressLookupTableAccounts(
@@ -280,15 +262,16 @@ const sendSwapAndBridgeTx = async () => {
     // eventAuthority and program accounts are implicitly added by Anchor
     .accounts(accounts)
     .remainingAccounts(swapInstruction.keys)
-    //.remainingAccounts(dedupKeys)
-    // messageSentEventAccountKeypair must be a signer so the MessageTransmitter program can take control of it and write to it.
-    // provider.wallet is also an implicit signer
-    //.signers([messageSentEventAccountKeypair1, messageSentEventAccountKeypair2])
-    //.rpc();
     .instruction();
+
+  // 增加手续费
+  const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
+    microLamports: 5,
+  });
 
   const instructions = [
     ...computeBudgetInstructions.map(instructionDataToTransactionInstruction),
+    //addPriorityFee,
     swapAndBridgeInstruction,
   ];
 
@@ -303,17 +286,36 @@ const sendSwapAndBridgeTx = async () => {
   const transaction = new VersionedTransaction(messageV0);
 
   try {
-    /*await provider.simulate(transaction, [
-      messageSentEventAccountKeypair1,
-      messageSentEventAccountKeypair2,
-    ]);*/
-
-    const txID = await provider.sendAndConfirm(transaction, [
+    transaction.sign([
       messageSentEventAccountKeypair1,
       messageSentEventAccountKeypair2,
     ]);
-    console.log({ txID });
-    return txID;
+
+    await provider.wallet.signTransaction(transaction);
+
+    const serializedTx = bs58.encode(transaction.serialize());
+
+    const response = await fetch(jito_url + "transactions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "sendTransaction",
+        params: [serializedTx],
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error("Error sending transaction:", error);
+    } else {
+      const result = await response.json();
+      console.log("Transaction result:", result);
+      return result["result"];
+    }
   } catch (e) {
     console.log({ e: e });
   }
