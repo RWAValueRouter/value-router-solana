@@ -34,7 +34,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("BNNQs4WU5XqEMDW6hd7iJ5awmRNPfb3bAZNppMdPThxq");
+declare_id!("BFmehiThYCz6mR4NRrCZtDto6BNrqADjMnLbRVbVwXym");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -221,7 +221,7 @@ pub mod value_router {
         pub jupiter_program: Program<'info, Jupiter>,
 
         /// CHECK:
-        #[account()]
+        #[account(mut)]
         pub fee_receiver: UncheckedAccount<'info>,
     }
 

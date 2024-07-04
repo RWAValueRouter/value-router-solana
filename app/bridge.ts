@@ -263,6 +263,13 @@ const sendBridgeTx = async () => {
   const transaction = new VersionedTransaction(messageV0);
 
   try {
+    /*const txID = await provider.sendAndConfirm(transaction, [
+      messageSentEventAccountKeypair1,
+      messageSentEventAccountKeypair2,
+    ]);
+    console.log({ txID });
+    return txID;*/
+
     transaction.sign([
       messageSentEventAccountKeypair1,
       messageSentEventAccountKeypair2,

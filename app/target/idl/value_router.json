@@ -207,7 +207,7 @@
         },
         {
           "name": "feeReceiver",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         }
       ],
@@ -478,6 +478,6 @@
     }
   ],
   "metadata": {
-    "address": "BNNQs4WU5XqEMDW6hd7iJ5awmRNPfb3bAZNppMdPThxq"
+    "address": "BFmehiThYCz6mR4NRrCZtDto6BNrqADjMnLbRVbVwXym"
   }
 }

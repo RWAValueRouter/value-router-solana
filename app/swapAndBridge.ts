@@ -266,7 +266,7 @@ const sendSwapAndBridgeTx = async () => {
 
   // 增加手续费
   const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
-    microLamports: 5,
+    microLamports: 1,
   });
 
   const instructions = [
@@ -286,6 +286,13 @@ const sendSwapAndBridgeTx = async () => {
   const transaction = new VersionedTransaction(messageV0);
 
   try {
+    /*const txID = await provider.sendAndConfirm(transaction, [
+      messageSentEventAccountKeypair1,
+      messageSentEventAccountKeypair2,
+    ]);
+    console.log({ txID });
+    return txID;*/
+
     transaction.sign([
       messageSentEventAccountKeypair1,
       messageSentEventAccountKeypair2,
