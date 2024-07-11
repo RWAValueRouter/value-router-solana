@@ -7,6 +7,7 @@ import {
   Keypair,
   TransactionMessage,
   VersionedTransaction,
+  Transaction,
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import {
@@ -651,9 +652,7 @@ export const relay = async (
     recipientWalletAccount: recipientWalletAddress,
     custodyTokenAccount: pdas.custodyTokenAccount.publicKey,
     programUsdcAccount: programUsdcAccount,
-    programWsolAccount: programWsolAccount,
     usdcMint: usdcAddress,
-    wsolMint: wsolAddress,
     outputMint: jupiterOutput,
     programAuthority: programAuthority,
     jupiterProgram: jupiterProgramId,

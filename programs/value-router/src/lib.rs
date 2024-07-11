@@ -18,6 +18,7 @@ use {
     message_transmitter::{
         cpi::accounts::{ReceiveMessageContext, SendMessageContext},
         instructions::{ReceiveMessageParams, SendMessageWithCallerParams},
+        message::Message,
         state::{MessageTransmitter, UsedNonces},
     },
     solana_program::system_instruction,
@@ -34,7 +35,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("BFmehiThYCz6mR4NRrCZtDto6BNrqADjMnLbRVbVwXym");
+declare_id!("HrEvhUbrvu8DdBHRmZhHPS989Adui5DHxnK79tKbGUe5");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -496,7 +497,7 @@ pub mod value_router {
 
         Ok(())
     }
-    /*
+
     /*
     Instruction 3: create_relay_data
      */
@@ -845,6 +846,25 @@ pub mod value_router {
             &ctx.accounts.relay_params.swap_message.message[116..], //.message_body,
         )?);
 
+        // check nonce
+        let mut encoded_data = vec![0; 12];
+        encoded_data[..4].copy_from_slice(&5u32.to_be_bytes());
+        encoded_data[4..].copy_from_slice(
+            &Message::new(
+                ctx.accounts.message_transmitter.as_ref().version,
+                &ctx.accounts.relay_params.bridge_message.message,
+            )?
+            .nonce()?
+            .to_be_bytes(),
+        );
+        let bridge_nonce_hash = anchor_lang::solana_program::keccak::hash(encoded_data.as_slice())
+            .to_bytes()
+            .to_vec();
+        assert!(
+            swap_message.get_bridge_nonce_hash()? == bridge_nonce_hash,
+            "value_router: nonce binding incorrect"
+        );
+
         // swap_message.get_recipient() is recipient's wallet address
         assert!(
             ctx.accounts.recipient_output_token_account.key()
@@ -922,5 +942,4 @@ pub mod value_router {
 
         Ok(())
     }
-    */
 }

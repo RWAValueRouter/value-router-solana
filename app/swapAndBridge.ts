@@ -36,7 +36,8 @@ const feeReceiver = new PublicKey(
 const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
 const usdtAddress = new PublicKey(process.env.USDT_ADDRESS);
 const wsolAddress = new PublicKey(process.env.WSOL_ADDRESS);
-const sourceMint = new PublicKey(process.env.USDT_ADDRESS);
+//const sourceMint = new PublicKey(process.env.USDT_ADDRESS);
+const sourceMint = new PublicKey(process.env.WSOL_ADDRESS);
 const jupiterProgramId = new PublicKey(process.env.JUPITER_ADDRESS);
 const remoteValueRouter = new PublicKey(
   getBytes(evmAddressToBytes32(process.env.REMOTE_VALUE_ROUTER!))
@@ -46,8 +47,8 @@ const LOOKUP_TABLE_2_ADDRESS = new PublicKey(
   "CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq"
 );
 
-const inputToken = usdtAddress;
-//const inputToken = wsolAddress;
+//const inputToken = usdtAddress;
+const inputToken = wsolAddress;
 
 const sellTokenAmount = Number(process.env.SELL_AMOUNT ?? 1);
 const bridgeUsdcAmount = new anchor.BN(process.env.BRIDGE_USDC_AMOUNT ?? 1);
@@ -71,6 +72,8 @@ const messageSentEventAccountKeypair2 = Keypair.generate();
 
 const provider = getAnchorConnection();
 provider.opts.expire = 4294967295;
+
+console.log("wallet: ", provider.wallet.publicKey);
 
 const {
   messageTransmitterProgram,
@@ -286,13 +289,6 @@ const sendSwapAndBridgeTx = async () => {
   const transaction = new VersionedTransaction(messageV0);
 
   try {
-    /*const txID = await provider.sendAndConfirm(transaction, [
-      messageSentEventAccountKeypair1,
-      messageSentEventAccountKeypair2,
-    ]);
-    console.log({ txID });
-    return txID;*/
-
     transaction.sign([
       messageSentEventAccountKeypair1,
       messageSentEventAccountKeypair2,

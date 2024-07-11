@@ -13,7 +13,8 @@
     "relaySol2Evm": "tsx relaySol2Evm.ts",
     "setupALT": "tsx setupALT.ts",
     "findEvmMessage": "tsx findEvmMessage.ts",
-    "setValueRouter": "tsx setValueRouter.ts"
+    "setValueRouter": "tsx setValueRouter.ts",
+    "wrapWsol": "tsx wrapWsol.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
