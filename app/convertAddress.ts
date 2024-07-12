@@ -22,6 +22,7 @@ let addresses = {
   usdt: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
   wsol: "So11111111111111111111111111111111111111112",
   wallet: "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt",
+  wallet2: "GcYJDjmMF5VaZmYk347Nrz8fJzT81suWfqGDguQtPB3U",
   walletUsdc: "9h2CxvWshcJaNAJ9BqrzL5Y849wQXkZdMF6nQMf6c4cY",
   valueRouter: valueRouterProgram.programId.toBase58(),
   caller: "",

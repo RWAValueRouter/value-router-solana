@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes/index.js";
 import * as fs from "fs";
 import {
   PublicKey,
@@ -7,7 +8,6 @@ import {
   Keypair,
   TransactionMessage,
   VersionedTransaction,
-  Transaction,
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import {
@@ -28,6 +28,8 @@ import {
   instructionDataToTransactionInstruction,
   getAdressLookupTableAccounts,
 } from "./jupiter";
+
+const jito_url = process.env.JITO_URL;
 
 const nativeSol = new PublicKey(
   Buffer.from(
@@ -605,6 +607,7 @@ export const relay = async (
       jupiterReceiver,
       quote
     );
+    console.log(JSON.stringify(swapIx));
 
     let swapInstruction = instructionDataToTransactionInstruction(
       swapIx.swapInstruction
@@ -697,11 +700,39 @@ export const relay = async (
       //relayTransaction.serialize();
 
       try {
-        txID = await provider.sendAndConfirm(relayTransaction, null, TIMEOUT);
+        /*txID = await provider.sendAndConfirm(relayTransaction, null, TIMEOUT);
         console.log(
           `Relay transaction: ${attempts}/${MAX_RETRIES} - Success, TX ID: ${txID}`
         );
         break; // Exit the loop if successful
+        */
+
+        await provider.wallet.signTransaction(relayTransaction);
+
+        const serializedTx = bs58.encode(relayTransaction.serialize());
+
+        const response = await fetch(jito_url + "transactions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "sendTransaction",
+            params: [serializedTx],
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          console.error("Error sending transaction:", error);
+        } else {
+          const result = await response.json();
+          console.log("Transaction result:", result);
+          txID = result["result"];
+          break;
+        }
       } catch (error) {
         console.error(`Relay transaction: ${attempts}/${MAX_RETRIES} - Failed`);
         console.log({ e: error });
