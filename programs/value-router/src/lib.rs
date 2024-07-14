@@ -21,7 +21,7 @@ use {
         message::Message,
         state::{MessageTransmitter, UsedNonces},
     },
-    solana_program::system_instruction,
+    solana_program::{pubkey, pubkey::Pubkey, system_instruction},
     token_messenger_minter::{
         cpi::accounts::DepositForBurnContext,
         program::TokenMessengerMinter,
@@ -35,7 +35,7 @@ use {
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("HrEvhUbrvu8DdBHRmZhHPS989Adui5DHxnK79tKbGUe5");
+declare_id!("91UQaR6UCwEDYPU3pFp7r1wrSvbKzQuSnrpK1KrKdBZC");
 
 #[program]
 #[feature(const_trait_impl)]
@@ -123,6 +123,7 @@ pub mod value_router {
         Ok(())
     }
 
+    /*
     /*
     Instruction 2: SwapAndBridge
     */
@@ -497,6 +498,7 @@ pub mod value_router {
 
         Ok(())
     }
+    */
 
     /*
     Instruction 3: create_relay_data
@@ -584,7 +586,63 @@ pub mod value_router {
     // TODO reclaim
 
     /*
-    Instruction 6: relay
+    Instruction 6: prepare accounts
+     */
+    #[derive(Accounts)]
+    #[instruction(params: PrepareRelayParams)]
+    pub struct PrepareRelayInstruction<'info> {
+        #[account(mut)]
+        pub payer: Signer<'info>,
+
+        /// CHECK: recipient wallet account
+        #[account(mut)]
+        pub recipient_wallet_account: UncheckedAccount<'info>,
+
+        #[account(
+            init_if_needed,
+            payer = payer,
+            //space = 8 + 165,
+            token::mint = usdc_mint,
+            token::authority = recipient_wallet_account,
+        )]
+        pub recipient_usdc_account: Box<Account<'info, TokenAccount>>,
+
+        #[account(
+            init_if_needed,
+            payer = payer,
+            //space = 8 + 165,
+            token::mint = output_mint,
+            token::authority = recipient_wallet_account,
+        )]
+        pub recipient_output_token_account: Box<Account<'info, TokenAccount>>,
+
+        pub token_program: Program<'info, Token>,
+
+        pub system_program: Program<'info, System>,
+
+        /// CHECK:
+        #[account(
+            mut,
+            constraint = usdc_mint.key() == solana_program::pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+        )]
+        pub usdc_mint: UncheckedAccount<'info>,
+
+        /// CHECK:
+        pub output_mint: UncheckedAccount<'info>,
+    }
+
+    #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+    pub struct PrepareRelayParams {}
+
+    pub fn prepare_relay<'a>(
+        ctx: Context<'_, '_, '_, 'a, PrepareRelayInstruction<'a>>,
+        params: PrepareRelayParams,
+    ) -> Result<()> {
+        Ok(())
+    }
+
+    /*
+    Instruction 7: relay
      */
     // Instruction accounts
     #[derive(Accounts)]
@@ -654,20 +712,10 @@ pub mod value_router {
 
         pub token_pair: Box<Account<'info, TokenPair>>,
 
-        #[account(
-            init_if_needed,
-            payer = payer,
-            associated_token::mint = usdc_mint,
-            associated_token::authority = recipient_wallet_account,
-        )]
+        #[account(mut)]
         pub recipient_usdc_account: Box<Account<'info, TokenAccount>>,
 
-        #[account(
-            init_if_needed,
-            payer = payer,
-            associated_token::mint = output_mint,
-            associated_token::authority = recipient_wallet_account,
-        )]
+        #[account(mut)]
         pub recipient_output_token_account: Box<Account<'info, TokenAccount>>,
 
         /// CHECK: recipient wallet account
@@ -889,19 +937,45 @@ pub mod value_router {
                 *usdc_balance >= swap_message.get_sell_amount()?,
                 "value_router: no enough usdc amount to swap"
             );
+            let token_balance_before;
+            if swap_message.get_buy_token()?
+                == pubkey!("So11111111111111111111111111111111111111112")
+            {
+                token_balance_before = ctx.accounts.payer.to_account_info().lamports();
+            } else {
+                token_balance_before = ctx.accounts.recipient_output_token_account.amount;
+            }
             // swap
             //msg!("value_router: swap on jupiter");
-            let token_balance_before = ctx.accounts.recipient_output_token_account.amount;
             swap_on_jupiter(
                 ctx.remaining_accounts,
                 ctx.accounts.jupiter_program.clone(),
                 params.jupiter_swap_data,
             )?;
-            assert!(
-                ctx.accounts.recipient_output_token_account.amount - token_balance_before
-                    >= swap_message.get_guaranteed_buy_amount()?,
-                "value_router: swap output not enough"
-            );
+
+            if swap_message.get_buy_token()?
+                == pubkey!("So11111111111111111111111111111111111111112")
+            {
+                let output_amount = Box::new(
+                    ctx.accounts.payer.to_account_info().lamports() - token_balance_before,
+                );
+                assert!(
+                    output_amount >= Box::new(swap_message.get_guaranteed_buy_amount()?),
+                    "value_router: swap output not enough"
+                );
+                utils::transfer_sol(
+                    &ctx.accounts.payer,
+                    &ctx.accounts.recipient_wallet_account,
+                    &ctx.accounts.system_program.to_account_info(),
+                    *output_amount,
+                );
+            } else {
+                assert!(
+                    ctx.accounts.recipient_output_token_account.amount - token_balance_before
+                        >= swap_message.get_guaranteed_buy_amount()?,
+                    "value_router: swap output not enough"
+                );
+            }
 
             // update remaining usdc balance
             usdc_balance = Box::new(

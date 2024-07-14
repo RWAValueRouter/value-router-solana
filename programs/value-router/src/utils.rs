@@ -4,7 +4,29 @@ use {
     crate::{constants, errors::ErrorCode},
     anchor_lang::{prelude::*, system_program},
     anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer},
+    solana_program::program::invoke,
+    solana_program::system_instruction,
 };
+
+pub fn transfer_sol<'info>(
+    payer: &Signer<'info>,
+    receiver: &AccountInfo<'info>,
+    system_program: &AccountInfo<'info>,
+    amount: u64,
+) -> Result<()> {
+    let ix = system_instruction::transfer(&payer.key, &receiver.key, amount);
+
+    invoke(
+        &ix,
+        &[
+            payer.to_account_info(),
+            receiver.clone(),
+            system_program.clone(),
+        ],
+    )?;
+
+    Ok(())
+}
 
 pub fn transfer_token<'info>(
     from_account: Account<'info, TokenAccount>,

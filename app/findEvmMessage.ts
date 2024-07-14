@@ -33,6 +33,6 @@ export const findEvmMessage = async (irisUrl: string, txid: string) => {
 
   findEvmMessage(
     irisUrl,
-    "0xec0cbac2ec95b3604229197665220ff228580b3d94363e559e97a50453777760"
+    "0x38f89ce34509ebd686f29576c2dd8a10e66f6f0d02e4eb3c1a1dfcf520ed2528"
   ).then(console.log);
 })();

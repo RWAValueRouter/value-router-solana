@@ -21,6 +21,7 @@ import {
   getAnchorConnection,
   getPrograms,
   getRelayPdas,
+  findProgramAddress,
 } from "./utils";
 import {
   getQuote,
@@ -28,12 +29,14 @@ import {
   instructionDataToTransactionInstruction,
   getAdressLookupTableAccounts,
 } from "./jupiter";
+import { publicKey } from "@coral-xyz/anchor/dist/cjs/utils";
+import { Transaction } from "ethers";
 
 const jito_url = process.env.JITO_URL;
 
-const nativeSol = new PublicKey(
+const wsolHex = new PublicKey(
   Buffer.from(
-    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "069b8857feab8184fb687f634618c035dac439dc1aeb3b5598a0f00000000001",
     "hex"
   )
 ); // H5hM4fqRjygvCYXnp6dgFLgZ6o4uJ8Q9z7dAsTfapHmF
@@ -583,12 +586,9 @@ export const relay = async (
   if (!usdcAddress.equals(outputToken)) {
     console.log("Build jupiter swap instruction");
 
-    // 判断 output token 是不是 native SOL
-    // 如果是 native SOL，jupiter swap 把 usdc 兑换为 wsol，
-    // 由 program_wsol_account 接收，再由合约转换为 native SOL 发送给用户
-    if (outputToken.equals(nativeSol)) {
+    if (outputToken.equals(wsolHex)) {
       jupiterOutput = wsolAddress;
-      jupiterReceiver = programWsolAccount;
+      //jupiterReceiver = "";
     }
 
     // 构建 jupiter swap 参数
@@ -629,6 +629,27 @@ export const relay = async (
 
   console.log("jupiterReceiver: ", jupiterReceiver);
 
+  // build prepare relay instruction
+  let prepareAccounts = {
+    payer: provider.wallet.publicKey,
+    recipientWalletAccount: recipientWalletAddress,
+    recipientUsdcAccount: recipientUsdcAccount,
+    recipientOutputTokenAccount: jupiterReceiver,
+    tokenProgram: TOKEN_PROGRAM_ID,
+    systemProgram: SystemProgram.programId,
+    usdcMint: usdcAddress,
+    outputMint: jupiterOutput,
+  };
+
+  const prepareIx = await valueRouterProgram.methods
+    .prepareRelay({
+      jupiterSwapData: jupiterSwapData,
+    })
+    .accounts(prepareAccounts)
+    .remainingAccounts(remainingAccounts)
+    .instruction();
+
+  // build relay instruction
   let accounts = {
     payer: provider.wallet.publicKey,
     caller: cctpCaller,
@@ -677,7 +698,7 @@ export const relay = async (
     units: 2000000,
   });
 
-  const relayInstructions = [computeBudgetIx, relayIx];
+  const relayInstructions = [computeBudgetIx, prepareIx, relayIx];
 
   /// 3.4 Send relay transactions
   const sendTx = async (relayInstructions: any) => {
@@ -700,12 +721,17 @@ export const relay = async (
       //relayTransaction.serialize();
 
       try {
+        const simulationResult = await provider.connection.simulateTransaction(
+          relayTransaction
+        );
+        console.log(simulationResult.value.logs);
+        break;
+
         /*txID = await provider.sendAndConfirm(relayTransaction, null, TIMEOUT);
         console.log(
           `Relay transaction: ${attempts}/${MAX_RETRIES} - Success, TX ID: ${txID}`
         );
-        break; // Exit the loop if successful
-        */
+        break; // Exit the loop if successful*/
 
         await provider.wallet.signTransaction(relayTransaction);
 
