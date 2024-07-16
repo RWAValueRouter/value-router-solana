@@ -290,7 +290,7 @@ export type ValueRouter = {
       ]
     },
     {
-      "name": "prepareRelay",
+      "name": "initRecipientTokenAccounts",
       "accounts": [
         {
           "name": "payer",
@@ -337,7 +337,7 @@ export type ValueRouter = {
         {
           "name": "params",
           "type": {
-            "defined": "PrepareRelayParams"
+            "defined": "InitRecipientTokenAccountsParams"
           }
         }
       ]
@@ -741,7 +741,7 @@ export type ValueRouter = {
       }
     },
     {
-      "name": "PrepareRelayParams",
+      "name": "InitRecipientTokenAccountsParams",
       "type": {
         "kind": "struct",
         "fields": []
@@ -1128,7 +1128,7 @@ export const IDL: ValueRouter = {
       ]
     },
     {
-      "name": "prepareRelay",
+      "name": "initRecipientTokenAccounts",
       "accounts": [
         {
           "name": "payer",
@@ -1175,7 +1175,7 @@ export const IDL: ValueRouter = {
         {
           "name": "params",
           "type": {
-            "defined": "PrepareRelayParams"
+            "defined": "InitRecipientTokenAccountsParams"
           }
         }
       ]
@@ -1579,7 +1579,7 @@ export const IDL: ValueRouter = {
       }
     },
     {
-      "name": "PrepareRelayParams",
+      "name": "InitRecipientTokenAccountsParams",
       "type": {
         "kind": "struct",
         "fields": []

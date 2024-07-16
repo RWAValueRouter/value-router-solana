@@ -7,7 +7,6 @@ mod utils;
 
 use {
     crate::{
-        errors::ErrorCode,
         jupiter::{swap_on_jupiter, Jupiter},
         state::{RelayData, SwapAndBridgeEvent, ValueRouter},
         swap_message::SwapMessage,
@@ -38,7 +37,6 @@ use {
 declare_id!("91UQaR6UCwEDYPU3pFp7r1wrSvbKzQuSnrpK1KrKdBZC");
 
 #[program]
-#[feature(const_trait_impl)]
 pub mod value_router {
     use super::*;
 
@@ -276,7 +274,7 @@ pub mod value_router {
             initial_program_usdc_account
         );
 
-        let mut final_balance: u64 = 0;
+        let final_balance: u64;
         if ctx.accounts.source_mint.clone().key() != ctx.accounts.burn_token_mint.key() {
             msg!("valuerouter: handling local swap");
 
@@ -597,11 +595,11 @@ pub mod value_router {
     // TODO reclaim
 
     /*
-    Instruction 6: prepare accounts
+    Instruction 6: init recipient token accounts
      */
     #[derive(Accounts)]
-    #[instruction(params: PrepareRelayParams)]
-    pub struct PrepareRelayInstruction<'info> {
+    #[instruction(params: InitRecipientTokenAccountsParams)]
+    pub struct InitRecipientTokenAccountsInstruction<'info> {
         #[account(mut)]
         pub payer: Signer<'info>,
 
@@ -643,11 +641,11 @@ pub mod value_router {
     }
 
     #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-    pub struct PrepareRelayParams {}
+    pub struct InitRecipientTokenAccountsParams {}
 
-    pub fn prepare_relay<'a>(
-        ctx: Context<'_, '_, '_, 'a, PrepareRelayInstruction<'a>>,
-        params: PrepareRelayParams,
+    pub fn init_recipient_token_accounts<'a>(
+        _ctx: Context<'_, '_, '_, 'a, InitRecipientTokenAccountsInstruction<'a>>,
+        _params: InitRecipientTokenAccountsParams,
     ) -> Result<()> {
         Ok(())
     }
@@ -908,6 +906,12 @@ pub mod value_router {
             &ctx.accounts.relay_params.swap_message.message[116..], //.message_body,
         )?);
 
+        // check version
+        assert!(
+            swap_message.get_version()? == 1,
+            "wrong swap message version"
+        );
+
         // check sender
         let bridge_message = &Message::new(
             ctx.accounts.message_transmitter.as_ref().version,
@@ -978,18 +982,17 @@ pub mod value_router {
             if swap_message.get_buy_token()?
                 == pubkey!("So11111111111111111111111111111111111111112")
             {
-                let output_amount = Box::new(
-                    ctx.accounts.payer.to_account_info().lamports() - token_balance_before,
-                );
+                let output_amount =
+                    &ctx.accounts.payer.to_account_info().lamports() - token_balance_before;
                 assert!(
-                    output_amount >= Box::new(swap_message.get_guaranteed_buy_amount()?),
+                    output_amount >= swap_message.get_guaranteed_buy_amount()?,
                     "value_router: swap output not enough"
                 );
-                utils::transfer_sol(
+                let _ = utils::transfer_sol(
                     &ctx.accounts.payer,
                     &ctx.accounts.recipient_wallet_account,
                     &ctx.accounts.system_program.to_account_info(),
-                    *output_amount,
+                    output_amount,
                 );
             } else {
                 assert!(

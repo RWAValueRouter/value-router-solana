@@ -615,7 +615,7 @@ export const relay = async (
 
     remainingAccounts = swapInstruction.keys;
     jupiterSwapData = swapInstruction.data;
-    console.log(jupiterSwapData.toString('hex'));
+    console.log(jupiterSwapData.toString("hex"));
     return;
 
     // 3. 获取 swap instruction 中的 lookup table 列表
@@ -631,8 +631,8 @@ export const relay = async (
 
   console.log("jupiterReceiver: ", jupiterReceiver);
 
-  // 4. prepare relay
-  let prepareAccounts = {
+  // 4. init recipient token accounts
+  let initRecipientTokenAccountsAccounts = {
     payer: provider.wallet.publicKey,
     recipientWalletAccount: recipientWalletAddress,
     recipientUsdcAccount: recipientUsdcAccount,
@@ -643,20 +643,23 @@ export const relay = async (
     outputMint: jupiterOutput,
   };
 
-  const prepareIx = await valueRouterProgram.methods
-    .prepareRelay({
+  const initRecipientTokenAccountsIx = await valueRouterProgram.methods
+    .initRecipientTokenAccounts({
       jupiterSwapData: jupiterSwapData,
     })
-    .accounts(prepareAccounts)
+    .accounts(initRecipientTokenAccountsAccounts)
     .remainingAccounts(remainingAccounts)
     .instruction();
 
   const computeBudgetIx1 = ComputeBudgetProgram.setComputeUnitLimit({
     units: 1000000,
   });
-  const prepareRelayInstructions = [computeBudgetIx1, prepareIx];
+  const initRecipientTokenAccountsInstructions = [
+    computeBudgetIx1,
+    initRecipientTokenAccountsIx,
+  ];
 
-  await sendTx(provider, prepareRelayInstructions, []);
+  await sendTx(provider, initRecipientTokenAccountsInstructions, []);
 
   // 5. relay
   let accounts = {

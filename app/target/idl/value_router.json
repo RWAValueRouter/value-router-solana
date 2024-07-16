@@ -288,7 +288,7 @@
       ]
     },
     {
-      "name": "prepareRelay",
+      "name": "initRecipientTokenAccounts",
       "accounts": [
         {
           "name": "payer",
@@ -335,7 +335,7 @@
         {
           "name": "params",
           "type": {
-            "defined": "PrepareRelayParams"
+            "defined": "InitRecipientTokenAccountsParams"
           }
         }
       ]
@@ -713,7 +713,7 @@
       }
     },
     {
-      "name": "PrepareRelayParams",
+      "name": "InitRecipientTokenAccountsParams",
       "type": {
         "kind": "struct",
         "fields": []
