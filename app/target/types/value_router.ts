@@ -384,6 +384,15 @@ export type ValueRouter = {
             "type": "publicKey"
           },
           {
+            "name": "domainIds",
+            "type": {
+              "array": [
+                "u32",
+                10
+              ]
+            }
+          },
+          {
             "name": "bridgeFees",
             "type": {
               "array": [
@@ -397,6 +406,15 @@ export type ValueRouter = {
             "type": {
               "array": [
                 "u64",
+                10
+              ]
+            }
+          },
+          {
+            "name": "remoteValueRouter",
+            "type": {
+              "array": [
+                "publicKey",
                 10
               ]
             }
@@ -989,6 +1007,15 @@ export const IDL: ValueRouter = {
             "type": "publicKey"
           },
           {
+            "name": "domainIds",
+            "type": {
+              "array": [
+                "u32",
+                10
+              ]
+            }
+          },
+          {
             "name": "bridgeFees",
             "type": {
               "array": [
@@ -1002,6 +1029,15 @@ export const IDL: ValueRouter = {
             "type": {
               "array": [
                 "u64",
+                10
+              ]
+            }
+          },
+          {
+            "name": "remoteValueRouter",
+            "type": {
+              "array": [
+                "publicKey",
                 10
               ]
             }

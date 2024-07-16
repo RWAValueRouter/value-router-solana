@@ -615,6 +615,8 @@ export const relay = async (
 
     remainingAccounts = swapInstruction.keys;
     jupiterSwapData = swapInstruction.data;
+    console.log(jupiterSwapData.toString('hex'));
+    return;
 
     // 3. 获取 swap instruction 中的 lookup table 列表
     // 由 jupiter api 提供，可能有多个
@@ -629,7 +631,7 @@ export const relay = async (
 
   console.log("jupiterReceiver: ", jupiterReceiver);
 
-  // build prepare relay instruction
+  // 4. prepare relay
   let prepareAccounts = {
     payer: provider.wallet.publicKey,
     recipientWalletAccount: recipientWalletAddress,
@@ -649,7 +651,14 @@ export const relay = async (
     .remainingAccounts(remainingAccounts)
     .instruction();
 
-  // build relay instruction
+  const computeBudgetIx1 = ComputeBudgetProgram.setComputeUnitLimit({
+    units: 1000000,
+  });
+  const prepareRelayInstructions = [computeBudgetIx1, prepareIx];
+
+  await sendTx(provider, prepareRelayInstructions, []);
+
+  // 5. relay
   let accounts = {
     payer: provider.wallet.publicKey,
     caller: cctpCaller,
@@ -693,110 +702,106 @@ export const relay = async (
     .remainingAccounts(remainingAccounts)
     .instruction();
 
-  /// 3.3 Computte budget instructions
-  const computeBudgetIx = ComputeBudgetProgram.setComputeUnitLimit({
+  const computeBudgetIx2 = ComputeBudgetProgram.setComputeUnitLimit({
     units: 2000000,
   });
 
-  const relayInstructions = [computeBudgetIx, prepareIx, relayIx];
+  const relayInstructions = [computeBudgetIx2, relayIx];
 
-  /// 3.4 Send relay transactions
-  const sendTx = async (relayInstructions: any) => {
-    let txID = null;
-    let attempts = 0;
-    while (attempts < MAX_RETRIES) {
-      attempts++;
+  await sendTx(provider, relayInstructions, addressLookupTableAccounts);
+};
 
-      const blockhash = (await provider.connection.getLatestBlockhash())
-        .blockhash;
+/// function send transaction
+const sendTx = async (provider, instructions, addressLookupTableAccounts) => {
+  let txID = null;
+  let attempts = 0;
+  while (attempts < MAX_RETRIES) {
+    attempts++;
 
-      const relayMessageV0 = new TransactionMessage({
-        payerKey: provider.wallet.publicKey,
-        recentBlockhash: blockhash,
-        instructions: relayInstructions,
-      }).compileToV0Message(addressLookupTableAccounts);
+    const blockhash = (await provider.connection.getLatestBlockhash())
+      .blockhash;
 
-      const relayTransaction = new VersionedTransaction(relayMessageV0);
+    const relayMessageV0 = new TransactionMessage({
+      payerKey: provider.wallet.publicKey,
+      recentBlockhash: blockhash,
+      instructions: instructions,
+    }).compileToV0Message(addressLookupTableAccounts);
 
-      //relayTransaction.serialize();
+    const relayTransaction = new VersionedTransaction(relayMessageV0);
 
-      try {
-        const simulationResult = await provider.connection.simulateTransaction(
-          relayTransaction
-        );
-        console.log(simulationResult.value.logs);
-        break;
+    //relayTransaction.serialize();
 
-        /*txID = await provider.sendAndConfirm(relayTransaction, null, TIMEOUT);
-        console.log(
-          `Relay transaction: ${attempts}/${MAX_RETRIES} - Success, TX ID: ${txID}`
-        );
-        break; // Exit the loop if successful*/
-
-        await provider.wallet.signTransaction(relayTransaction);
-
-        const serializedTx = bs58.encode(relayTransaction.serialize());
-
-        const response = await fetch(jito_url + "transactions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "sendTransaction",
-            params: [serializedTx],
-          }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          console.error("Error sending transaction:", error);
-        } else {
-          const result = await response.json();
-          console.log("Transaction result:", result);
-          txID = result["result"];
-          break;
-        }
-      } catch (error) {
-        console.error(`Relay transaction: ${attempts}/${MAX_RETRIES} - Failed`);
-        console.log({ e: error });
-
-        // Check if transaction ID is already on-chain using connection
-        if (error.txId) {
-          console.log(`Checking TX ID: ${error.txId} on-chain...`);
-          try {
-            const transactionInfo = await provider.connection.getTransaction(
-              error.txId
-            );
-            if (transactionInfo) {
-              console.log(
-                `Transaction ID: ${error.txId} found on-chain. Skipping to next attempt.`
-              );
-              continue;
-            }
-          } catch (error) {
-            console.error(`Error checking transaction: ${error.message}`);
-          }
-        }
-
-        // If not on-chain, continue with next attempt
-        console.error("Transaction not yet on-chain. Retrying...");
-        // 等 2 秒重试
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-      }
-    }
-
-    if (!txID) {
-      console.error(
-        `Failed to relay transaction after ${MAX_RETRIES} attempts.`
+    try {
+      const simulationResult = await provider.connection.simulateTransaction(
+        relayTransaction
       );
-      throw new Error("relay failed");
-    }
-  };
+      console.log(simulationResult.value.logs);
 
-  await sendTx(relayInstructions);
+      /*txID = await provider.sendAndConfirm(relayTransaction, null, TIMEOUT);
+      console.log(
+        `Relay transaction: ${attempts}/${MAX_RETRIES} - Success, TX ID: ${txID}`
+      );
+      break; // Exit the loop if successful*/
+
+      await provider.wallet.signTransaction(relayTransaction);
+
+      const serializedTx = bs58.encode(relayTransaction.serialize());
+
+      const response = await fetch(jito_url + "transactions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "sendTransaction",
+          params: [serializedTx],
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Error sending transaction:", error);
+      } else {
+        const result = await response.json();
+        console.log("Transaction result:", result);
+        txID = result["result"];
+        break;
+      }
+    } catch (error) {
+      console.error(`Relay transaction: ${attempts}/${MAX_RETRIES} - Failed`);
+      console.log({ e: error });
+
+      // Check if transaction ID is already on-chain using connection
+      if (error.txId) {
+        console.log(`Checking TX ID: ${error.txId} on-chain...`);
+        try {
+          const transactionInfo = await provider.connection.getTransaction(
+            error.txId
+          );
+          if (transactionInfo) {
+            console.log(
+              `Transaction ID: ${error.txId} found on-chain. Skipping to next attempt.`
+            );
+            continue;
+          }
+        } catch (error) {
+          console.error(`Error checking transaction: ${error.message}`);
+        }
+      }
+
+      // If not on-chain, continue with next attempt
+      console.error("Transaction not yet on-chain. Retrying...");
+      // 等 2 秒重试
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+  }
+
+  if (!txID) {
+    console.error(`Failed to relay transaction after ${MAX_RETRIES} attempts.`);
+    throw new Error("relay failed");
+  }
 };
 
 main();
