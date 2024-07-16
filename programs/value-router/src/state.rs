@@ -8,9 +8,37 @@ use {anchor_lang::prelude::*, message_transmitter::instructions::ReceiveMessageP
 /// Main state of the MessageTransmitter program
 pub struct ValueRouter {
     pub admin: Pubkey,
+    pub domain_ids: [u32; 10],
     pub bridge_fees: [u64; 10],
     pub swap_fees: [u64; 10],
+    pub remote_value_router: [Pubkey; 10],
     pub fee_receiver: Pubkey,
+}
+
+impl ValueRouter {
+    pub fn get_bridge_fee_for_domain(&self, domain: u32) -> Option<u64> {
+        if let Some(index) = self.domain_ids.iter().position(|&id| id == domain) {
+            Some(self.bridge_fees[index])
+        } else {
+            None
+        }
+    }
+
+    pub fn get_swap_fee_for_domain(&self, domain: u32) -> Option<u64> {
+        if let Some(index) = self.domain_ids.iter().position(|&id| id == domain) {
+            Some(self.swap_fees[index])
+        } else {
+            None
+        }
+    }
+
+    pub fn get_remote_value_router_for_domain(&self, domain: u32) -> Option<Pubkey> {
+        if let Some(index) = self.domain_ids.iter().position(|&id| id == domain) {
+            Some(self.remote_value_router[index])
+        } else {
+            None
+        }
+    }
 }
 
 #[account]

@@ -55,7 +55,7 @@ pub mod value_router {
         #[account(
             init_if_needed,
             payer = payer,
-            space = 240,
+            space = 584,
             seeds = [b"value_router"],
             bump
         )]
@@ -86,8 +86,10 @@ pub mod value_router {
 
     #[derive(AnchorSerialize, AnchorDeserialize, Copy, Clone)]
     pub struct SetValueRouterParams {
+        pub domain_ids: [u32; 10],
         pub bridge_fees: [u64; 10],
         pub swap_fees: [u64; 10],
+        pub remote_value_router: [Pubkey; 10],
         pub fee_receiver: Pubkey,
     }
 
@@ -96,8 +98,10 @@ pub mod value_router {
         _params: SetValueRouterParams,
     ) -> Result<()> {
         let value_router = ctx.accounts.value_router.as_mut();
+        value_router.domain_ids = _params.domain_ids;
         value_router.bridge_fees = _params.bridge_fees;
         value_router.swap_fees = _params.swap_fees;
+        value_router.remote_value_router = _params.remote_value_router;
         value_router.fee_receiver = _params.fee_receiver;
 
         Ok(())
@@ -123,7 +127,6 @@ pub mod value_router {
         Ok(())
     }
 
-    /*
     /*
     Instruction 2: SwapAndBridge
     */
@@ -160,7 +163,7 @@ pub mod value_router {
         #[account(mut)]
         pub token_minter: Box<Account<'info, TokenMinter>>,
 
-        #[account(mut)]
+        #[account()]
         pub value_router: Box<Account<'info, ValueRouter>>,
 
         // Pdas
@@ -313,10 +316,18 @@ pub mod value_router {
         let mut fee_amount: u64 = 0;
         if params.buy_args.buy_token == Pubkey::new_from_array([0; 32]) {
             // no dest swap
-            fee_amount += ctx.accounts.value_router.bridge_fees[params.dest_domain as usize];
+            fee_amount += ctx
+                .accounts
+                .value_router
+                .get_bridge_fee_for_domain(params.dest_domain)
+                .unwrap();
         } else {
             // need dest swap
-            fee_amount += ctx.accounts.value_router.swap_fees[params.dest_domain as usize];
+            fee_amount += ctx
+                .accounts
+                .value_router
+                .get_swap_fee_for_domain(params.dest_domain)
+                .unwrap();
         }
 
         let fee_ix = system_instruction::transfer(
@@ -363,6 +374,7 @@ pub mod value_router {
             program: ctx.accounts.value_router_program.to_account_info(),
         });
 
+        // TODO remote value router
         let deposit_for_burn_params = DepositForBurnWithCallerParams {
             amount: final_balance,
             destination_domain: params.dest_domain,
@@ -498,7 +510,6 @@ pub mod value_router {
 
         Ok(())
     }
-    */
 
     /*
     Instruction 3: create_relay_data
@@ -680,6 +691,9 @@ pub mod value_router {
         pub token_messenger_minter_program: Program<'info, TokenMessengerMinter>,
 
         pub value_router_program: Program<'info, program::ValueRouter>,
+
+        #[account()]
+        pub value_router: Box<Account<'info, ValueRouter>>,
 
         pub token_program: Program<'info, Token>,
 
@@ -894,17 +908,25 @@ pub mod value_router {
             &ctx.accounts.relay_params.swap_message.message[116..], //.message_body,
         )?);
 
+        // check sender
+        let bridge_message = &Message::new(
+            ctx.accounts.message_transmitter.as_ref().version,
+            &ctx.accounts.relay_params.bridge_message.message,
+        )?;
+        assert!(
+            bridge_message.sender()?
+                == ctx
+                    .accounts
+                    .value_router
+                    .get_remote_value_router_for_domain(bridge_message.source_domain()?)
+                    .unwrap(),
+            "value_router: message sender is incorrect"
+        );
+
         // check nonce
         let mut encoded_data = vec![0; 12];
-        encoded_data[..4].copy_from_slice(&5u32.to_be_bytes());
-        encoded_data[4..].copy_from_slice(
-            &Message::new(
-                ctx.accounts.message_transmitter.as_ref().version,
-                &ctx.accounts.relay_params.bridge_message.message,
-            )?
-            .nonce()?
-            .to_be_bytes(),
-        );
+        encoded_data[..4].copy_from_slice(&bridge_message.source_domain()?.to_be_bytes()); // source domain id
+        encoded_data[4..].copy_from_slice(&bridge_message.nonce()?.to_be_bytes());
         let bridge_nonce_hash = anchor_lang::solana_program::keccak::hash(encoded_data.as_slice())
             .to_bytes()
             .to_vec();
