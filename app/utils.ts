@@ -281,7 +281,8 @@ export const getRelayPdas = async (
   solUsdcAddress: PublicKey,
   remoteUsdcAddressHex: string,
   remoteDomain: string,
-  nonce: string
+  nonce1: string,
+  nonce2: string
 ) => {
   const tokenMessengerAccount = findProgramAddress(
     "token_messenger",
@@ -339,9 +340,19 @@ export const getRelayPdas = async (
     valueRouterProgram.programId
   );
 
-  const usedNonces = await messageTransmitterProgram.methods
+  const usedNonces1 = await messageTransmitterProgram.methods
     .getNoncePda({
-      nonce: new anchor.BN(nonce),
+      nonce: new anchor.BN(nonce1),
+      sourceDomain: Number(remoteDomain),
+    })
+    .accounts({
+      messageTransmitter: messageTransmitterAccount.publicKey,
+    })
+    .view();
+
+  const usedNonces2 = await messageTransmitterProgram.methods
+    .getNoncePda({
+      nonce: new anchor.BN(nonce2),
       sourceDomain: Number(remoteDomain),
     })
     .accounts({
@@ -362,7 +373,8 @@ export const getRelayPdas = async (
     vrAuthorityPda,
     tokenMessengerEventAuthority,
     cctpReceiverEventAuthority,
-    usedNonces,
+    usedNonces1,
+    usedNonces2,
     valueRouter,
   };
 };

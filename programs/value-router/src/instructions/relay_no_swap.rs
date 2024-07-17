@@ -55,7 +55,10 @@ pub struct RelayNoSwapInstruction<'info> {
 
     // Used nonces state, see UsedNonces struct for more details
     #[account(mut)]
-    pub used_nonces: Box<Account<'info, UsedNonces>>,
+    pub used_nonces_1: Box<Account<'info, UsedNonces>>,
+
+    #[account(mut)]
+    pub used_nonces_2: Box<Account<'info, UsedNonces>>,
 
     pub token_messenger_minter_program: Program<'info, TokenMessengerMinter>,
 
@@ -163,7 +166,7 @@ pub fn relay_no_swap<'a>(
         caller: ctx.accounts.caller.to_account_info(),
         authority_pda: ctx.accounts.tm_authority_pda.to_account_info(),
         message_transmitter: ctx.accounts.message_transmitter.clone().to_account_info(),
-        used_nonces: ctx.accounts.used_nonces.to_account_info(),
+        used_nonces: ctx.accounts.used_nonces_1.to_account_info(),
         receiver: ctx
             .accounts
             .token_messenger_minter_program
@@ -220,7 +223,7 @@ pub fn relay_no_swap<'a>(
         caller: ctx.accounts.caller.to_account_info(),
         authority_pda: ctx.accounts.vr_authority_pda.to_account_info(),
         message_transmitter: ctx.accounts.message_transmitter.clone().to_account_info(),
-        used_nonces: ctx.accounts.used_nonces.to_account_info(),
+        used_nonces: ctx.accounts.used_nonces_2.to_account_info(),
         receiver: ctx.accounts.cctp_message_receiver.to_account_info(),
         system_program: ctx.accounts.system_program.to_account_info(),
         event_authority: ctx

@@ -130,8 +130,8 @@ const main = async () => {
     ASSOCIATED_TOKEN_PROGRAM_ID
   );
 
-  // 获取 nonce account，用 message1 和 message 2 获取都可以
-  const nonce = decodeEventNonceFromMessage(messageHex2);
+  const bridgeNonce = decodeEventNonceFromMessage(messageHex1);
+  const swapNonce = decodeEventNonceFromMessage(messageHex2);
 
   console.log({
     sourceDomain: sourceDomain,
@@ -143,7 +143,8 @@ const main = async () => {
     userOutputTokenAccount: userOutputTokenAccount,
     userUsdcAccount: userUsdcAccount,
     remoteTokenAddressHex: remoteTokenAddressHex,
-    nonce: nonce,
+    bridgeNonce: bridgeNonce,
+    swapNonce: swapNonce,
     messageHex1: messageHex1,
     attestationHex1: attestationHex1,
     messageHex2: messageHex2,
@@ -214,7 +215,8 @@ const main = async () => {
     wsolAddress,
     remoteTokenAddressHex,
     sourceDomain,
-    nonce,
+    bridgeNonce,
+    swapNonce,
     userOutputTokenAccount,
     userUsdcAccount,
     recipientWalletAddress,
@@ -475,7 +477,8 @@ export const postMessages = async (
  * @param wsolAddress
  * @param remoteTokenAddressHex
  * @param sourceDomain
- * @param nonce
+ * @param bridgeNonce
+ * @param swapNonce
  * @param recipientOutputTokenAccount recipient 的 output token 账户，要和 swap message 指定的 recipient 匹配
  * @param recipientUsdcAccount recipient 的 usdc 账户，要和 swap message 指定的 recipient 匹配
  * @param recipientWalletAddress
@@ -493,7 +496,8 @@ export const relay = async (
   wsolAddress,
   remoteTokenAddressHex,
   sourceDomain,
-  nonce,
+  bridgeNonce,
+  swapNonce,
   recipientOutputTokenAccount,
   recipientUsdcAccount,
   recipientWalletAddress,
@@ -525,7 +529,8 @@ export const relay = async (
     usdcAddress,
     remoteTokenAddressHex,
     sourceDomain,
-    nonce
+    bridgeNonce,
+    swapNonce
   );
 
   const [cctpCaller, bump] = PublicKey.findProgramAddressSync(
@@ -669,7 +674,8 @@ export const relay = async (
     vrAuthorityPda: pdas.vrAuthorityPda,
     messageTransmitterProgram: messageTransmitterProgram.programId,
     messageTransmitter: pdas.messageTransmitterAccount.publicKey,
-    usedNonces: pdas.usedNonces,
+    usedNonces1: pdas.usedNonces1,
+    usedNonces2: pdas.usedNonces2,
     tokenMessengerMinterProgram: tokenMessengerMinterProgram.programId,
     valueRouterProgram: valueRouterProgram.programId,
     tokenProgram: TOKEN_PROGRAM_ID,
