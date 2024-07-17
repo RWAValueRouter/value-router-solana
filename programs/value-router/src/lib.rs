@@ -37,12 +37,12 @@ pub mod value_router {
     }
 
     // 4 swap_and_bridge
-    pub fn swap_and_bridge(
+    /*pub fn swap_and_bridge(
         ctx: Context<SwapAndBridgeInstruction>,
         params: SwapAndBridgeParams,
     ) -> Result<()> {
         swap_and_bridge::swap_and_bridge(ctx, params)
-    }
+    }*/
 
     // 5 create_relay_data
     pub fn create_relay_data(ctx: Context<CreateRelayData>) -> Result<()> {
@@ -79,10 +79,10 @@ pub mod value_router {
     }
 
     // 10 relay_no_swap
-    pub fn relay_no_swap<'a>(
+    /*pub fn relay_no_swap<'a>(
         ctx: Context<'_, '_, '_, 'a, RelayNoSwapInstruction<'a>>,
         params: RelayNoSwapParams,
     ) -> Result<()> {
         relay_no_swap::relay_no_swap(ctx, params)
-    }
+    }*/
 }
