@@ -13,7 +13,7 @@ pub struct InitializeContext<'info> {
     #[account(
             init_if_needed,
             payer = payer,
-            space = 584,
+            space = 600,
             seeds = [b"value_router"],
             bump
         )]

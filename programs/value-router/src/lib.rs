@@ -12,7 +12,7 @@ use {anchor_lang::prelude::*, solana_program::pubkey::Pubkey};
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("91UQaR6UCwEDYPU3pFp7r1wrSvbKzQuSnrpK1KrKdBZC");
+declare_id!("CoCTk9bJZnEGUWVLmY4igrFS4AZ4967p3wz8AYxnxUvj");
 
 #[program]
 pub mod value_router {
