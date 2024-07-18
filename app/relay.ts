@@ -621,7 +621,6 @@ export const relay = async (
     remainingAccounts = swapInstruction.keys;
     jupiterSwapData = swapInstruction.data;
     console.log(jupiterSwapData.toString("hex"));
-    return;
 
     // 3. 获取 swap instruction 中的 lookup table 列表
     // 由 jupiter api 提供，可能有多个
@@ -646,14 +645,20 @@ export const relay = async (
     systemProgram: SystemProgram.programId,
     usdcMint: usdcAddress,
     outputMint: jupiterOutput,
+    rent: SYSVAR_RENT_PUBKEY,
   };
+  console.log(
+    "++++++ recipientOutputTokenAccount: ",
+    initRecipientTokenAccountsAccounts.recipientOutputTokenAccount,
+    " ++++++"
+  );
 
   const initRecipientTokenAccountsIx = await valueRouterProgram.methods
     .initRecipientTokenAccounts({
       jupiterSwapData: jupiterSwapData,
     })
     .accounts(initRecipientTokenAccountsAccounts)
-    .remainingAccounts(remainingAccounts)
+    .remainingAccounts([recipientUsdcAccount, recipientOutputTokenAccount])
     .instruction();
 
   const computeBudgetIx1 = ComputeBudgetProgram.setComputeUnitLimit({
@@ -664,6 +669,7 @@ export const relay = async (
     initRecipientTokenAccountsIx,
   ];
 
+  console.log("send initRecipientTokenAccount tx");
   await sendTx(provider, initRecipientTokenAccountsInstructions, []);
 
   // 5. relay
@@ -678,6 +684,7 @@ export const relay = async (
     usedNonces2: pdas.usedNonces2,
     tokenMessengerMinterProgram: tokenMessengerMinterProgram.programId,
     valueRouterProgram: valueRouterProgram.programId,
+    valueRouter: pdas.valueRouter,
     tokenProgram: TOKEN_PROGRAM_ID,
     systemProgram: SystemProgram.programId,
     messageTransmitterEventAuthority: eventAuthority,
@@ -717,6 +724,7 @@ export const relay = async (
 
   const relayInstructions = [computeBudgetIx2, relayIx];
 
+  console.log("send relay tx");
   await sendTx(provider, relayInstructions, addressLookupTableAccounts);
 };
 
@@ -736,25 +744,23 @@ const sendTx = async (provider, instructions, addressLookupTableAccounts) => {
       instructions: instructions,
     }).compileToV0Message(addressLookupTableAccounts);
 
-    const relayTransaction = new VersionedTransaction(relayMessageV0);
-
-    //relayTransaction.serialize();
+    const tx = new VersionedTransaction(relayMessageV0);
 
     try {
       const simulationResult = await provider.connection.simulateTransaction(
-        relayTransaction
+        tx
       );
       console.log(simulationResult.value.logs);
 
-      /*txID = await provider.sendAndConfirm(relayTransaction, null, TIMEOUT);
+      /*txID = await provider.sendAndConfirm(tx, null, TIMEOUT);
       console.log(
         `Relay transaction: ${attempts}/${MAX_RETRIES} - Success, TX ID: ${txID}`
       );
       break; // Exit the loop if successful*/
 
-      await provider.wallet.signTransaction(relayTransaction);
+      await provider.wallet.signTransaction(tx);
 
-      const serializedTx = bs58.encode(relayTransaction.serialize());
+      const serializedTx = bs58.encode(tx.serialize());
 
       const response = await fetch(jito_url + "transactions", {
         method: "POST",

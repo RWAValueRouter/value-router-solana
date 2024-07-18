@@ -157,16 +157,6 @@
           "isSigner": false
         },
         {
-          "name": "recipientUsdcAccount",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "recipientOutputTokenAccount",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -720,6 +710,6 @@
     }
   ],
   "metadata": {
-    "address": "ELwhnsTHmDPBDReTy5AqfQp7gPwUEHMknsi1NF6ppzsG"
+    "address": "3Gf5WW3Wwv7vzhKME47YDMySn298UTeC64JVFjwfkSjr"
   }
 }
