@@ -186,14 +186,6 @@
           "isMut": false,
           "isSigner": false
         }
-      ],
-      "args": [
-        {
-          "name": "params",
-          "type": {
-            "defined": "InitRecipientTokenAccountsParams"
-          }
-        }
       ]
     },
     {
