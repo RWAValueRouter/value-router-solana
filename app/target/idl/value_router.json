@@ -158,12 +158,12 @@
         },
         {
           "name": "recipientUsdcAccount",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false
         },
         {
           "name": "recipientOutputTokenAccount",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -185,6 +185,19 @@
           "name": "outputMint",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": "InitRecipientTokenAccountsParams"
+          }
         }
       ]
     },
@@ -707,6 +720,6 @@
     }
   ],
   "metadata": {
-    "address": "CoCTk9bJZnEGUWVLmY4igrFS4AZ4967p3wz8AYxnxUvj"
+    "address": "ELwhnsTHmDPBDReTy5AqfQp7gPwUEHMknsi1NF6ppzsG"
   }
 }
