@@ -159,12 +159,12 @@
         {
           "name": "recipientUsdcAccount",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "recipientOutputTokenAccount",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "tokenProgram",
