@@ -1,5 +1,4 @@
 pub mod create_relay_data;
-pub mod init_recipient_token_accounts;
 pub mod initialize;
 pub mod post_bridge_message;
 pub mod post_swap_message;
@@ -10,7 +9,6 @@ pub mod set_value_router;
 pub mod swap_and_bridge;
 
 pub use create_relay_data::*;
-pub use init_recipient_token_accounts::*;
 pub use initialize::*;
 pub use post_bridge_message::*;
 pub use post_swap_message::*;

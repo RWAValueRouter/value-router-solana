@@ -12,7 +12,7 @@ use {anchor_lang::prelude::*, solana_program::pubkey::Pubkey};
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("3Gf5WW3Wwv7vzhKME47YDMySn298UTeC64JVFjwfkSjr");
+declare_id!("DmDqT6DZWRHHaB6HFfrHwCVmw8sNvt7TRpq5Scxssy6t");
 
 #[program]
 pub mod value_router {
@@ -62,15 +62,7 @@ pub mod value_router {
         post_swap_message::post_swap_message(ctx, params)
     }
 
-    // 8 init_recipient_token_accounts
-    pub fn init_recipient_token_accounts<'a>(
-        ctx: Context<'_, '_, '_, 'a, InitRecipientTokenAccountsInstruction<'a>>,
-        params: InitRecipientTokenAccountsParams,
-    ) -> Result<()> {
-        init_recipient_token_accounts::init_recipient_token_accounts(ctx, params)
-    }
-
-    // 9 relay
+    // 8 relay
     pub fn relay<'a>(
         ctx: Context<'_, '_, '_, 'a, RelayInstruction<'a>>,
         params: RelayParams,
@@ -78,11 +70,11 @@ pub mod value_router {
         relay::relay(ctx, params)
     }
 
-    // 10 relay_no_swap
-    /*pub fn relay_no_swap<'a>(
+    // 9 relay10_no_swap
+    pub fn relay_no_swap<'a>(
         ctx: Context<'_, '_, '_, 'a, RelayNoSwapInstruction<'a>>,
         params: RelayNoSwapParams,
     ) -> Result<()> {
         relay_no_swap::relay_no_swap(ctx, params)
-    }*/
+    }
 }

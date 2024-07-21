@@ -8,6 +8,7 @@ import {
 import {
   getAssociatedTokenAddress,
   createAssociatedTokenAccountInstruction,
+  createAssociatedTokenAccountIdempotentInstruction,
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
@@ -27,7 +28,9 @@ async function ensureTokenAccountExists(userPublicKey, mintAddress) {
   );
 
   // Check if the token account already exists
-  const accountInfo = await provider.connection.getAccountInfo(tokenAccountAddress);
+  const accountInfo = await provider.connection.getAccountInfo(
+    tokenAccountAddress
+  );
   if (accountInfo !== null) {
     console.log(
       "Token account already exists:",
@@ -38,7 +41,7 @@ async function ensureTokenAccountExists(userPublicKey, mintAddress) {
 
   // If it doesn't exist, create the token account
   const transaction = new Transaction().add(
-    createAssociatedTokenAccountInstruction(
+    createAssociatedTokenAccountIdempotentInstruction(
       provider.wallet.publicKey, // payer
       tokenAccountAddress, // token account (to address)
       userPublicKey, // token account owner
@@ -57,8 +60,12 @@ async function ensureTokenAccountExists(userPublicKey, mintAddress) {
 
 // Example usage
 (async () => {
-  const userPublicKey = new PublicKey("D5wyc7W4wfnV8WQehDxsuZ6J8Zbt3aSUpKoGpZE2ngpa");
-  const mintAddress = new PublicKey("J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn");
+  const userPublicKey = new PublicKey(
+    "D5wyc7W4wfnV8WQehDxsuZ6J8Zbt3aSUpKoGpZE2ngpa"
+  );
+  const mintAddress = new PublicKey(
+    "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn"
+  );
   const payer = Keypair.generate(); // replace with actual payer
 
   const tokenAccountAddress = await ensureTokenAccountExists(

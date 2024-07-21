@@ -14,7 +14,8 @@
     "setupALT": "tsx setupALT.ts",
     "findEvmMessage": "tsx findEvmMessage.ts",
     "setValueRouter": "tsx setValueRouter.ts",
-    "wrapWsol": "tsx wrapWsol.ts"
+    "wrapWsol": "tsx wrapWsol.ts",
+    "initTokenAccount": "tsx initTokenAccount.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",

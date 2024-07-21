@@ -647,18 +647,28 @@ export const relay = async (
     outputMint: jupiterOutput,
     rent: SYSVAR_RENT_PUBKEY,
   };
-  console.log(
-    "++++++ recipientOutputTokenAccount: ",
-    initRecipientTokenAccountsAccounts.recipientOutputTokenAccount,
-    " ++++++"
-  );
+  console.log("usdcMint: ", usdcAddress);
+  console.log("outputMint: ", jupiterOutput);
+  console.log("recipientUsdcAccount: ", recipientUsdcAccount);
+  console.log("recipientOutputTokenAccount: ", recipientOutputTokenAccount);
 
   const initRecipientTokenAccountsIx = await valueRouterProgram.methods
     .initRecipientTokenAccounts({
       jupiterSwapData: jupiterSwapData,
     })
     .accounts(initRecipientTokenAccountsAccounts)
-    .remainingAccounts([recipientUsdcAccount, recipientOutputTokenAccount])
+    .remainingAccounts([
+      {
+        pubkey: recipientUsdcAccount,
+        isWritable: false,
+        isSigner: false,
+      },
+      {
+        pubkey: recipientOutputTokenAccount,
+        isWritable: false,
+        isSigner: false,
+      },
+    ])
     .instruction();
 
   const computeBudgetIx1 = ComputeBudgetProgram.setComputeUnitLimit({
@@ -671,6 +681,8 @@ export const relay = async (
 
   console.log("send initRecipientTokenAccount tx");
   await sendTx(provider, initRecipientTokenAccountsInstructions, []);
+
+  return;
 
   // 5. relay
   let accounts = {
@@ -738,13 +750,13 @@ const sendTx = async (provider, instructions, addressLookupTableAccounts) => {
     const blockhash = (await provider.connection.getLatestBlockhash())
       .blockhash;
 
-    const relayMessageV0 = new TransactionMessage({
+    const messageV0 = new TransactionMessage({
       payerKey: provider.wallet.publicKey,
       recentBlockhash: blockhash,
       instructions: instructions,
     }).compileToV0Message(addressLookupTableAccounts);
 
-    const tx = new VersionedTransaction(relayMessageV0);
+    const tx = new VersionedTransaction(messageV0);
 
     try {
       const simulationResult = await provider.connection.simulateTransaction(
@@ -752,11 +764,11 @@ const sendTx = async (provider, instructions, addressLookupTableAccounts) => {
       );
       console.log(simulationResult.value.logs);
 
-      /*txID = await provider.sendAndConfirm(tx, null, TIMEOUT);
+      txID = await provider.sendAndConfirm(tx, null, TIMEOUT);
       console.log(
         `Relay transaction: ${attempts}/${MAX_RETRIES} - Success, TX ID: ${txID}`
       );
-      break; // Exit the loop if successful*/
+      break; // Exit the loop if successful
 
       await provider.wallet.signTransaction(tx);
 

@@ -144,54 +144,6 @@
       ]
     },
     {
-      "name": "initRecipientTokenAccounts",
-      "accounts": [
-        {
-          "name": "payer",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "recipientWalletAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "usdcMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "outputMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "params",
-          "type": {
-            "defined": "InitRecipientTokenAccountsParams"
-          }
-        }
-      ]
-    },
-    {
       "name": "relay",
       "accounts": [
         {
@@ -373,6 +325,179 @@
           }
         }
       ]
+    },
+    {
+      "name": "relayNoSwap",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "caller",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tmAuthorityPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vrAuthorityPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "messageTransmitterProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "messageTransmitter",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "usedNonces1",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "usedNonces2",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMessengerMinterProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "valueRouterProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "valueRouter",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "messageTransmitterEventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMessengerEventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cctpReceiverEventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "relayParams",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMessenger",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "remoteTokenMessenger",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMinter",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "localToken",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenPair",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "recipientUsdcAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "recipientWalletAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "custodyTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "programUsdcAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "usdcMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "outputMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "programAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cctpMessageReceiver",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": "RelayNoSwapParams"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -439,13 +564,6 @@
     }
   ],
   "types": [
-    {
-      "name": "InitRecipientTokenAccountsParams",
-      "type": {
-        "kind": "struct",
-        "fields": []
-      }
-    },
     {
       "name": "InitializeParams",
       "type": {
@@ -710,6 +828,6 @@
     }
   ],
   "metadata": {
-    "address": "3Gf5WW3Wwv7vzhKME47YDMySn298UTeC64JVFjwfkSjr"
+    "address": "DmDqT6DZWRHHaB6HFfrHwCVmw8sNvt7TRpq5Scxssy6t"
   }
 }
