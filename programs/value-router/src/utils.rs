@@ -31,6 +31,28 @@ pub fn transfer_sol<'info>(
 pub fn transfer_token<'info>(
     from_account: Account<'info, TokenAccount>,
     to_account: Account<'info, TokenAccount>,
+    authority: Signer<'info>,
+    token_program: Program<'info, Token>,
+    amount: u64,
+) -> Result<()> {
+    let cpi_accounts = Transfer {
+        from: from_account.to_account_info(),
+        to: to_account.to_account_info(),
+        authority: authority.to_account_info(),
+    };
+
+    let cpi_program = token_program.to_account_info();
+
+    let cpi_context = CpiContext::new(cpi_program, cpi_accounts);
+
+    token::transfer(cpi_context, amount)?;
+
+    Ok(())
+}
+
+pub fn transfer_token_program<'info>(
+    from_account: Account<'info, TokenAccount>,
+    to_account: Account<'info, TokenAccount>,
     authority: UncheckedAccount<'info>,
     authority_bump: &[u8],
     token_program: Program<'info, Token>,

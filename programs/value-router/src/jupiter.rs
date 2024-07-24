@@ -56,32 +56,3 @@ pub fn swap_on_jupiter<'info>(
         &[],
     )
 }
-
-#[derive(Accounts)]
-pub struct SwapToUSDC<'info> {
-    #[account(mut, seeds = [constants::AUTHORITY_SEED], bump)]
-    /// CHECK:
-    pub program_authority: UncheckedAccount<'info>,
-    /// CHECK:
-    #[account(mut, seeds = [constants::USDC_SEED], bump)]
-    pub program_usdc_account: UncheckedAccount<'info>,
-    pub user_account: Signer<'info>,
-    pub usdc_mint: Account<'info, Mint>,
-    pub jupiter_program: Program<'info, Jupiter>,
-    pub token_program: Program<'info, Token>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct USDCToSwap<'info> {
-    #[account(mut, seeds = [constants::AUTHORITY_SEED], bump)]
-    pub program_authority: SystemAccount<'info>,
-    /// CHECK: This may not be initialized yet.
-    #[account(mut, seeds = [constants::USDC_SEED], bump)]
-    pub program_usdc_account: UncheckedAccount<'info>,
-    pub user_account: Signer<'info>,
-    pub usdc_mint: Account<'info, Mint>,
-    pub jupiter_program: Program<'info, Jupiter>,
-    pub token_program: Program<'info, Token>,
-    pub system_program: Program<'info, System>,
-}

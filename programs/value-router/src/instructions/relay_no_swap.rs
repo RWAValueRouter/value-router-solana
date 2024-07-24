@@ -254,32 +254,38 @@ pub fn relay_no_swap<'a>(
         ctx.accounts.relay_params.swap_message.clone(),
     )?;
 
+    // check sender
+    let swap_message = &Message::new(
+        ctx.accounts.message_transmitter.as_ref().version,
+        &ctx.accounts.relay_params.swap_message.message,
+    )?;
+
+    assert!(
+        swap_message.sender()?
+            == ctx
+                .accounts
+                .value_router
+                .get_remote_value_router_for_domain(swap_message.source_domain()?)
+                .unwrap(),
+        "value_router: message sender is incorrect"
+    );
+
     // decode message
-    let swap_message = Box::new(SwapMessage::new(
+    let swap_message_body = Box::new(SwapMessage::new(
         1,
         &ctx.accounts.relay_params.swap_message.message[116..], //.message_body,
     )?);
 
     // check version
     assert!(
-        swap_message.get_version()? == 1,
+        swap_message_body.get_version()? == 1,
         "wrong swap message version"
     );
 
-    // check sender
     let bridge_message = &Message::new(
         ctx.accounts.message_transmitter.as_ref().version,
         &ctx.accounts.relay_params.bridge_message.message,
     )?;
-    assert!(
-        bridge_message.sender()?
-            == ctx
-                .accounts
-                .value_router
-                .get_remote_value_router_for_domain(bridge_message.source_domain()?)
-                .unwrap(),
-        "value_router: message sender is incorrect"
-    );
 
     // check nonce
     let mut encoded_data = vec![0; 12];
@@ -289,14 +295,14 @@ pub fn relay_no_swap<'a>(
         .to_bytes()
         .to_vec();
     assert!(
-        swap_message.get_bridge_nonce_hash()? == bridge_nonce_hash,
+        swap_message_body.get_bridge_nonce_hash()? == bridge_nonce_hash,
         "value_router: nonce binding incorrect"
     );
 
     assert!(
         ctx.accounts.recipient_usdc_account.key()
             == get_associated_token_address(
-                &swap_message.get_recipient()?,
+                &swap_message_body.get_recipient()?,
                 ctx.accounts.usdc_mint.key,
             ),
         "value_router: incorrect recipient's usdc account"
@@ -314,7 +320,7 @@ pub fn relay_no_swap<'a>(
     );
 
     // transfer usdc to recipient
-    let _ = utils::transfer_token(
+    let _ = utils::transfer_token_program(
         Account::<TokenAccount>::try_from(
             &ctx.accounts.program_usdc_account.clone().to_account_info(),
         )?,
