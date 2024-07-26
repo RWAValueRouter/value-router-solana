@@ -371,9 +371,6 @@ pub fn relay<'a>(
         let payer_usdc_account =
             Account::<TokenAccount>::try_from(&ctx.remaining_accounts[payer_usdc_account_index])?;
 
-        // check payer's usdc balance
-        let payer_usdc_balance_before = Box::new(payer_usdc_account.amount);
-
         // send usdc to payer
         let _ = utils::transfer_token_program(
             Account::<TokenAccount>::try_from(
@@ -385,6 +382,17 @@ pub fn relay<'a>(
             ctx.accounts.token_program.clone(),
             *usdc_bridge_amount,
         );
+
+        // check payer's usdc balance
+        let payer_usdc_balance_before = Box::new(
+            TokenAccount::try_deserialize(
+                &mut ctx.remaining_accounts[payer_usdc_account_index]
+                    .try_borrow_data()?
+                    .as_ref(),
+            )?
+            .amount,
+        );
+
         // swap
         //msg!("value_router: swap on jupiter");
         swap_on_jupiter(
@@ -417,8 +425,21 @@ pub fn relay<'a>(
         }
 
         // check payer's usdc balance change
-        let payer_usdc_balance_after = Box::new(payer_usdc_account.amount);
-        if *usdc_bridge_amount - *payer_usdc_balance_before + *payer_usdc_balance_after > 0 {
+        let payer_usdc_balance_after = Box::new(
+            TokenAccount::try_deserialize(
+                &mut ctx.remaining_accounts[payer_usdc_account_index]
+                    .try_borrow_data()?
+                    .as_ref(),
+            )?
+            .amount,
+        );
+        msg!(
+            "usdc_bridge_amount: {}, payer_usdc_balance_before: {}, payer_usdc_balance_after: {}",
+            *usdc_bridge_amount,
+            *payer_usdc_balance_before,
+            *payer_usdc_balance_after
+        );
+        if *usdc_bridge_amount - (*payer_usdc_balance_before - *payer_usdc_balance_after) > 0 {
             // send remaining usdc to program usdc account
             let _ = utils::transfer_token(
                 payer_usdc_account,
@@ -430,7 +451,7 @@ pub fn relay<'a>(
                 )?,
                 ctx.accounts.payer.clone(),
                 ctx.accounts.token_program.clone(),
-                *usdc_bridge_amount - *payer_usdc_balance_before + *payer_usdc_balance_after,
+                *usdc_bridge_amount - (*payer_usdc_balance_before - *payer_usdc_balance_after),
             );
         }
     } else {
