@@ -151,11 +151,11 @@ pub fn relay_no_swap<'a>(
     _params: RelayNoSwapParams,
 ) -> Result<()> {
     utils::create_usdc_token_idempotent(
-        ctx.accounts.program_authority.clone(),
-        ctx.accounts.program_usdc_account.clone(),
-        Box::new(Account::try_from(&ctx.accounts.usdc_mint)?),
-        ctx.accounts.token_program.clone(),
-        ctx.accounts.system_program.clone(),
+        &ctx.accounts.program_authority,
+        &ctx.accounts.program_usdc_account,
+        &Box::new(Account::try_from(&ctx.accounts.usdc_mint)?),
+        &ctx.accounts.token_program,
+        &ctx.accounts.system_program,
         &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
         &constants::USDC_IN_SEED,
         &ctx.bumps.get("program_usdc_account").unwrap().to_le_bytes(),
@@ -337,9 +337,9 @@ pub fn relay_no_swap<'a>(
     );
 
     utils::close_program_usdc(
-        ctx.accounts.program_authority.clone(),
-        ctx.accounts.program_usdc_account.clone(),
-        ctx.accounts.token_program.clone(),
+        &ctx.accounts.program_authority,
+        &ctx.accounts.program_usdc_account,
+        &ctx.accounts.token_program,
         &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
     )?;
 

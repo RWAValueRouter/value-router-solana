@@ -76,11 +76,11 @@ pub fn transfer_token_program<'info>(
 }
 
 pub fn create_usdc_token_idempotent<'info>(
-    program_authority: UncheckedAccount<'info>,
-    program_usdc_account: UncheckedAccount<'info>,
-    usdc_mint: Box<Account<'info, Mint>>,
-    token_program: Program<'info, Token>,
-    system_program: Program<'info, System>,
+    program_authority: &UncheckedAccount<'info>,
+    program_usdc_account: &UncheckedAccount<'info>,
+    usdc_mint: &Box<Account<'info, Mint>>,
+    token_program: &Program<'info, Token>,
+    system_program: &Program<'info, System>,
     authority_bump: &[u8],
     usdc_seed: &[u8],
     usdc_bump: &[u8],
@@ -148,9 +148,9 @@ pub fn create_usdc_token_idempotent<'info>(
 }
 
 pub fn close_program_usdc<'info>(
-    program_authority: UncheckedAccount<'info>,
-    program_usdc_account: UncheckedAccount<'info>,
-    token_program: Program<'info, Token>,
+    program_authority: &UncheckedAccount<'info>,
+    program_usdc_account: &UncheckedAccount<'info>,
+    token_program: &Program<'info, Token>,
     authority_bump: &[u8],
 ) -> Result<()> {
     let signer_seeds: &[&[&[u8]]] = &[&[constants::AUTHORITY_SEED, authority_bump.as_ref()]];

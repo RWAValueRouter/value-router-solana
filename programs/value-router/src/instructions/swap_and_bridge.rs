@@ -159,11 +159,11 @@ pub fn swap_and_bridge(
     let usdc_bump = ctx.bumps.get("program_usdc_account").unwrap().to_le_bytes();
 
     let initial_program_usdc_account = utils::create_usdc_token_idempotent(
-        ctx.accounts.program_authority.clone(),
-        ctx.accounts.program_usdc_account.clone(),
-        Box::new(Account::try_from(&ctx.accounts.burn_token_mint)?),
-        ctx.accounts.token_program.clone(),
-        ctx.accounts.system_program.clone(),
+        &ctx.accounts.program_authority,
+        &ctx.accounts.program_usdc_account,
+        &Box::new(Account::try_from(&ctx.accounts.burn_token_mint)?),
+        &ctx.accounts.token_program,
+        &ctx.accounts.system_program,
         &authority_bump,
         &constants::USDC_SEED,
         &usdc_bump,
@@ -313,9 +313,9 @@ pub fn swap_and_bridge(
 
     msg!("closing program usdc account");
     utils::close_program_usdc(
-        ctx.accounts.program_authority.clone(),
-        ctx.accounts.program_usdc_account.clone(),
-        ctx.accounts.token_program.clone(),
+        &ctx.accounts.program_authority,
+        &ctx.accounts.program_usdc_account,
+        &ctx.accounts.token_program,
         &authority_bump,
     )?;
     msg!("program usdc account closed");
