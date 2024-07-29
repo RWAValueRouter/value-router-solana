@@ -9,7 +9,9 @@ async function fetchTransaction(txid: TransactionSignature) {
   const connection = new Connection(SOLANA_RPC_URL, "confirmed");
 
   try {
-    const transaction = await connection.getTransaction(txid);
+    const transaction = await connection.getTransaction(txid, {
+      maxSupportedTransactionVersion: 1,
+    });
 
     if (!transaction) {
       console.log("Transaction not found");
@@ -23,8 +25,10 @@ async function fetchTransaction(txid: TransactionSignature) {
 }
 
 // Replace with the transaction ID you want to query
+//const TXID =
+//  "zHhVRzT5CWFZdBCRZp4jMdRBzmwccdD2wUkc9cjyYdLyAXXwYeD8Vpy5D99Q83xQM219WejucF48AibZ3eGXDEd";
 const TXID =
-  "zHhVRzT5CWFZdBCRZp4jMdRBzmwccdD2wUkc9cjyYdLyAXXwYeD8Vpy5D99Q83xQM219WejucF48AibZ3eGXDEd";
+  "43cTwFD1a9acCpQUYT3L39hyEo8mi9xCkmJN1MXMSkrmh81bkoPXgtpy41JyiLnPJsjd378ErSmX82zzFkQVAPxy";
 
 fetchTransaction(TXID);
 

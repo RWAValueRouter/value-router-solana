@@ -61,10 +61,15 @@ async function ensureTokenAccountExists(userPublicKey, mintAddress) {
 // Example usage
 (async () => {
   const userPublicKey = new PublicKey(
-    "D5wyc7W4wfnV8WQehDxsuZ6J8Zbt3aSUpKoGpZE2ngpa"
+    //"D5wyc7W4wfnV8WQehDxsuZ6J8Zbt3aSUpKoGpZE2ngpa"
+    //"4bW9er8krg5og3WkVYULz4QQWr9dfLooxZoCNQ4qhvCW"
+    "RdxGWo5AfTuG8TyCHNDpj6VSNhEM4KQJj4xSdj8DKNN"
   );
   const mintAddress = new PublicKey(
-    "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn"
+    //"J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn"
+    //"mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6"
+    //"Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+    "So11111111111111111111111111111111111111112"
   );
   const payer = Keypair.generate(); // replace with actual payer
 

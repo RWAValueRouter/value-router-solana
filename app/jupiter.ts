@@ -42,7 +42,7 @@ export const getSwapIx = async (
     quoteResponse: quote,
     userPublicKey: user.toBase58(),
     destinationTokenAccount: outputAccount.toBase58(),
-    useSharedAccounts: false,
+    useSharedAccounts: true,
     wrapAndUnwrapSol: true,
   };
   return fetch(config.basePath + `/swap-instructions`, {

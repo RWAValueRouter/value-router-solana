@@ -44,7 +44,8 @@ const main = async () => {
 
   remoteValueRouter[1] = new PublicKey(
     Buffer.from(
-      "0000000000000000000000002fc343EBBf550d17ddd7C7A4b4De1a57609A00F9",
+      //"0000000000000000000000002fc343EBBf550d17ddd7C7A4b4De1a57609A00F9",
+      "000000000000000000000000c36D05Fa1e5649bd3e29CA521da39FD4660914BF",
       "hex"
     )
   ); // domain = 1, value router contract = 0x2fc343EBBf550d17ddd7C7A4b4De1a57609A00F9

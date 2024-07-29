@@ -15,7 +15,10 @@
     "findEvmMessage": "tsx findEvmMessage.ts",
     "setValueRouter": "tsx setValueRouter.ts",
     "wrapWsol": "tsx wrapWsol.ts",
-    "initTokenAccount": "tsx initTokenAccount.ts"
+    "initTokenAccount": "tsx initTokenAccount.ts",
+    "checkValueRouter": "tsx checkValueRouter.ts",
+    "jupiterSwap": "tsx jupiterSwap.ts",
+    "tryTx": "tsx tryTx.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",

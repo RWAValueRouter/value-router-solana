@@ -9,6 +9,7 @@ import {
   TransactionMessage,
   VersionedTransaction,
   SYSVAR_RENT_PUBKEY,
+  Transaction,
 } from "@solana/web3.js";
 import {
   TOKEN_PROGRAM_ID,
@@ -30,7 +31,6 @@ import {
   getAdressLookupTableAccounts,
 } from "./jupiter";
 import { publicKey } from "@coral-xyz/anchor/dist/cjs/utils";
-import { Transaction } from "ethers";
 
 const jito_url = process.env.JITO_URL;
 
@@ -635,56 +635,7 @@ export const relay = async (
 
   console.log("jupiterReceiver: ", jupiterReceiver);
 
-  // 4. init recipient token accounts
-  let initRecipientTokenAccountsAccounts = {
-    payer: provider.wallet.publicKey,
-    recipientWalletAccount: recipientWalletAddress,
-    recipientUsdcAccount: recipientUsdcAccount,
-    recipientOutputTokenAccount: jupiterReceiver,
-    tokenProgram: TOKEN_PROGRAM_ID,
-    systemProgram: SystemProgram.programId,
-    usdcMint: usdcAddress,
-    outputMint: jupiterOutput,
-    rent: SYSVAR_RENT_PUBKEY,
-  };
-  console.log("usdcMint: ", usdcAddress);
-  console.log("outputMint: ", jupiterOutput);
-  console.log("recipientUsdcAccount: ", recipientUsdcAccount);
-  console.log("recipientOutputTokenAccount: ", recipientOutputTokenAccount);
-
-  const initRecipientTokenAccountsIx = await valueRouterProgram.methods
-    .initRecipientTokenAccounts({
-      jupiterSwapData: jupiterSwapData,
-    })
-    .accounts(initRecipientTokenAccountsAccounts)
-    .remainingAccounts([
-      {
-        pubkey: recipientUsdcAccount,
-        isWritable: false,
-        isSigner: false,
-      },
-      {
-        pubkey: recipientOutputTokenAccount,
-        isWritable: false,
-        isSigner: false,
-      },
-    ])
-    .instruction();
-
-  const computeBudgetIx1 = ComputeBudgetProgram.setComputeUnitLimit({
-    units: 1000000,
-  });
-  const initRecipientTokenAccountsInstructions = [
-    computeBudgetIx1,
-    initRecipientTokenAccountsIx,
-  ];
-
-  console.log("send initRecipientTokenAccount tx");
-  await sendTx(provider, initRecipientTokenAccountsInstructions, []);
-
-  return;
-
-  // 5. relay
+  // 4. relay
   let accounts = {
     payer: provider.wallet.publicKey,
     caller: cctpCaller,
@@ -696,7 +647,7 @@ export const relay = async (
     usedNonces2: pdas.usedNonces2,
     tokenMessengerMinterProgram: tokenMessengerMinterProgram.programId,
     valueRouterProgram: valueRouterProgram.programId,
-    valueRouter: pdas.valueRouter,
+    valueRouter: pdas.valueRouter.publicKey,
     tokenProgram: TOKEN_PROGRAM_ID,
     systemProgram: SystemProgram.programId,
     messageTransmitterEventAuthority: eventAuthority,
@@ -721,6 +672,8 @@ export const relay = async (
     associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
     rent: SYSVAR_RENT_PUBKEY,
   };
+  console.log("usedNonces1: ", accounts.usedNonces1);
+  console.log("usedNonces2: ", accounts.usedNonces2);
 
   const relayIx = await valueRouterProgram.methods
     .relay({
@@ -734,7 +687,11 @@ export const relay = async (
     units: 2000000,
   });
 
-  const relayInstructions = [computeBudgetIx2, relayIx];
+  const computeUnitPriceIx = ComputeBudgetProgram.setComputeUnitPrice({
+    microLamports: 150000,
+  });
+
+  const relayInstructions = [computeUnitPriceIx, computeBudgetIx2, relayIx];
 
   console.log("send relay tx");
   await sendTx(provider, relayInstructions, addressLookupTableAccounts);
@@ -764,11 +721,11 @@ const sendTx = async (provider, instructions, addressLookupTableAccounts) => {
       );
       console.log(simulationResult.value.logs);
 
-      txID = await provider.sendAndConfirm(tx, null, TIMEOUT);
+      /*txID = await provider.sendAndConfirm(tx, null, TIMEOUT);
       console.log(
         `Relay transaction: ${attempts}/${MAX_RETRIES} - Success, TX ID: ${txID}`
       );
-      break; // Exit the loop if successful
+      break; // Exit the loop if successful*/
 
       await provider.wallet.signTransaction(tx);
 

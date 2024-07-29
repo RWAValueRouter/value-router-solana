@@ -5,6 +5,11 @@ import { PublicKey } from "@solana/web3.js";
 
 import { getPrograms, getAnchorConnection } from "./utils";
 
+import {
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
+
 export const solanaAddressToHex = (solanaAddress) =>
   hexlify(bs58.decode(solanaAddress));
 
@@ -22,11 +27,14 @@ let addresses = {
   usdt: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
   billy: "3B5wuUrMEi5yATD7on46hKfej3pfmd7t1RKgrsN3pump",
   mobile: "mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6",
+  paypal: "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo", // 2022
+  jup: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
   wsol: "So11111111111111111111111111111111111111112",
   wallet: "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt",
   wallet2: "GcYJDjmMF5VaZmYk347Nrz8fJzT81suWfqGDguQtPB3U",
-  wallet3: "D5wyc7W4wfnV8WQehDxsuZ6J8Zbt3aSUpKoGpZE2ngpa",
-  wallet4: "ELHzkAeAoAxrmRxcoEfYPr6AydVVaAnYuRLVovdoye4e",
+  wallet4: "D5wyc7W4wfnV8WQehDxsuZ6J8Zbt3aSUpKoGpZE2ngpa",
+  wallet5: "ELHzkAeAoAxrmRxcoEfYPr6AydVVaAnYuRLVovdoye4e",
+  wallet6: "RdxGWo5AfTuG8TyCHNDpj6VSNhEM4KQJj4xSdj8DKNN",
   walletUsdc: "9h2CxvWshcJaNAJ9BqrzL5Y849wQXkZdMF6nQMf6c4cY",
   valueRouter: valueRouterProgram.programId.toBase58(),
   caller: "",

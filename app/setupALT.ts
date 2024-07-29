@@ -42,6 +42,7 @@ const {
   messageTransmitterProgram,
   tokenMessengerMinterProgram,
   valueRouterProgram,
+  cctpMessageReceiverProgram,
 } = getPrograms(provider);
 
 const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
@@ -62,6 +63,7 @@ const swapAndBridgePdas = getSwapAndBridgePdas(
     messageTransmitterProgram,
     tokenMessengerMinterProgram,
     valueRouterProgram,
+    cctpMessageReceiverProgram,
   },
   usdcAddress,
   0 // not used here
@@ -101,14 +103,17 @@ const createAndSendV0Tx = async ([ints]) => {
   const lookupTableAddress = new PublicKey(
     //"4eiZMuz9vSj2EGHSX3JUg3BRou1rNVG68VtsiiXXZLyp" // mainnet
     //"7XE9Q69NwcE58XKY3VWfnLB5WrdQeiRQYgEBj2VUkXYg" // devnet
-    "CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq" // mainnet
+    //"CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq" // mainnet
+    "J5y2dSuVbGd5yQpTN1wcfC97LXWkRpqK3dXYXupEZtXZ"
   );
+  console.log("lookupTableAddress: ", lookupTableAddress);
 
   const relayPdas = await getRelayPdas(
     {
       messageTransmitterProgram,
       tokenMessengerMinterProgram,
       valueRouterProgram,
+      cctpMessageReceiverProgram,
     },
     usdcAddress,
     remoteTokenAddressHex,
