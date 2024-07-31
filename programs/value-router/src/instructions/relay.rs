@@ -103,8 +103,9 @@ pub struct RelayInstruction<'info> {
     #[account(mut)]
     pub recipient_usdc_account: Box<Account<'info, TokenAccount>>,
 
+    /// CHECK: recipient output token account
     #[account(mut)]
-    pub recipient_output_token_account: Box<Account<'info, TokenAccount>>,
+    pub recipient_output_token_account: UncheckedAccount<'info>,
 
     /// CHECK: recipient wallet account
     #[account(mut)]
@@ -310,11 +311,17 @@ pub fn relay<'a>(
 
     // swap_message.get_recipient() is recipient's wallet address
     assert!(
-        ctx.accounts.recipient_output_token_account.key()
-            == get_associated_token_address(
-                &swap_message_body.get_recipient()?,
-                &swap_message_body.get_buy_token()?,
-            ),
+        *ctx.accounts.recipient_wallet_account.to_account_info().key
+            == swap_message_body.get_recipient()?,
+        "value_router: incorrect recipient's wallet account"
+    );
+    // TODO check owner
+    assert!(
+        parse_owner(
+            &ctx.accounts
+                .recipient_output_token_account
+                .try_borrow_data()?,
+        ) == swap_message_body.get_recipient()?,
         "value_router: incorrect recipient's output token account"
     );
 
@@ -350,7 +357,12 @@ pub fn relay<'a>(
         {
             token_balance_before = ctx.accounts.payer.to_account_info().lamports();
         } else {
-            token_balance_before = ctx.accounts.recipient_output_token_account.amount;
+            // TODO get balance
+            token_balance_before = parse_amount(
+                &ctx.accounts
+                    .recipient_output_token_account
+                    .try_borrow_data()?,
+            );
         }
 
         // found payer's usdc account
@@ -417,8 +429,13 @@ pub fn relay<'a>(
                 output_amount,
             );
         } else {
+            // TODO check balance
             assert!(
-                ctx.accounts.recipient_output_token_account.amount - token_balance_before
+                parse_amount(
+                    &ctx.accounts
+                        .recipient_output_token_account
+                        .try_borrow_data()?,
+                ) - token_balance_before
                     >= swap_message_body.get_guaranteed_buy_amount()?,
                 "value_router: swap output not enough"
             );
@@ -482,4 +499,15 @@ pub fn relay<'a>(
     )?;
 
     Ok(())
+}
+
+pub fn parse_owner(data: &[u8]) -> Pubkey {
+    Pubkey::new(&data[32..64])
+}
+
+pub fn parse_amount(data: &[u8]) -> u64 {
+    let amount_bytes: [u8; 8] = data[64..72]
+        .try_into()
+        .expect("slice with incorrect length");
+    u64::from_le_bytes(amount_bytes)
 }
