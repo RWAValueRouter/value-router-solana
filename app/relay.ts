@@ -14,6 +14,7 @@ import {
 import {
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 import {
   SOLANA_WSOL_ADDRESS,
@@ -124,7 +125,8 @@ const main = async () => {
   const [userOutputTokenAccount] = await PublicKey.findProgramAddressSync(
     [
       recipientWalletAddress.toBuffer(),
-      TOKEN_PROGRAM_ID.toBuffer(),
+      //TOKEN_PROGRAM_ID.toBuffer(),
+      TOKEN_2022_PROGRAM_ID.toBuffer(),
       outputTokenAddress.toBuffer(),
     ],
     ASSOCIATED_TOKEN_PROGRAM_ID
@@ -614,6 +616,18 @@ export const relay = async (
     );
     console.log(JSON.stringify(swapIx));
 
+    if (swapIx.setupInstructions.length > 0) {
+      let setupInstructions = swapIx.setupInstructions.map((instruction) => {
+        return instructionDataToTransactionInstruction(instruction);
+      });
+      console.log("setup instructions: ", setupInstructions);
+      const transaction = new Transaction();
+      setupInstructions.map((ix) => {
+        transaction.add(ix);
+      });
+      let txid = await provider.sendAndConfirm(transaction);
+      console.log("setup txid: ", txid);
+    }
     let swapInstruction = instructionDataToTransactionInstruction(
       swapIx.swapInstruction
     );
@@ -672,8 +686,7 @@ export const relay = async (
     associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
     rent: SYSVAR_RENT_PUBKEY,
   };
-  console.log("usedNonces1: ", accounts.usedNonces1);
-  console.log("usedNonces2: ", accounts.usedNonces2);
+  console.log("relay accounts: ", accounts);
 
   const relayIx = await valueRouterProgram.methods
     .relay({
@@ -684,11 +697,11 @@ export const relay = async (
     .instruction();
 
   const computeBudgetIx2 = ComputeBudgetProgram.setComputeUnitLimit({
-    units: 2000000,
+    units: 4000000,
   });
 
   const computeUnitPriceIx = ComputeBudgetProgram.setComputeUnitPrice({
-    microLamports: 150000,
+    microLamports: 5000000,
   });
 
   const relayInstructions = [computeUnitPriceIx, computeBudgetIx2, relayIx];

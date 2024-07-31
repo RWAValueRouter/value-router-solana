@@ -7,7 +7,9 @@ import { getPrograms, getAnchorConnection } from "./utils";
 
 import {
   TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  getAssociatedTokenAddress,
 } from "@solana/spl-token";
 
 export const solanaAddressToHex = (solanaAddress) =>
@@ -16,53 +18,75 @@ export const solanaAddressToHex = (solanaAddress) =>
 export const solanaAddressToArray = (solanaAddress) =>
   bs58.decode(solanaAddress);
 
-const provider = getAnchorConnection();
+(async () => {
+  const provider = getAnchorConnection();
 
-const { valueRouterProgram, cctpMessageReceiverProgram } =
-  getPrograms(provider);
+  const { valueRouterProgram, cctpMessageReceiverProgram } =
+    getPrograms(provider);
 
-let addresses = {
-  tokenMessengerMinter: "CCTPiPYPc6AsJuwueEnWgSgucamXDZwBd53dQ11YiKX3",
-  usdc: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-  usdt: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
-  billy: "3B5wuUrMEi5yATD7on46hKfej3pfmd7t1RKgrsN3pump",
-  mobile: "mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6",
-  paypal: "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo", // 2022
-  jup: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
-  wsol: "So11111111111111111111111111111111111111112",
-  wallet: "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt",
-  wallet2: "GcYJDjmMF5VaZmYk347Nrz8fJzT81suWfqGDguQtPB3U",
-  wallet4: "D5wyc7W4wfnV8WQehDxsuZ6J8Zbt3aSUpKoGpZE2ngpa",
-  wallet5: "ELHzkAeAoAxrmRxcoEfYPr6AydVVaAnYuRLVovdoye4e",
-  wallet6: "RdxGWo5AfTuG8TyCHNDpj6VSNhEM4KQJj4xSdj8DKNN",
-  walletUsdc: "9h2CxvWshcJaNAJ9BqrzL5Y849wQXkZdMF6nQMf6c4cY",
-  valueRouter: valueRouterProgram.programId.toBase58(),
-  caller: "",
-  programUsdcAccount: "",
-  programAuthority: "",
-  receiver: cctpMessageReceiverProgram.programId.toBase58(),
-};
+  let addresses = {
+    tokenMessengerMinter: "CCTPiPYPc6AsJuwueEnWgSgucamXDZwBd53dQ11YiKX3",
+    usdc: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    usdt: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+    billy: "3B5wuUrMEi5yATD7on46hKfej3pfmd7t1RKgrsN3pump",
+    mobile: "mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6",
+    paypal: "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo", // 2022
+    jup: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+    wsol: "So11111111111111111111111111111111111111112",
+    wallet: "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt",
+    wallet2: "GcYJDjmMF5VaZmYk347Nrz8fJzT81suWfqGDguQtPB3U",
+    wallet4: "D5wyc7W4wfnV8WQehDxsuZ6J8Zbt3aSUpKoGpZE2ngpa",
+    wallet5: "ELHzkAeAoAxrmRxcoEfYPr6AydVVaAnYuRLVovdoye4e",
+    wallet6: "RdxGWo5AfTuG8TyCHNDpj6VSNhEM4KQJj4xSdj8DKNN",
+    wallet6Usdc: "",
+    wallet6Paypal: "",
+    walletUsdc: "9h2CxvWshcJaNAJ9BqrzL5Y849wQXkZdMF6nQMf6c4cY",
+    valueRouter: valueRouterProgram.programId.toBase58(),
+    caller: "",
+    programUsdcAccount: "",
+    programAuthority: "",
+    receiver: cctpMessageReceiverProgram.programId.toBase58(),
+  };
 
-addresses.programAuthority = PublicKey.findProgramAddressSync(
-  [Buffer.from("authority")],
-  valueRouterProgram.programId
-)[0].toBase58();
+  const wallet6Paypal = await getAssociatedTokenAddress(
+    new PublicKey(addresses.paypal), // The mint address of the token
+    new PublicKey(addresses.wallet6), // The owner's wallet address
+    true, // AllowOwnerOffCurve: If the owner's address is off the curve
+    TOKEN_2022_PROGRAM_ID, // Token program id
+    ASSOCIATED_TOKEN_PROGRAM_ID // Associated token program id
+  );
+  addresses.wallet6Paypal = wallet6Paypal.toString();
 
-addresses.caller = PublicKey.findProgramAddressSync(
-  [Buffer.from("cctp_caller")],
-  new PublicKey(addresses.valueRouter)
-)[0].toBase58();
+  const wallet6Usdc = await getAssociatedTokenAddress(
+    new PublicKey(addresses.usdc), // The mint address of the token
+    new PublicKey(addresses.wallet6), // The owner's wallet address
+    true, // AllowOwnerOffCurve: If the owner's address is off the curve
+    TOKEN_PROGRAM_ID, // Token program id
+    ASSOCIATED_TOKEN_PROGRAM_ID // Associated token program id
+  );
+  addresses.wallet6Usdc = wallet6Usdc.toString();
 
-addresses.programUsdcAccount = PublicKey.findProgramAddressSync(
-  [Buffer.from("usdc_in")],
-  new PublicKey(addresses.valueRouter)
-)[0].toBase58();
+  addresses.programAuthority = PublicKey.findProgramAddressSync(
+    [Buffer.from("authority")],
+    valueRouterProgram.programId
+  )[0].toBase58();
 
-console.log("bs58 addresses: \n", addresses);
+  addresses.caller = PublicKey.findProgramAddressSync(
+    [Buffer.from("cctp_caller")],
+    new PublicKey(addresses.valueRouter)
+  )[0].toBase58();
 
-let hexAddresses = Object.keys(addresses).reduce((_acc, key) => {
-  _acc[key] = solanaAddressToHex((addresses as any)[key]);
-  return _acc;
-}, {} as any);
+  addresses.programUsdcAccount = PublicKey.findProgramAddressSync(
+    [Buffer.from("usdc_in")],
+    new PublicKey(addresses.valueRouter)
+  )[0].toBase58();
 
-console.log("hex addresses: \n", hexAddresses);
+  console.log("bs58 addresses: \n", addresses);
+
+  let hexAddresses = Object.keys(addresses).reduce((_acc, key) => {
+    _acc[key] = solanaAddressToHex((addresses as any)[key]);
+    return _acc;
+  }, {} as any);
+
+  console.log("hex addresses: \n", hexAddresses);
+})();

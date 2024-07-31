@@ -3,7 +3,7 @@ import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
 // Function to get account information
 async function getAccountInfo(publicKeyString: string) {
   const SOLANA_RPC_URL =
-    "https://blue-omniscient-friday.solana-mainnet.quiknode.pro/59ccc9be093f05d398a9256ef883d0b9ad4857e2";
+    "https://mainnet.helius-rpc.com/?api-key=7391bccc-4df8-409b-aeea-838e927e6123";
   // Connect to the Solana cluster
   const connection = new Connection(SOLANA_RPC_URL, "confirmed");
 
@@ -35,8 +35,9 @@ async function getAccountInfo(publicKeyString: string) {
 
 // Replace with the public key of the account you want to query
 //const publicKeyString = "CVo3cWWdQF8Lfc7ECV2fChFgPcza1nHvRzjiHMYY7UkU";
-const publicKeyString = "AdufTJ7BbuWRx5679UdY4YmYNApdLV1MDqJJ91tLE8m2";
-
+//const publicKeyString = "AdufTJ7BbuWRx5679UdY4YmYNApdLV1MDqJJ91tLE8m2";
+const publicKeyString = "9nnXjZ2wsPdDsf9P4ehvftYMk2s5RHubhitssCARCWh7";
+//const publicKeyString = "2Tv4PGKfd2utRuCbHeNJ6WjzwrMvZUwcm3xrE2hJqJnx";
 
 // Call the function
 getAccountInfo(publicKeyString).catch((err) => {

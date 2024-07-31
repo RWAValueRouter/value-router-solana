@@ -18,7 +18,8 @@
     "initTokenAccount": "tsx initTokenAccount.ts",
     "checkValueRouter": "tsx checkValueRouter.ts",
     "jupiterSwap": "tsx jupiterSwap.ts",
-    "tryTx": "tsx tryTx.ts"
+    "tryTx": "tsx tryTx.ts",
+    "inspectAccount": "tsx inspectAccount.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
