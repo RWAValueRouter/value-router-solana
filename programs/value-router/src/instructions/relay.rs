@@ -315,7 +315,6 @@ pub fn relay<'a>(
             == swap_message_body.get_recipient()?,
         "value_router: incorrect recipient's wallet account"
     );
-    // TODO check owner
     assert!(
         parse_owner(
             &ctx.accounts
@@ -357,7 +356,6 @@ pub fn relay<'a>(
         {
             token_balance_before = ctx.accounts.payer.to_account_info().lamports();
         } else {
-            // TODO get balance
             token_balance_before = parse_amount(
                 &ctx.accounts
                     .recipient_output_token_account
@@ -429,7 +427,6 @@ pub fn relay<'a>(
                 output_amount,
             );
         } else {
-            // TODO check balance
             assert!(
                 parse_amount(
                     &ctx.accounts
@@ -449,12 +446,6 @@ pub fn relay<'a>(
                     .as_ref(),
             )?
             .amount,
-        );
-        msg!(
-            "usdc_bridge_amount: {}, payer_usdc_balance_before: {}, payer_usdc_balance_after: {}",
-            *usdc_bridge_amount,
-            *payer_usdc_balance_before,
-            *payer_usdc_balance_after
         );
         if *usdc_bridge_amount - (*payer_usdc_balance_before - *payer_usdc_balance_after) > 0 {
             // send remaining usdc to program usdc account
@@ -497,6 +488,8 @@ pub fn relay<'a>(
         &ctx.accounts.token_program,
         &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
     )?;
+
+    msg!("Relay success\nsource_domain: {:?}, bridge_nonce_hash: {:?}, bridge_amount: {:?}, buy_token: {:?}", swap_message.source_domain()?, bridge_nonce_hash, *usdc_bridge_amount, swap_message_body.get_buy_token()?);
 
     Ok(())
 }

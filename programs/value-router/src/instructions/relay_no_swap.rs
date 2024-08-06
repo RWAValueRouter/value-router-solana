@@ -343,5 +343,7 @@ pub fn relay_no_swap<'a>(
         &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
     )?;
 
+    msg!("Relay success\nsource_domain: {:?}, bridge_nonce_hash: {:?}, bridge_amount: {:?}, buy_token: {:?}", swap_message.source_domain()?, bridge_nonce_hash, *usdc_balance, swap_message_body.get_buy_token()?);
+
     Ok(())
 }

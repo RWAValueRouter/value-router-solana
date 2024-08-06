@@ -12,7 +12,7 @@ use {anchor_lang::prelude::*, solana_program::pubkey::Pubkey};
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("7mJwi9PnX561LSghknRnVhjcKmBUWumFnKTMuzM5S8Gg");
+declare_id!("CLBPHmvo7ypsixAphEmUHKcPEDKwbFMiUdnUX84zmfy2");
 
 #[program]
 pub mod value_router {
@@ -37,12 +37,12 @@ pub mod value_router {
     }
 
     // 4 swap_and_bridge
-    /*pub fn swap_and_bridge(
+    pub fn swap_and_bridge(
         ctx: Context<SwapAndBridgeInstruction>,
         params: SwapAndBridgeParams,
     ) -> Result<()> {
         swap_and_bridge::swap_and_bridge(ctx, params)
-    }*/
+    }
 
     // 5 create_relay_data
     pub fn create_relay_data(ctx: Context<CreateRelayData>) -> Result<()> {
