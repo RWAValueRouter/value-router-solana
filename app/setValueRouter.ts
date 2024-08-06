@@ -38,18 +38,50 @@ const main = async () => {
       )
   );
 
+  bridgeFees[0] = new anchor.BN(100); // domain = 0, bridge fee = 0.000100
   bridgeFees[1] = new anchor.BN(100); // domain = 1, bridge fee = 0.000100
+  bridgeFees[2] = new anchor.BN(100); // domain = 2, bridge fee = 0.000100
+  bridgeFees[3] = new anchor.BN(100); // domain = 3, bridge fee = 0.000100
+  bridgeFees[6] = new anchor.BN(100); // domain = 6, bridge fee = 0.000100
+  bridgeFees[7] = new anchor.BN(100); // domain = 7, bridge fee = 0.000100
 
+  swapFees[0] = new anchor.BN(100); // domain = 0, swap fee = 0.000100
   swapFees[1] = new anchor.BN(100); // domain = 1, swap fee = 0.000100
+  swapFees[2] = new anchor.BN(100); // domain = 2, swap fee = 0.000100
+  swapFees[3] = new anchor.BN(100); // domain = 3, swap fee = 0.000100
+  swapFees[6] = new anchor.BN(100); // domain = 6, swap fee = 0.000100
+  swapFees[7] = new anchor.BN(100); // domain = 7, swap fee = 0.000100
 
   remoteValueRouter[1] = new PublicKey(
     Buffer.from(
-      //"0000000000000000000000002fc343EBBf550d17ddd7C7A4b4De1a57609A00F9",
       "000000000000000000000000c36D05Fa1e5649bd3e29CA521da39FD4660914BF",
       "hex"
     )
-  ); // domain = 1, value router contract = 0x2fc343EBBf550d17ddd7C7A4b4De1a57609A00F9
-
+  );
+  remoteValueRouter[2] = new PublicKey(
+    Buffer.from(
+      "00000000000000000000000006bCcac1D96Ec89c1Dd62F715e0487b8c6B9FC92",
+      "hex"
+    )
+  );
+  remoteValueRouter[3] = new PublicKey(
+    Buffer.from(
+      "00000000000000000000000006bCcac1D96Ec89c1Dd62F715e0487b8c6B9FC92",
+      "hex"
+    )
+  );
+  remoteValueRouter[6] = new PublicKey(
+    Buffer.from(
+      "00000000000000000000000006bCcac1D96Ec89c1Dd62F715e0487b8c6B9FC92",
+      "hex"
+    )
+  );
+  remoteValueRouter[7] = new PublicKey(
+    Buffer.from(
+      "000000000000000000000000D845c64c7196B96bB384e11361b2DeeE0D83921a",
+      "hex"
+    )
+  );
   const setValueRouterTx = await valueRouterProgram.methods
     .setValueRouter({
       domainIds: domainIds,
