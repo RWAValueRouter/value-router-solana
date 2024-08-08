@@ -15,7 +15,8 @@ pub struct InitializeContext<'info> {
             payer = payer,
             space = 600,
             seeds = [b"value_router"],
-            bump
+            bump,
+            constraint = value_router.admin == Pubkey::default() @ InitializeErrorCode::AccountAlreadyInitialized
         )]
     pub value_router: Box<Account<'info, ValueRouter>>,
 
@@ -32,4 +33,11 @@ pub fn initialize(ctx: Context<InitializeContext>, _params: InitializeParams) ->
 
     value_router.admin = ctx.accounts.payer.key();
     Ok(())
+}
+
+// Define a custom error code
+#[error_code]
+pub enum InitializeErrorCode {
+    #[msg("The account has already been initialized")]
+    AccountAlreadyInitialized,
 }
