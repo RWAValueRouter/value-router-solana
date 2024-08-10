@@ -418,7 +418,9 @@ pub fn relay<'a>(
                 &ctx.accounts.payer.to_account_info().lamports() - token_balance_before;
             assert!(
                 output_amount >= swap_message_body.get_guaranteed_buy_amount()?,
-                "value_router: swap output not enough"
+                "value_router: swap output not enough, have {:?}, expect {:?}",
+                output_amount,
+                swap_message_body.get_guaranteed_buy_amount()?
             );
             let _ = utils::transfer_sol(
                 &ctx.accounts.payer,
@@ -427,14 +429,16 @@ pub fn relay<'a>(
                 output_amount,
             );
         } else {
+            let output = parse_amount(
+                &ctx.accounts
+                    .recipient_output_token_account
+                    .try_borrow_data()?,
+            ) - token_balance_before;
             assert!(
-                parse_amount(
-                    &ctx.accounts
-                        .recipient_output_token_account
-                        .try_borrow_data()?,
-                ) - token_balance_before
-                    >= swap_message_body.get_guaranteed_buy_amount()?,
-                "value_router: swap output not enough"
+                output >= swap_message_body.get_guaranteed_buy_amount()?,
+                "value_router: swap output not enough, have {:?}, expect {:?}",
+                output,
+                swap_message_body.get_guaranteed_buy_amount()?
             );
         }
 
