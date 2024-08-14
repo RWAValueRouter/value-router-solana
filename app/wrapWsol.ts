@@ -26,7 +26,8 @@ export async function createWsolAccountAndConvertSolToWsol(amount: number) {
     spl.createAssociatedTokenAccountInstruction(
       provider.wallet.publicKey,
       associatedToken,
-      provider.wallet.publicKey,
+      //provider.wallet.publicKey,
+      new PublicKey("4bW9er8krg5og3WkVYULz4QQWr9dfLooxZoCNQ4qhvCW"),
       wsolMint,
       spl.TOKEN_PROGRAM_ID,
       spl.ASSOCIATED_TOKEN_PROGRAM_ID
@@ -77,8 +78,10 @@ export async function initUsdcAccount() {
   provider.opts.expire = 4294967295;
 
   const associatedToken = spl.getAssociatedTokenAddressSync(
-    usdcMint,
-    provider.wallet.publicKey,
+    //usdcMint,
+    wsolMint,
+    //provider.wallet.publicKey,
+    new PublicKey("4bW9er8krg5og3WkVYULz4QQWr9dfLooxZoCNQ4qhvCW"),
     false,
     spl.TOKEN_PROGRAM_ID,
     spl.ASSOCIATED_TOKEN_PROGRAM_ID
@@ -88,8 +91,10 @@ export async function initUsdcAccount() {
     spl.createAssociatedTokenAccountInstruction(
       provider.wallet.publicKey,
       associatedToken,
-      provider.wallet.publicKey,
-      usdcMint,
+      //provider.wallet.publicKey,
+      new PublicKey("4bW9er8krg5og3WkVYULz4QQWr9dfLooxZoCNQ4qhvCW"),
+      //usdcMint,
+      wsolMint,
       spl.TOKEN_PROGRAM_ID,
       spl.ASSOCIATED_TOKEN_PROGRAM_ID
     )

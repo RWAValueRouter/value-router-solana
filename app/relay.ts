@@ -15,6 +15,8 @@ import {
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
+  createSyncNativeInstruction,
+  getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
 import {
   SOLANA_WSOL_ADDRESS,
@@ -183,12 +185,23 @@ const main = async () => {
     [Buffer.from("value_router")],
     valueRouterProgram.programId
   )[0];
+  console.log("valueRouter: ", valueRouter);
 
-  const accountInfo = await provider.connection.getAccountInfo(valueRouter);
+  const accountInfo = await (async () => {
+    while (true) {
+      try {
+        const accountInfo = await provider.connection.getAccountInfo(
+          valueRouter
+        );
+        return accountInfo;
+      } catch (error) {
+        console.log(error);
+        setTimeout(() => {}, 1000);
+      }
+    }
+  })();
 
   const receiver = new PublicKey(accountInfo.data.slice(9, 41));
-
-  console.log("valueRouter: ", valueRouter);
   console.log("receiver: ", receiver);
 
   /// 1. Create RelayData account transaction
@@ -238,9 +251,19 @@ export const createDataAccount = async (
 ) => {
   console.log("\n\n1. Create data account\n");
 
-  const accountInfo = await provider.connection.getAccountInfo(
-    relayDataKeypair.publicKey
-  );
+  const accountInfo = await (async () => {
+    while (true) {
+      try {
+        const accountInfo = await provider.connection.getAccountInfo(
+          relayDataKeypair.publicKey
+        );
+        return accountInfo;
+      } catch (error) {
+        console.log(error);
+        setTimeout(() => {}, 1000);
+      }
+    }
+  })();
   if (accountInfo) {
     console.log("relay data account exists:", accountInfo);
 
@@ -270,9 +293,19 @@ export const createDataAccount = async (
       console.log("create relay data account transaction: ", { txID });
 
       // 查询relayDataKeypair的pubkey对应的account是否存在
-      const accountInfo = await provider.connection.getAccountInfo(
-        relayDataKeypair.publicKey
-      );
+      const accountInfo = await (async () => {
+        while (true) {
+          try {
+            const accountInfo = await provider.connection.getAccountInfo(
+              relayDataKeypair.publicKey
+            );
+            return accountInfo;
+          } catch (error) {
+            console.log(error);
+            setTimeout(() => {}, 1000);
+          }
+        }
+      })();
       if (accountInfo) {
         console.log("relay data account exists:", accountInfo);
 
@@ -290,9 +323,19 @@ export const createDataAccount = async (
       retryCount++;
 
       // 每次尝试不论成功或失败都要查询relayDataKeypair的pubkey对应的account是否存在
-      const accountInfo = await provider.connection.getAccountInfo(
-        relayDataKeypair.publicKey
-      );
+      const accountInfo = await (async () => {
+        while (true) {
+          try {
+            const accountInfo = await provider.connection.getAccountInfo(
+              relayDataKeypair.publicKey
+            );
+            return accountInfo;
+          } catch (error) {
+            console.log(error);
+            setTimeout(() => {}, 1000);
+          }
+        }
+      })();
       if (accountInfo) {
         console.log("relay data account exists:", accountInfo);
 
@@ -336,9 +379,19 @@ export const postMessages = async (
     attestation: Buffer.from(messages[1].attestation.replace("0x", ""), "hex"),
   };
 
-  const accountInfo = await provider.connection.getAccountInfo(
-    relayDataKeypair.publicKey
-  );
+  const accountInfo = await (async () => {
+    while (true) {
+      try {
+        const accountInfo = await provider.connection.getAccountInfo(
+          relayDataKeypair.publicKey
+        );
+        return accountInfo;
+      } catch (error) {
+        console.log(error);
+        setTimeout(() => {}, 1000);
+      }
+    }
+  })();
   if (accountInfo) {
     console.log("relay data account exists:", accountInfo);
 
@@ -410,9 +463,19 @@ export const postMessages = async (
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
       // 查看 account 是否更新成功
-      const accountInfo = await provider.connection.getAccountInfo(
-        relayDataKeypair.publicKey
-      );
+      const accountInfo = await (async () => {
+        while (true) {
+          try {
+            const accountInfo = await provider.connection.getAccountInfo(
+              relayDataKeypair.publicKey
+            );
+            return accountInfo;
+          } catch (error) {
+            console.log(error);
+            setTimeout(() => {}, 1000);
+          }
+        }
+      })();
       if (accountInfo) {
         // sendAndConfirm 结果成功
         // 检查 account data 是否已经更新
@@ -433,9 +496,19 @@ export const postMessages = async (
       retryCount++;
 
       // 每次尝试不论成功或失败都要查询relayDataKeypair的pubkey对应的account是否存在
-      const accountInfo = await provider.connection.getAccountInfo(
-        relayDataKeypair.publicKey
-      );
+      const accountInfo = await (async () => {
+        while (true) {
+          try {
+            const accountInfo = await provider.connection.getAccountInfo(
+              relayDataKeypair.publicKey
+            );
+            return accountInfo;
+          } catch (error) {
+            console.log(error);
+            setTimeout(() => {}, 1000);
+          }
+        }
+      })();
       if (accountInfo) {
         console.log("relay data account exists:", accountInfo);
 
@@ -595,7 +668,7 @@ export const relay = async (
 
     if (outputToken.equals(wsolHex)) {
       jupiterOutput = wsolAddress;
-      //jupiterReceiver = "";
+      //jupiterReceiver = provider.wallet.publicKey;
     }
 
     // 构建 jupiter swap 参数
@@ -621,13 +694,28 @@ export const relay = async (
         return instructionDataToTransactionInstruction(instruction);
       });
       console.log("setup instructions: ", setupInstructions);
-      const transaction = new Transaction();
+      /*const transaction = new Transaction();
       setupInstructions.map((ix) => {
         transaction.add(ix);
       });
-      let txid = await provider.sendAndConfirm(transaction);
-      console.log("setup txid: ", txid);
+      let txid = await provider.sendAndConfirm(transaction);*/
+      //console.log("setup txid: ", txid);
+      await sendTx(provider, setupInstructions, []);
     }
+
+    // sync native
+    /*const syncIx = createSyncNativeInstruction(
+      getAssociatedTokenAddressSync(
+        wsolAddress,
+        provider.wallet.publicKey,
+        false,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      ),
+      TOKEN_PROGRAM_ID
+    );
+    await sendTx(provider, [syncIx], []);*/
+
     let swapInstruction = instructionDataToTransactionInstruction(
       swapIx.swapInstruction
     );
@@ -701,7 +789,7 @@ export const relay = async (
   });
 
   const computeUnitPriceIx = ComputeBudgetProgram.setComputeUnitPrice({
-    microLamports: 5000000,
+    microLamports: 300000,
   });
 
   const relayInstructions = [computeUnitPriceIx, computeBudgetIx2, relayIx];
@@ -732,13 +820,13 @@ const sendTx = async (provider, instructions, addressLookupTableAccounts) => {
       const simulationResult = await provider.connection.simulateTransaction(
         tx
       );
-      console.log(simulationResult.value.logs);
+      console.log("simulate logs: ", simulationResult.value.logs);
 
-      /*txID = await provider.sendAndConfirm(tx, null, TIMEOUT);
+      txID = await provider.sendAndConfirm(tx, null, TIMEOUT);
       console.log(
         `Relay transaction: ${attempts}/${MAX_RETRIES} - Success, TX ID: ${txID}`
       );
-      break; // Exit the loop if successful*/
+      break; // Exit the loop if successful
 
       await provider.wallet.signTransaction(tx);
 

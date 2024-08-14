@@ -33,6 +33,8 @@ export const solanaAddressToArray = (solanaAddress) =>
     paypal: "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo", // 2022
     jup: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
     wsol: "So11111111111111111111111111111111111111112",
+    relayerWallet: "4bW9er8krg5og3WkVYULz4QQWr9dfLooxZoCNQ4qhvCW",
+    relayerWsol: "",
     wallet: "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt",
     wallet2: "GcYJDjmMF5VaZmYk347Nrz8fJzT81suWfqGDguQtPB3U",
     wallet4: "D5wyc7W4wfnV8WQehDxsuZ6J8Zbt3aSUpKoGpZE2ngpa",
@@ -65,6 +67,15 @@ export const solanaAddressToArray = (solanaAddress) =>
     ASSOCIATED_TOKEN_PROGRAM_ID // Associated token program id
   );
   addresses.wallet6Usdc = wallet6Usdc.toString();
+
+  const relayerWsol = await getAssociatedTokenAddress(
+    new PublicKey(addresses.wsol), // The mint address of the token
+    new PublicKey(addresses.relayerWallet), // The owner's wallet address
+    true, // AllowOwnerOffCurve: If the owner's address is off the curve
+    TOKEN_PROGRAM_ID, // Token program id
+    ASSOCIATED_TOKEN_PROGRAM_ID // Associated token program id
+  );
+  addresses.relayerWsol = relayerWsol.toString();
 
   addresses.programAuthority = PublicKey.findProgramAddressSync(
     [Buffer.from("authority")],

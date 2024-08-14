@@ -315,14 +315,17 @@ pub fn relay<'a>(
             == swap_message_body.get_recipient()?,
         "value_router: incorrect recipient's wallet account"
     );
-    assert!(
-        parse_owner(
-            &ctx.accounts
-                .recipient_output_token_account
-                .try_borrow_data()?,
-        ) == swap_message_body.get_recipient()?,
-        "value_router: incorrect recipient's output token account"
-    );
+    if swap_message_body.get_buy_token()? != pubkey!("So11111111111111111111111111111111111111112")
+    {
+        assert!(
+            parse_owner(
+                &ctx.accounts
+                    .recipient_output_token_account
+                    .try_borrow_data()?,
+            ) == swap_message_body.get_recipient()?,
+            "value_router: incorrect recipient's output token account"
+        );
+    }
 
     assert!(
         ctx.accounts.recipient_usdc_account.key()

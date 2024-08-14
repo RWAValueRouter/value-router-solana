@@ -16,6 +16,7 @@ export const getQuote_2 = async (inputMint, outputMint, amount) => {
     inputMint: inputMint,
     outputMint: outputMint,
     amount: amount,
+    autoSlippage: true,
     // platformFeeBps: 10,
     // asLegacyTransaction: true, // legacy transaction, default is versoined transaction
   });
