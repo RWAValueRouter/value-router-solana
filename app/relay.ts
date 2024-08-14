@@ -127,8 +127,8 @@ const main = async () => {
   const [userOutputTokenAccount] = await PublicKey.findProgramAddressSync(
     [
       recipientWalletAddress.toBuffer(),
-      //TOKEN_PROGRAM_ID.toBuffer(),
-      TOKEN_2022_PROGRAM_ID.toBuffer(),
+      TOKEN_PROGRAM_ID.toBuffer(),
+      //TOKEN_2022_PROGRAM_ID.toBuffer(),
       outputTokenAddress.toBuffer(),
     ],
     ASSOCIATED_TOKEN_PROGRAM_ID
@@ -668,7 +668,13 @@ export const relay = async (
 
     if (outputToken.equals(wsolHex)) {
       jupiterOutput = wsolAddress;
-      //jupiterReceiver = provider.wallet.publicKey;
+      jupiterReceiver = getAssociatedTokenAddressSync(
+        wsolAddress,
+        provider.wallet.publicKey,
+        false,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+      );
     }
 
     // 构建 jupiter swap 参数
@@ -762,7 +768,7 @@ export const relay = async (
     localToken: pdas.localToken.publicKey,
     tokenPair: pdas.tokenPair.publicKey,
     recipientUsdcAccount: recipientUsdcAccount,
-    recipientOutputTokenAccount: jupiterReceiver,
+    recipientOutputTokenAccount: recipientOutputTokenAccount,
     recipientWalletAccount: recipientWalletAddress,
     custodyTokenAccount: pdas.custodyTokenAccount.publicKey,
     programUsdcAccount: programUsdcAccount,

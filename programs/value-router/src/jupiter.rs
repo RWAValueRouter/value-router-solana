@@ -1,14 +1,8 @@
 //! Jupiter
 
-use {
-    crate::constants,
-    anchor_lang::{
-        prelude::*,
-        solana_program::{
-            entrypoint::ProgramResult, instruction::Instruction, program::invoke_signed,
-        },
-    },
-    anchor_spl::token::{Mint, Token},
+use anchor_lang::{
+    prelude::*,
+    solana_program::{entrypoint::ProgramResult, instruction::Instruction, program::invoke_signed},
 };
 
 mod jupiter {

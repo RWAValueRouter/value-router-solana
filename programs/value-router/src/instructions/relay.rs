@@ -9,7 +9,7 @@ use {
     },
     anchor_lang::prelude::*,
     anchor_spl::associated_token::{get_associated_token_address, AssociatedToken},
-    anchor_spl::token::{Token, TokenAccount},
+    anchor_spl::token::{self, Burn, Token, TokenAccount},
     message_transmitter::{
         cpi::accounts::ReceiveMessageContext,
         message::Message,
@@ -103,7 +103,7 @@ pub struct RelayInstruction<'info> {
     #[account(mut)]
     pub recipient_usdc_account: Box<Account<'info, TokenAccount>>,
 
-    /// CHECK: recipient output token account
+    /// CHECK: jupiter swap recipient output token account
     #[account(mut)]
     pub recipient_output_token_account: UncheckedAccount<'info>,
 
@@ -325,6 +325,15 @@ pub fn relay<'a>(
             ) == swap_message_body.get_recipient()?,
             "value_router: incorrect recipient's output token account"
         );
+    } else {
+        assert!(
+            parse_owner(
+                &ctx.accounts
+                    .recipient_output_token_account
+                    .try_borrow_data()?,
+            ) == *ctx.accounts.payer.to_account_info().key,
+            "value_router: incorrect recipient's output token account"
+        );
     }
 
     assert!(
@@ -337,7 +346,7 @@ pub fn relay<'a>(
     );
 
     // check usdc balance change of usdc_vault;
-    let mut usdc_bridge_amount: Box<u64> = Box::new(
+    let usdc_bridge_amount: Box<u64> = Box::new(
         TokenAccount::try_deserialize(
             &mut ctx
                 .accounts
@@ -353,18 +362,11 @@ pub fn relay<'a>(
             *usdc_bridge_amount >= swap_message_body.get_sell_amount()?,
             "value_router: no enough usdc amount to swap"
         );
-        let token_balance_before;
-        if swap_message_body.get_buy_token()?
-            == pubkey!("So11111111111111111111111111111111111111112")
-        {
-            token_balance_before = ctx.accounts.payer.to_account_info().lamports();
-        } else {
-            token_balance_before = parse_amount(
-                &ctx.accounts
-                    .recipient_output_token_account
-                    .try_borrow_data()?,
-            );
-        }
+        let token_balance_before = parse_amount(
+            &ctx.accounts
+                .recipient_output_token_account
+                .try_borrow_data()?,
+        );
 
         // found payer's usdc account
         let mut payer_usdc_account_index = 0;
@@ -414,17 +416,33 @@ pub fn relay<'a>(
             params.jupiter_swap_data,
         )?;
 
+        let output_amount = parse_amount(
+            &ctx.accounts
+                .recipient_output_token_account
+                .try_borrow_data()?,
+        ) - token_balance_before;
         if swap_message_body.get_buy_token()?
             == pubkey!("So11111111111111111111111111111111111111112")
         {
-            let output_amount =
-                &ctx.accounts.payer.to_account_info().lamports() - token_balance_before;
             assert!(
                 output_amount >= swap_message_body.get_guaranteed_buy_amount()?,
                 "value_router: swap output not enough, have {:?}, expect {:?}",
                 output_amount,
                 swap_message_body.get_guaranteed_buy_amount()?
             );
+            // unwrap
+            let burn_cpi_accounts = Box::new(Burn {
+                mint: ctx.accounts.output_mint.to_account_info(),
+                from: ctx.accounts.recipient_wallet_account.to_account_info(),
+                authority: ctx.accounts.payer.to_account_info(),
+            });
+
+            let burn_cpi_ctx = Box::new(CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                *burn_cpi_accounts,
+            ));
+            token::burn(*burn_cpi_ctx, output_amount)?;
+
             let _ = utils::transfer_sol(
                 &ctx.accounts.payer,
                 &ctx.accounts.recipient_wallet_account,
@@ -432,15 +450,10 @@ pub fn relay<'a>(
                 output_amount,
             );
         } else {
-            let output = parse_amount(
-                &ctx.accounts
-                    .recipient_output_token_account
-                    .try_borrow_data()?,
-            ) - token_balance_before;
             assert!(
-                output >= swap_message_body.get_guaranteed_buy_amount()?,
+                output_amount >= swap_message_body.get_guaranteed_buy_amount()?,
                 "value_router: swap output not enough, have {:?}, expect {:?}",
-                output,
+                output_amount,
                 swap_message_body.get_guaranteed_buy_amount()?
             );
         }
