@@ -583,7 +583,7 @@ export const relay = async (
   console.log("\n\n3. Relay\n");
 
   const LOOKUP_TABLE_ADDRESS = new PublicKey(
-    "CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq"
+    "47cYDtFWHLqF6pGSdcTibrfsoGV5SKcMZ429vn1D9vGb"
   );
 
   // value router 专用的 lookup table 列表
@@ -768,7 +768,7 @@ export const relay = async (
     localToken: pdas.localToken.publicKey,
     tokenPair: pdas.tokenPair.publicKey,
     recipientUsdcAccount: recipientUsdcAccount,
-    recipientOutputTokenAccount: recipientOutputTokenAccount,
+    recipientOutputTokenAccount: jupiterReceiver,
     recipientWalletAccount: recipientWalletAddress,
     custodyTokenAccount: pdas.custodyTokenAccount.publicKey,
     programUsdcAccount: programUsdcAccount,

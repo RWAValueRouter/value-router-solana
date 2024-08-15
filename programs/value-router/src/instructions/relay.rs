@@ -9,7 +9,7 @@ use {
     },
     anchor_lang::prelude::*,
     anchor_spl::associated_token::{get_associated_token_address, AssociatedToken},
-    anchor_spl::token::{self, Burn, Token, TokenAccount},
+    anchor_spl::token::{self, CloseAccount, Token, TokenAccount},
     message_transmitter::{
         cpi::accounts::ReceiveMessageContext,
         message::Message,
@@ -105,7 +105,7 @@ pub struct RelayInstruction<'info> {
 
     /// CHECK: jupiter swap recipient output token account
     #[account(mut)]
-    pub recipient_output_token_account: UncheckedAccount<'info>,
+    pub recipient_output_token_account: AccountInfo<'info>,
 
     /// CHECK: recipient wallet account
     #[account(mut)]
@@ -130,6 +130,7 @@ pub struct RelayInstruction<'info> {
     pub usdc_mint: UncheckedAccount<'info>,
 
     /// CHECK:
+    #[account()]
     pub output_mint: UncheckedAccount<'info>,
 
     /// CHECK:
@@ -371,27 +372,28 @@ pub fn relay<'a>(
         // found payer's usdc account
         let mut payer_usdc_account_index = 0;
 
-        let payer_usdc_key = get_associated_token_address(
+        let payer_usdc_key = Box::new(get_associated_token_address(
             &ctx.accounts.payer.clone().to_account_info().key,
             &ctx.accounts.usdc_mint.key(),
-        );
+        ));
 
         for (i, account_info) in ctx.remaining_accounts.iter().enumerate() {
-            if *account_info.key == payer_usdc_key {
+            if *account_info.key == *payer_usdc_key {
                 payer_usdc_account_index = i;
                 break;
             }
         }
 
-        let payer_usdc_account =
-            Account::<TokenAccount>::try_from(&ctx.remaining_accounts[payer_usdc_account_index])?;
+        let payer_usdc_account = Box::new(Account::<TokenAccount>::try_from(
+            &ctx.remaining_accounts[payer_usdc_account_index],
+        )?);
 
         // send usdc to payer
         let _ = utils::transfer_token_program(
             Account::<TokenAccount>::try_from(
                 &ctx.accounts.program_usdc_account.clone().to_account_info(),
             )?,
-            payer_usdc_account.clone(),
+            *(payer_usdc_account.clone()),
             ctx.accounts.program_authority.clone(),
             &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
             ctx.accounts.token_program.clone(),
@@ -421,6 +423,7 @@ pub fn relay<'a>(
                 .recipient_output_token_account
                 .try_borrow_data()?,
         ) - token_balance_before;
+        //msg!("swap output: {:?}", output_amount);
         if swap_message_body.get_buy_token()?
             == pubkey!("So11111111111111111111111111111111111111112")
         {
@@ -431,17 +434,18 @@ pub fn relay<'a>(
                 swap_message_body.get_guaranteed_buy_amount()?
             );
             // unwrap
-            let burn_cpi_accounts = Box::new(Burn {
-                mint: ctx.accounts.output_mint.to_account_info(),
-                from: ctx.accounts.recipient_wallet_account.to_account_info(),
-                authority: ctx.accounts.payer.to_account_info(),
-            });
-
-            let burn_cpi_ctx = Box::new(CpiContext::new(
+            let close_wsol_cpi_ctx = Box::new(CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
-                *burn_cpi_accounts,
+                CloseAccount {
+                    account: ctx
+                        .accounts
+                        .recipient_output_token_account
+                        .to_account_info(),
+                    destination: ctx.accounts.payer.to_account_info(),
+                    authority: ctx.accounts.payer.to_account_info(),
+                },
             ));
-            token::burn(*burn_cpi_ctx, output_amount)?;
+            token::close_account(*close_wsol_cpi_ctx)?;
 
             let _ = utils::transfer_sol(
                 &ctx.accounts.payer,
@@ -470,7 +474,7 @@ pub fn relay<'a>(
         if *usdc_bridge_amount - (*payer_usdc_balance_before - *payer_usdc_balance_after) > 0 {
             // send remaining usdc to program usdc account
             let _ = utils::transfer_token(
-                payer_usdc_account,
+                *payer_usdc_account,
                 Account::<TokenAccount>::try_from(
                     &ctx.accounts
                         .recipient_usdc_account
