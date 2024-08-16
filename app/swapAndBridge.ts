@@ -43,12 +43,11 @@ const remoteValueRouter = new PublicKey(
   getBytes(evmAddressToBytes32(process.env.REMOTE_VALUE_ROUTER!))
 );
 const LOOKUP_TABLE_2_ADDRESS = new PublicKey(
-  //"4eiZMuz9vSj2EGHSX3JUg3BRou1rNVG68VtsiiXXZLyp"
-  "CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq"
+  "G6XcDmLhLDBDxeYpCiumt1KCRiNEDoFh3JEdTXu5H4kf"
 );
 
-//const inputToken = usdtAddress;
-const inputToken = wsolAddress;
+const inputToken = usdtAddress;
+//const inputToken = wsolAddress;
 
 const sellTokenAmount = Number(process.env.SELL_AMOUNT ?? 1);
 const bridgeUsdcAmount = new anchor.BN(process.env.BRIDGE_USDC_AMOUNT ?? 1);
@@ -154,6 +153,10 @@ const sendSwapAndBridgeTx = async () => {
   );
 
   let computeBudgetInstructions = swapIx.computeBudgetInstructions;
+
+  const computeUnitPriceIx = ComputeBudgetProgram.setComputeUnitPrice({
+    microLamports: 500000,
+  });
 
   /// 3. Get accounts
   const pdas = getSwapAndBridgePdas(
@@ -274,7 +277,7 @@ const sendSwapAndBridgeTx = async () => {
 
   const instructions = [
     ...computeBudgetInstructions.map(instructionDataToTransactionInstruction),
-    //addPriorityFee,
+    computeUnitPriceIx,
     swapAndBridgeInstruction,
   ];
 
@@ -293,6 +296,11 @@ const sendSwapAndBridgeTx = async () => {
       messageSentEventAccountKeypair1,
       messageSentEventAccountKeypair2,
     ]);
+
+    const simulationResult = await provider.connection.simulateTransaction(
+      transaction
+    );
+    console.log("simulate logs: ", simulationResult.value.logs);
 
     await provider.wallet.signTransaction(transaction);
 

@@ -172,98 +172,104 @@ pub fn relay<'a>(
         &ctx.bumps.get("program_usdc_account").unwrap().to_le_bytes(),
     )?;
 
-    let accounts_1 = Box::new(ReceiveMessageContext {
-        payer: ctx.accounts.payer.to_account_info(),
-        caller: ctx.accounts.caller.to_account_info(),
-        authority_pda: ctx.accounts.tm_authority_pda.to_account_info(),
-        message_transmitter: ctx.accounts.message_transmitter.clone().to_account_info(),
-        used_nonces: ctx.accounts.used_nonces_1.to_account_info(),
-        receiver: ctx
-            .accounts
-            .token_messenger_minter_program
-            .to_account_info(),
-        system_program: ctx.accounts.system_program.to_account_info(),
-        event_authority: ctx
-            .accounts
-            .message_transmitter_event_authority
-            .to_account_info(),
-        program: ctx.accounts.value_router_program.to_account_info(),
-    });
+    {
+        let accounts_1 = Box::new(ReceiveMessageContext {
+            payer: ctx.accounts.payer.to_account_info(),
+            caller: ctx.accounts.caller.to_account_info(),
+            authority_pda: ctx.accounts.tm_authority_pda.to_account_info(),
+            message_transmitter: ctx.accounts.message_transmitter.clone().to_account_info(),
+            used_nonces: ctx.accounts.used_nonces_1.to_account_info(),
+            receiver: ctx
+                .accounts
+                .token_messenger_minter_program
+                .to_account_info(),
+            system_program: ctx.accounts.system_program.to_account_info(),
+            event_authority: ctx
+                .accounts
+                .message_transmitter_event_authority
+                .to_account_info(),
+            program: ctx.accounts.value_router_program.to_account_info(),
+        });
 
-    let remaining: Vec<AccountInfo> = [
-        ctx.accounts.token_messenger.to_account_info(),
-        ctx.accounts.remote_token_messenger.to_account_info(),
-        ctx.accounts.token_minter.to_account_info(),
-        ctx.accounts.local_token.to_account_info(),
-        ctx.accounts.token_pair.to_account_info(),
-        ctx.accounts.program_usdc_account.to_account_info(),
-        ctx.accounts.custody_token_account.to_account_info(),
-        ctx.accounts.token_program.to_account_info(),
-        ctx.accounts
-            .token_messenger_event_authority
-            .to_account_info(),
-        ctx.accounts
-            .token_messenger_minter_program
-            .to_account_info(),
-        ctx.accounts.message_transmitter_program.to_account_info(),
-    ]
-    .to_vec();
+        let remaining = Box::new(
+            [
+                ctx.accounts.token_messenger.to_account_info(),
+                ctx.accounts.remote_token_messenger.to_account_info(),
+                ctx.accounts.token_minter.to_account_info(),
+                ctx.accounts.local_token.to_account_info(),
+                ctx.accounts.token_pair.to_account_info(),
+                ctx.accounts.program_usdc_account.to_account_info(),
+                ctx.accounts.custody_token_account.to_account_info(),
+                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts
+                    .token_messenger_event_authority
+                    .to_account_info(),
+                ctx.accounts
+                    .token_messenger_minter_program
+                    .to_account_info(),
+                ctx.accounts.message_transmitter_program.to_account_info(),
+            ]
+            .to_vec(),
+        );
 
-    let seeds: &[&[&[u8]]] = &[&[
-        constants::CCTP_CALLER_SEED,
-        &[*ctx.bumps.get("caller").unwrap()],
-    ]];
+        let seeds: &[&[&[u8]]] = &[&[
+            constants::CCTP_CALLER_SEED,
+            &[*ctx.bumps.get("caller").unwrap()],
+        ]];
 
-    let cpi_ctx_1 = CpiContext::new_with_signer(
-        ctx.accounts
-            .message_transmitter_program
-            .clone()
-            .to_account_info(),
-        *accounts_1,
-        seeds,
-    )
-    .with_remaining_accounts(remaining);
+        let cpi_ctx_1 = CpiContext::new_with_signer(
+            ctx.accounts
+                .message_transmitter_program
+                .clone()
+                .to_account_info(),
+            *accounts_1,
+            seeds,
+        )
+        .with_remaining_accounts(*remaining);
 
-    message_transmitter::cpi::receive_message(
-        cpi_ctx_1,
-        ctx.accounts.relay_params.bridge_message.clone(),
-    )?;
+        message_transmitter::cpi::receive_message(
+            cpi_ctx_1,
+            ctx.accounts.relay_params.bridge_message.clone(),
+        )?;
 
-    let accounts_2 = Box::new(ReceiveMessageContext {
-        payer: ctx.accounts.payer.to_account_info(),
-        caller: ctx.accounts.caller.to_account_info(),
-        authority_pda: ctx.accounts.vr_authority_pda.to_account_info(),
-        message_transmitter: ctx.accounts.message_transmitter.clone().to_account_info(),
-        used_nonces: ctx.accounts.used_nonces_2.to_account_info(),
-        receiver: ctx.accounts.cctp_message_receiver.to_account_info(),
-        system_program: ctx.accounts.system_program.to_account_info(),
-        event_authority: ctx
-            .accounts
-            .message_transmitter_event_authority
-            .to_account_info(),
-        program: ctx.accounts.value_router_program.to_account_info(),
-    });
+        let accounts_2 = Box::new(ReceiveMessageContext {
+            payer: ctx.accounts.payer.to_account_info(),
+            caller: ctx.accounts.caller.to_account_info(),
+            authority_pda: ctx.accounts.vr_authority_pda.to_account_info(),
+            message_transmitter: ctx.accounts.message_transmitter.clone().to_account_info(),
+            used_nonces: ctx.accounts.used_nonces_2.to_account_info(),
+            receiver: ctx.accounts.cctp_message_receiver.to_account_info(),
+            system_program: ctx.accounts.system_program.to_account_info(),
+            event_authority: ctx
+                .accounts
+                .message_transmitter_event_authority
+                .to_account_info(),
+            program: ctx.accounts.value_router_program.to_account_info(),
+        });
 
-    let remaining_2: Vec<AccountInfo> = [
-        ctx.accounts.cctp_receiver_event_authority.to_account_info(),
-        ctx.accounts.message_transmitter_program.to_account_info(),
-    ]
-    .to_vec();
+        let remaining_2 = Box::new(
+            [
+                ctx.accounts.cctp_receiver_event_authority.to_account_info(),
+                ctx.accounts.message_transmitter_program.to_account_info(),
+            ]
+            .to_vec(),
+        );
 
-    let cpi_ctx_2 = CpiContext::new_with_signer(
-        ctx.accounts
-            .message_transmitter_program
-            .clone()
-            .to_account_info(),
-        *accounts_2,
-        seeds,
-    )
-    .with_remaining_accounts(remaining_2);
+        let cpi_ctx_2 = CpiContext::new_with_signer(
+            ctx.accounts
+                .message_transmitter_program
+                .clone()
+                .to_account_info(),
+            *accounts_2,
+            seeds,
+        )
+        .with_remaining_accounts(*remaining_2);
 
-    message_transmitter::cpi::receive_message(
-        cpi_ctx_2,
-        ctx.accounts.relay_params.swap_message.clone(),
-    )?;
+        message_transmitter::cpi::receive_message(
+            cpi_ctx_2,
+            ctx.accounts.relay_params.swap_message.clone(),
+        )?;
+    }
 
     // check sender
     let swap_message = &Message::new(
@@ -299,16 +305,18 @@ pub fn relay<'a>(
     )?;
 
     // check nonce
-    let mut encoded_data = vec![0; 12];
-    encoded_data[..4].copy_from_slice(&bridge_message.source_domain()?.to_be_bytes()); // source domain id
-    encoded_data[4..].copy_from_slice(&bridge_message.nonce()?.to_be_bytes());
-    let bridge_nonce_hash = anchor_lang::solana_program::keccak::hash(encoded_data.as_slice())
-        .to_bytes()
-        .to_vec();
-    assert!(
-        swap_message_body.get_bridge_nonce_hash()? == bridge_nonce_hash,
-        "value_router: nonce binding incorrect"
-    );
+    {
+        let mut encoded_data = Box::new(vec![0; 12]);
+        encoded_data[..4].copy_from_slice(&bridge_message.source_domain()?.to_be_bytes()); // source domain id
+        encoded_data[4..].copy_from_slice(&bridge_message.nonce()?.to_be_bytes());
+        let bridge_nonce_hash = anchor_lang::solana_program::keccak::hash(encoded_data.as_slice())
+            .to_bytes()
+            .to_vec();
+        assert!(
+            swap_message_body.get_bridge_nonce_hash()? == bridge_nonce_hash,
+            "value_router: nonce binding incorrect"
+        );
+    }
 
     // swap_message.get_recipient() is recipient's wallet address
     assert!(
@@ -347,20 +355,20 @@ pub fn relay<'a>(
     );
 
     // check usdc balance change of usdc_vault;
-    let usdc_bridge_amount: Box<u64> = Box::new(
-        TokenAccount::try_deserialize(
-            &mut ctx
-                .accounts
-                .program_usdc_account
-                .try_borrow_data()?
-                .as_ref(),
-        )?
-        .amount,
-    );
+    let usdc_bridge_amount = TokenAccount::try_deserialize(
+        &mut ctx
+            .accounts
+            .program_usdc_account
+            .try_borrow_data()?
+            .as_ref(),
+    )?
+    .amount;
+
+    let mut output_amount: u64 = 0;
 
     if swap_message_body.get_buy_token()? != ctx.accounts.usdc_mint.key() {
         assert!(
-            *usdc_bridge_amount >= swap_message_body.get_sell_amount()?,
+            usdc_bridge_amount >= swap_message_body.get_sell_amount()?,
             "value_router: no enough usdc amount to swap"
         );
         let token_balance_before = parse_amount(
@@ -384,31 +392,31 @@ pub fn relay<'a>(
             }
         }
 
-        let payer_usdc_account = Box::new(Account::<TokenAccount>::try_from(
-            &ctx.remaining_accounts[payer_usdc_account_index],
-        )?);
+        {
+            let payer_usdc_account = Box::new(Account::<TokenAccount>::try_from(
+                &ctx.remaining_accounts[payer_usdc_account_index],
+            )?);
 
-        // send usdc to payer
-        let _ = utils::transfer_token_program(
-            Account::<TokenAccount>::try_from(
-                &ctx.accounts.program_usdc_account.clone().to_account_info(),
-            )?,
-            *(payer_usdc_account.clone()),
-            ctx.accounts.program_authority.clone(),
-            &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
-            ctx.accounts.token_program.clone(),
-            *usdc_bridge_amount,
-        );
+            // send usdc to payer
+            let _ = utils::transfer_token_program(
+                Account::<TokenAccount>::try_from(
+                    &ctx.accounts.program_usdc_account.clone().to_account_info(),
+                )?,
+                *(payer_usdc_account),
+                ctx.accounts.program_authority.clone(),
+                &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
+                ctx.accounts.token_program.clone(),
+                usdc_bridge_amount,
+            );
+        }
 
         // check payer's usdc balance
-        let payer_usdc_balance_before = Box::new(
-            TokenAccount::try_deserialize(
-                &mut ctx.remaining_accounts[payer_usdc_account_index]
-                    .try_borrow_data()?
-                    .as_ref(),
-            )?
-            .amount,
-        );
+        let payer_usdc_balance_before = TokenAccount::try_deserialize(
+            &mut ctx.remaining_accounts[payer_usdc_account_index]
+                .try_borrow_data()?
+                .as_ref(),
+        )?
+        .amount;
 
         // swap
         //msg!("value_router: swap on jupiter");
@@ -418,7 +426,7 @@ pub fn relay<'a>(
             params.jupiter_swap_data,
         )?;
 
-        let output_amount = parse_amount(
+        output_amount = parse_amount(
             &ctx.accounts
                 .recipient_output_token_account
                 .try_borrow_data()?,
@@ -434,18 +442,20 @@ pub fn relay<'a>(
                 swap_message_body.get_guaranteed_buy_amount()?
             );
             // unwrap
-            let close_wsol_cpi_ctx = Box::new(CpiContext::new(
-                ctx.accounts.token_program.to_account_info(),
-                CloseAccount {
-                    account: ctx
-                        .accounts
-                        .recipient_output_token_account
-                        .to_account_info(),
-                    destination: ctx.accounts.payer.to_account_info(),
-                    authority: ctx.accounts.payer.to_account_info(),
-                },
-            ));
-            token::close_account(*close_wsol_cpi_ctx)?;
+            {
+                let close_wsol_cpi_ctx = Box::new(CpiContext::new(
+                    ctx.accounts.token_program.to_account_info(),
+                    CloseAccount {
+                        account: ctx
+                            .accounts
+                            .recipient_output_token_account
+                            .to_account_info(),
+                        destination: ctx.accounts.payer.to_account_info(),
+                        authority: ctx.accounts.payer.to_account_info(),
+                    },
+                ));
+                token::close_account(*close_wsol_cpi_ctx)?;
+            }
 
             let _ = utils::transfer_sol(
                 &ctx.accounts.payer,
@@ -463,15 +473,17 @@ pub fn relay<'a>(
         }
 
         // check payer's usdc balance change
-        let payer_usdc_balance_after = Box::new(
-            TokenAccount::try_deserialize(
-                &mut ctx.remaining_accounts[payer_usdc_account_index]
-                    .try_borrow_data()?
-                    .as_ref(),
-            )?
-            .amount,
+        let payer_usdc_balance_after = TokenAccount::try_deserialize(
+            &mut ctx.remaining_accounts[payer_usdc_account_index]
+                .try_borrow_data()?
+                .as_ref(),
+        )?
+        .amount;
+        msg!(
+            "remaining usdc: {:?}",
+            usdc_bridge_amount - (payer_usdc_balance_before - payer_usdc_balance_after)
         );
-        if *usdc_bridge_amount - (*payer_usdc_balance_before - *payer_usdc_balance_after) > 0 {
+        /*if usdc_bridge_amount - (payer_usdc_balance_before - payer_usdc_balance_after) > 0 {
             // send remaining usdc to program usdc account
             let _ = utils::transfer_token(
                 *payer_usdc_account,
@@ -483,9 +495,9 @@ pub fn relay<'a>(
                 )?,
                 ctx.accounts.payer.clone(),
                 ctx.accounts.token_program.clone(),
-                *usdc_bridge_amount - (*payer_usdc_balance_before - *payer_usdc_balance_after),
+                usdc_bridge_amount - (payer_usdc_balance_before - payer_usdc_balance_after),
             );
-        }
+        }*/
     } else {
         // no swap
         // transfer usdc to recipient
@@ -502,21 +514,50 @@ pub fn relay<'a>(
             ctx.accounts.program_authority.clone(),
             &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
             ctx.accounts.token_program.clone(),
-            *usdc_bridge_amount,
+            usdc_bridge_amount,
         );
     }
 
-    utils::close_program_usdc(
+    /*utils::close_program_usdc(
         &ctx.accounts.program_authority,
         &ctx.accounts.program_usdc_account,
         &ctx.accounts.token_program,
         &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
-    )?;
+    )?;*/
 
-    msg!("Relay success\nsource_domain: {:?}, bridge_nonce_hash: {:?}, bridge_amount: {:?}, buy_token: {:?}", swap_message.source_domain()?, bridge_nonce_hash, *usdc_bridge_amount, swap_message_body.get_buy_token()?);
+    msg!("Relay success\nsource_domain: {:?}, bridge_amount: {:?}, buy_token: {:?}, buy_amount: {:?}", swap_message.source_domain()?, usdc_bridge_amount, swap_message_body.get_buy_token()?, output_amount);
 
     Ok(())
 }
+
+/*
+fn unwrap_wsol<'info>(
+    payer: &Signer<'info>,
+    recipient_wallet_account: &AccountInfo<'info>,
+    recipient_output_token_account: &AccountInfo<'info>,
+    token_program: &AccountInfo<'info>,
+    system_program: &AccountInfo<'info>,
+    output_amount: u64,
+) -> Result<()> {
+    let close_wsol_cpi_ctx = Box::new(CpiContext::new(
+        token_program.clone(),
+        CloseAccount {
+            account: recipient_output_token_account.clone(),
+            destination: payer.to_account_info(),
+            authority: payer.to_account_info(),
+        },
+    ));
+    token::close_account(*close_wsol_cpi_ctx)?;
+
+    let _ = utils::transfer_sol(
+        payer,
+        recipient_wallet_account,
+        system_program,
+        output_amount,
+    );
+    Ok(())
+}
+*/
 
 pub fn parse_owner(data: &[u8]) -> Pubkey {
     Pubkey::new(&data[32..64])
@@ -528,3 +569,97 @@ pub fn parse_amount(data: &[u8]) -> u64 {
         .expect("slice with incorrect length");
     u64::from_le_bytes(amount_bytes)
 }
+
+/*
+fn receive_messages(accounts: &mut RelayInstruction, bumps: &BTreeMap<String, u8>) -> Result<()> {
+    let accounts_1 = Box::new(ReceiveMessageContext {
+        payer: accounts.payer.to_account_info(),
+        caller: accounts.caller.to_account_info(),
+        authority_pda: accounts.tm_authority_pda.to_account_info(),
+        message_transmitter: accounts.message_transmitter.clone().to_account_info(),
+        used_nonces: accounts.used_nonces_1.to_account_info(),
+        receiver: accounts.token_messenger_minter_program.to_account_info(),
+        system_program: accounts.system_program.to_account_info(),
+        event_authority: accounts
+            .message_transmitter_event_authority
+            .to_account_info(),
+        program: accounts.value_router_program.to_account_info(),
+    });
+
+    let remaining = Box::new(
+        [
+            accounts.token_messenger.to_account_info(),
+            accounts.remote_token_messenger.to_account_info(),
+            accounts.token_minter.to_account_info(),
+            accounts.local_token.to_account_info(),
+            accounts.token_pair.to_account_info(),
+            accounts.program_usdc_account.to_account_info(),
+            accounts.custody_token_account.to_account_info(),
+            accounts.token_program.to_account_info(),
+            accounts.token_messenger_event_authority.to_account_info(),
+            accounts.token_messenger_minter_program.to_account_info(),
+            accounts.message_transmitter_program.to_account_info(),
+        ]
+        .to_vec(),
+    );
+
+    let seeds: &[&[&[u8]]] = &[&[
+        constants::CCTP_CALLER_SEED,
+        &[*bumps.get("caller").unwrap()],
+    ]];
+
+    let cpi_ctx_1 = CpiContext::new_with_signer(
+        accounts
+            .message_transmitter_program
+            .clone()
+            .to_account_info(),
+        *accounts_1,
+        seeds,
+    )
+    .with_remaining_accounts(*remaining);
+
+    message_transmitter::cpi::receive_message(
+        cpi_ctx_1,
+        accounts.relay_params.bridge_message.clone(),
+    )?;
+
+    let accounts_2 = Box::new(ReceiveMessageContext {
+        payer: accounts.payer.to_account_info(),
+        caller: accounts.caller.to_account_info(),
+        authority_pda: accounts.vr_authority_pda.to_account_info(),
+        message_transmitter: accounts.message_transmitter.clone().to_account_info(),
+        used_nonces: accounts.used_nonces_2.to_account_info(),
+        receiver: accounts.cctp_message_receiver.to_account_info(),
+        system_program: accounts.system_program.to_account_info(),
+        event_authority: accounts
+            .message_transmitter_event_authority
+            .to_account_info(),
+        program: accounts.value_router_program.to_account_info(),
+    });
+
+    let remaining_2 = Box::new(
+        [
+            accounts.cctp_receiver_event_authority.to_account_info(),
+            accounts.message_transmitter_program.to_account_info(),
+        ]
+        .to_vec(),
+    );
+
+    let cpi_ctx_2 = CpiContext::new_with_signer(
+        accounts
+            .message_transmitter_program
+            .clone()
+            .to_account_info(),
+        *accounts_2,
+        seeds,
+    )
+    .with_remaining_accounts(*remaining_2);
+
+    message_transmitter::cpi::receive_message(
+        cpi_ctx_2,
+        accounts.relay_params.swap_message.clone(),
+    )?;
+
+    Ok(())
+}
+*/

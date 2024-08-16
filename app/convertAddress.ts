@@ -40,6 +40,7 @@ export const solanaAddressToArray = (solanaAddress) =>
     wallet4: "D5wyc7W4wfnV8WQehDxsuZ6J8Zbt3aSUpKoGpZE2ngpa",
     wallet5: "ELHzkAeAoAxrmRxcoEfYPr6AydVVaAnYuRLVovdoye4e",
     wallet6: "RdxGWo5AfTuG8TyCHNDpj6VSNhEM4KQJj4xSdj8DKNN",
+    wallet7: "2BZvFhhqTVwkHL3wbAYJs2piLgMbUpmCBrmBGCVmHyVx",
     wallet6Usdc: "",
     wallet6Paypal: "",
     walletUsdc: "9h2CxvWshcJaNAJ9BqrzL5Y849wQXkZdMF6nQMf6c4cY",

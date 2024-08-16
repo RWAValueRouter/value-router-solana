@@ -336,14 +336,14 @@ pub fn relay_no_swap<'a>(
         *usdc_balance,
     );
 
-    utils::close_program_usdc(
+    /*utils::close_program_usdc(
         &ctx.accounts.program_authority,
         &ctx.accounts.program_usdc_account,
         &ctx.accounts.token_program,
         &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
-    )?;
+    )?;*/
 
-    msg!("Relay success\nsource_domain: {:?}, bridge_nonce_hash: {:?}, bridge_amount: {:?}, buy_token: {:?}", swap_message.source_domain()?, bridge_nonce_hash, *usdc_balance, swap_message_body.get_buy_token()?);
+    msg!("Relay success\nsource_domain: {:?}, bridge_amount: {:?}, buy_token: {:?}", swap_message.source_domain()?, *usdc_balance, swap_message_body.get_buy_token()?);
 
     Ok(())
 }

@@ -127,16 +127,6 @@ pub fn create_usdc_token_idempotent<'info>(
     } else {
         //msg!("program_usdc_account has data");
 
-        //msg!("Initialize program usdc token account");
-        token::initialize_account3(CpiContext::new(
-            token_program.to_account_info(),
-            token::InitializeAccount3 {
-                account: program_usdc_account.to_account_info(),
-                mint: usdc_mint.to_account_info(),
-                authority: program_authority.to_account_info(),
-            },
-        ))?;
-
         let data = program_usdc_account.try_borrow_data()?;
         let usdc_token_account = TokenAccount::try_deserialize(&mut data.as_ref())?;
         if &usdc_token_account.owner != program_authority.key {

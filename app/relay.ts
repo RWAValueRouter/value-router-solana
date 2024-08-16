@@ -15,7 +15,7 @@ import {
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
-  createSyncNativeInstruction,
+  createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
 import {
@@ -583,7 +583,7 @@ export const relay = async (
   console.log("\n\n3. Relay\n");
 
   const LOOKUP_TABLE_ADDRESS = new PublicKey(
-    "47cYDtFWHLqF6pGSdcTibrfsoGV5SKcMZ429vn1D9vGb"
+    "G6XcDmLhLDBDxeYpCiumt1KCRiNEDoFh3JEdTXu5H4kf"
   );
 
   // value router 专用的 lookup table 列表
@@ -709,19 +709,6 @@ export const relay = async (
       await sendTx(provider, setupInstructions, []);
     }
 
-    // sync native
-    /*const syncIx = createSyncNativeInstruction(
-      getAssociatedTokenAddressSync(
-        wsolAddress,
-        provider.wallet.publicKey,
-        false,
-        TOKEN_PROGRAM_ID,
-        ASSOCIATED_TOKEN_PROGRAM_ID
-      ),
-      TOKEN_PROGRAM_ID
-    );
-    await sendTx(provider, [syncIx], []);*/
-
     let swapInstruction = instructionDataToTransactionInstruction(
       swapIx.swapInstruction
     );
@@ -782,6 +769,30 @@ export const relay = async (
   };
   console.log("relay accounts: ", accounts);
 
+  const createWsolIx = createAssociatedTokenAccountIdempotentInstruction(
+    provider.wallet.publicKey,
+    getAssociatedTokenAddressSync(
+      wsolAddress,
+      provider.wallet.publicKey,
+      false,
+      TOKEN_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID
+    ),
+    provider.wallet.publicKey,
+    wsolAddress,
+    TOKEN_PROGRAM_ID,
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+
+  const createUsdcIx = createAssociatedTokenAccountIdempotentInstruction(
+    provider.wallet.publicKey,
+    recipientUsdcAccount,
+    recipientWalletAddress,
+    usdcAddress,
+    TOKEN_PROGRAM_ID,
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+
   const relayIx = await valueRouterProgram.methods
     .relay({
       jupiterSwapData: jupiterSwapData,
@@ -795,10 +806,16 @@ export const relay = async (
   });
 
   const computeUnitPriceIx = ComputeBudgetProgram.setComputeUnitPrice({
-    microLamports: 300000,
+    microLamports: 500000,
   });
 
-  const relayInstructions = [computeUnitPriceIx, computeBudgetIx2, relayIx];
+  const relayInstructions = [
+    computeUnitPriceIx,
+    computeBudgetIx2,
+    createWsolIx,
+    createUsdcIx,
+    relayIx,
+  ];
 
   console.log("send relay tx");
   await sendTx(provider, relayInstructions, addressLookupTableAccounts);
@@ -828,11 +845,11 @@ const sendTx = async (provider, instructions, addressLookupTableAccounts) => {
       );
       console.log("simulate logs: ", simulationResult.value.logs);
 
-      txID = await provider.sendAndConfirm(tx, null, TIMEOUT);
+      /*txID = await provider.sendAndConfirm(tx, null, TIMEOUT);
       console.log(
         `Relay transaction: ${attempts}/${MAX_RETRIES} - Success, TX ID: ${txID}`
       );
-      break; // Exit the loop if successful
+      break; // Exit the loop if successful*/
 
       await provider.wallet.signTransaction(tx);
 

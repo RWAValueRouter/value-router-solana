@@ -105,7 +105,8 @@ const createAndSendV0Tx = async ([ints]) => {
     //"7XE9Q69NwcE58XKY3VWfnLB5WrdQeiRQYgEBj2VUkXYg" // devnet
     //"CoYBpCUivvpfmVZvcXxsVQ75KuVMLKC3XKw3AC6ECjSq" // mainnet
     //"J5y2dSuVbGd5yQpTN1wcfC97LXWkRpqK3dXYXupEZtXZ"
-    "47cYDtFWHLqF6pGSdcTibrfsoGV5SKcMZ429vn1D9vGb"
+    //"47cYDtFWHLqF6pGSdcTibrfsoGV5SKcMZ429vn1D9vGb"
+    "G6XcDmLhLDBDxeYpCiumt1KCRiNEDoFh3JEdTXu5H4kf"
   );
   console.log("lookupTableAddress: ", lookupTableAddress);
 
