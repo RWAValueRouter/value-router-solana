@@ -158,90 +158,91 @@ pub fn swap_and_bridge(
     let authority_bump = ctx.bumps.get("program_authority").unwrap().to_le_bytes();
     let usdc_bump = ctx.bumps.get("program_usdc_account").unwrap().to_le_bytes();
 
-    let initial_program_usdc_account = utils::create_usdc_token_idempotent(
-        &ctx.accounts.program_authority,
-        &ctx.accounts.program_usdc_account,
-        &Box::new(Account::try_from(&ctx.accounts.burn_token_mint)?),
-        &ctx.accounts.token_program,
-        &ctx.accounts.system_program,
-        &authority_bump,
-        &constants::USDC_SEED,
-        &usdc_bump,
-    )?;
-
-    msg!(
-        "valuerouter: initial_program_usdc_account: {:?}",
-        initial_program_usdc_account
-    );
-
-    let final_balance: u64;
-    if ctx.accounts.source_mint.clone().key() != ctx.accounts.burn_token_mint.key() {
-        msg!("valuerouter: handling local swap");
-
-        swap_on_jupiter(
-            ctx.remaining_accounts,
-            ctx.accounts.jupiter_program.clone(),
-            params.jupiter_swap_data,
+    let increased_usdc_amount: u64;
+    {
+        let initial_program_usdc_account = utils::create_usdc_token_idempotent(
+            &ctx.accounts.program_authority,
+            &ctx.accounts.program_usdc_account,
+            &Box::new(Account::try_from(&ctx.accounts.burn_token_mint)?),
+            &ctx.accounts.token_program,
+            &ctx.accounts.system_program,
+            &authority_bump,
+            &constants::USDC_SEED,
+            &usdc_bump,
         )?;
-    } else {
-        msg!("valuerouter: no local swap");
-        let cpi_accounts = Transfer {
-            from: ctx.accounts.sender_usdc_account.to_account_info(),
-            to: ctx.accounts.program_usdc_account.to_account_info(),
-            authority: ctx.accounts.payer.to_account_info(),
-        };
-        let cpi_program = ctx.accounts.token_program.to_account_info();
-        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
 
-        transfer(cpi_ctx, params.bridge_usdc_amount)?;
-    }
-    //let final_token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
-    let final_program_usdc_account = TokenAccount::try_deserialize(
-        &mut ctx
-            .accounts
-            .program_usdc_account
-            .try_borrow_data()?
-            .as_ref(),
-    )?;
+        let initial_balance: u64 = initial_program_usdc_account.amount;
+        if ctx.accounts.source_mint.clone().key() != ctx.accounts.burn_token_mint.key() {
+            msg!("valuerouter: handling local swap");
 
-    final_balance = final_program_usdc_account.amount;
-    msg!("valuerouter: swap output {:?}", final_balance);
-    assert!(
-        final_program_usdc_account.amount >= params.bridge_usdc_amount,
-        "value_router: no enough swap output"
-    );
+            swap_on_jupiter(
+                ctx.remaining_accounts,
+                ctx.accounts.jupiter_program.clone(),
+                params.jupiter_swap_data,
+            )?;
+        } else {
+            msg!("valuerouter: no local swap");
+            let cpi_accounts = Transfer {
+                from: ctx.accounts.sender_usdc_account.to_account_info(),
+                to: ctx.accounts.program_usdc_account.to_account_info(),
+                authority: ctx.accounts.payer.to_account_info(),
+            };
+            let cpi_program = ctx.accounts.token_program.to_account_info();
+            let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
 
-    let mut fee_amount: u64 = 0;
-    if params.buy_args.buy_token == Pubkey::new_from_array([0; 32]) {
-        // no dest swap
-        fee_amount += ctx
-            .accounts
-            .value_router
-            .get_bridge_fee_for_domain(params.dest_domain)
-            .unwrap();
-    } else {
-        // need dest swap
-        fee_amount += ctx
-            .accounts
-            .value_router
-            .get_swap_fee_for_domain(params.dest_domain)
-            .unwrap();
+            transfer(cpi_ctx, params.bridge_usdc_amount)?;
+        }
+        //let final_token_account_data = ctx.accounts.program_usdc_account.try_borrow_data()?;
+        let final_balance = TokenAccount::try_deserialize(
+            &mut ctx
+                .accounts
+                .program_usdc_account
+                .try_borrow_data()?
+                .as_ref(),
+        )?
+        .amount;
+
+        msg!("valuerouter: swap output {:?}", final_balance);
+        increased_usdc_amount = final_balance - initial_balance;
+        assert!(
+            increased_usdc_amount >= params.bridge_usdc_amount,
+            "value_router: no enough swap output"
+        );
     }
 
-    let fee_ix = system_instruction::transfer(
-        &ctx.accounts.payer.key(),
-        &ctx.accounts.value_router.fee_receiver.key(),
-        fee_amount,
-    );
+    {
+        let mut fee_amount: u64 = 0;
+        if params.buy_args.buy_token == Pubkey::new_from_array([0; 32]) {
+            // no dest swap
+            fee_amount += ctx
+                .accounts
+                .value_router
+                .get_bridge_fee_for_domain(params.dest_domain)
+                .unwrap();
+        } else {
+            // need dest swap
+            fee_amount += ctx
+                .accounts
+                .value_router
+                .get_swap_fee_for_domain(params.dest_domain)
+                .unwrap();
+        }
 
-    anchor_lang::solana_program::program::invoke(
-        &fee_ix,
-        &[
-            ctx.accounts.payer.to_account_info(),
-            ctx.accounts.fee_receiver.to_account_info(),
-            ctx.accounts.system_program.to_account_info(),
-        ],
-    )?;
+        let fee_ix = system_instruction::transfer(
+            &ctx.accounts.payer.key(),
+            &ctx.accounts.value_router.fee_receiver.key(),
+            fee_amount,
+        );
+
+        anchor_lang::solana_program::program::invoke(
+            &fee_ix,
+            &[
+                ctx.accounts.payer.to_account_info(),
+                ctx.accounts.fee_receiver.to_account_info(),
+                ctx.accounts.system_program.to_account_info(),
+            ],
+        )?;
+    }
 
     // cpi depositForBurnWithCaller
     let deposit_for_burn_accounts = Box::new(DepositForBurnContext {
@@ -272,9 +273,8 @@ pub fn swap_and_bridge(
         program: ctx.accounts.value_router_program.to_account_info(),
     });
 
-    // TODO remote value router
-    let deposit_for_burn_params = DepositForBurnWithCallerParams {
-        amount: final_balance,
+    let mut deposit_for_burn_params = DepositForBurnWithCallerParams {
+        amount: increased_usdc_amount,
         destination_domain: params.dest_domain,
         mint_recipient: *ctx
             .accounts
@@ -289,6 +289,12 @@ pub fn swap_and_bridge(
             .to_account_info()
             .key,
     };
+
+    // if dest domain is noble
+    if params.dest_domain == 4 {
+        deposit_for_burn_params.mint_recipient = params.recipient.clone();
+        deposit_for_burn_params.destination_caller = ctx.accounts.value_router.noble_caller.key();
+    }
 
     let signer_seeds: &[&[&[u8]]] = &[&[constants::AUTHORITY_SEED, authority_bump.as_ref()]];
 
@@ -311,14 +317,29 @@ pub fn swap_and_bridge(
 
     msg!("bridge nonce: {:?}", nonce);
 
-    msg!("closing program usdc account");
+    // if dest domain is noble
+    if params.dest_domain == 4 {
+        emit!(SwapAndBridgeEvent {
+            bridge_usdc_amount: increased_usdc_amount,
+            buy_token: params.buy_args.buy_token,
+            guaranteed_buy_amount: params.buy_args.guaranteed_buy_amount,
+            dest_domain: params.dest_domain,
+            recipient: params.recipient.clone(),
+            bridge_nonce: nonce,
+            swap_nonce: 0,
+        });
+
+        return Ok(());
+    }
+
+    /*msg!("closing program usdc account");
     utils::close_program_usdc(
         &ctx.accounts.program_authority,
         &ctx.accounts.program_usdc_account,
         &ctx.accounts.token_program,
         &authority_bump,
     )?;
-    msg!("program usdc account closed");
+    msg!("program usdc account closed");*/
 
     // solidity: bytes32 bridgeNonceHash = keccak256(abi.encodePacked(5, bridgeNonce))
     let localdomain: u32 = 5;
@@ -341,7 +362,7 @@ pub fn swap_and_bridge(
     let message_body = Box::new(SwapMessage::format_message(
         1u32,
         bridge_nonce_hash.to_vec(),
-        final_balance,
+        increased_usdc_amount,
         &params.buy_args.buy_token,
         params.buy_args.guaranteed_buy_amount.clone(),
         &params.recipient.clone(),
@@ -395,11 +416,11 @@ pub fn swap_and_bridge(
     msg!("send message nonce: {:?}", nonce2);
 
     emit!(SwapAndBridgeEvent {
-        bridge_usdc_amount: final_balance,
+        bridge_usdc_amount: increased_usdc_amount,
         buy_token: params.buy_args.buy_token,
         guaranteed_buy_amount: params.buy_args.guaranteed_buy_amount,
         dest_domain: params.dest_domain,
-        recipient: params.recipient.clone(),
+        recipient: params.recipient,
         bridge_nonce: nonce,
         swap_nonce: nonce2,
     });

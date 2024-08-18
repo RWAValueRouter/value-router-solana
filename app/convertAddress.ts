@@ -33,7 +33,7 @@ export const solanaAddressToArray = (solanaAddress) =>
     paypal: "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo", // 2022
     jup: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
     wsol: "So11111111111111111111111111111111111111112",
-    relayerWallet: "4bW9er8krg5og3WkVYULz4QQWr9dfLooxZoCNQ4qhvCW",
+    relayerWallet: "HfdkJ3LwKtUU56RJMjkXepGww4ZvhQ1bcKJG47w2UZUS",
     relayerWsol: "",
     wallet: "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt",
     wallet2: "GcYJDjmMF5VaZmYk347Nrz8fJzT81suWfqGDguQtPB3U",
@@ -41,6 +41,7 @@ export const solanaAddressToArray = (solanaAddress) =>
     wallet5: "ELHzkAeAoAxrmRxcoEfYPr6AydVVaAnYuRLVovdoye4e",
     wallet6: "RdxGWo5AfTuG8TyCHNDpj6VSNhEM4KQJj4xSdj8DKNN",
     wallet7: "2BZvFhhqTVwkHL3wbAYJs2piLgMbUpmCBrmBGCVmHyVx",
+    wallet7Usdt: "",
     wallet6Usdc: "",
     wallet6Paypal: "",
     walletUsdc: "9h2CxvWshcJaNAJ9BqrzL5Y849wQXkZdMF6nQMf6c4cY",
@@ -68,6 +69,15 @@ export const solanaAddressToArray = (solanaAddress) =>
     ASSOCIATED_TOKEN_PROGRAM_ID // Associated token program id
   );
   addresses.wallet6Usdc = wallet6Usdc.toString();
+
+  const wallet7Usdt = await getAssociatedTokenAddress(
+    new PublicKey(addresses.usdt), // The mint address of the token
+    new PublicKey(addresses.wallet7), // The owner's wallet address
+    true, // AllowOwnerOffCurve: If the owner's address is off the curve
+    TOKEN_PROGRAM_ID, // Token program id
+    ASSOCIATED_TOKEN_PROGRAM_ID // Associated token program id
+  );
+  addresses.wallet7Usdt = wallet7Usdt.toString();
 
   const relayerWsol = await getAssociatedTokenAddress(
     new PublicKey(addresses.wsol), // The mint address of the token

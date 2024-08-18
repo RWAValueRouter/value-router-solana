@@ -81,7 +81,7 @@ export async function initUsdcAccount() {
     //usdcMint,
     wsolMint,
     //provider.wallet.publicKey,
-    new PublicKey("4bW9er8krg5og3WkVYULz4QQWr9dfLooxZoCNQ4qhvCW"),
+    new PublicKey("HfdkJ3LwKtUU56RJMjkXepGww4ZvhQ1bcKJG47w2UZUS"),
     false,
     spl.TOKEN_PROGRAM_ID,
     spl.ASSOCIATED_TOKEN_PROGRAM_ID
@@ -92,7 +92,7 @@ export async function initUsdcAccount() {
       provider.wallet.publicKey,
       associatedToken,
       //provider.wallet.publicKey,
-      new PublicKey("4bW9er8krg5og3WkVYULz4QQWr9dfLooxZoCNQ4qhvCW"),
+      new PublicKey("HfdkJ3LwKtUU56RJMjkXepGww4ZvhQ1bcKJG47w2UZUS"),
       //usdcMint,
       wsolMint,
       spl.TOKEN_PROGRAM_ID,

@@ -13,6 +13,7 @@ pub struct ValueRouter {
     pub swap_fees: [u64; 10],
     pub remote_value_router: [Pubkey; 10],
     pub fee_receiver: Pubkey,
+    pub noble_caller: Pubkey,
 }
 
 impl ValueRouter {
