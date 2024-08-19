@@ -13,7 +13,7 @@ pub struct InitializeContext<'info> {
     #[account(
             init_if_needed,
             payer = payer,
-            space = 600,
+            space = 640,
             seeds = [b"value_router"],
             bump,
             constraint = value_router.admin == Pubkey::default() @ InitializeErrorCode::AccountAlreadyInitialized
