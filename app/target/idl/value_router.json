@@ -806,6 +806,10 @@
           {
             "name": "feeReceiver",
             "type": "publicKey"
+          },
+		  {
+		    "name": "nobleCaller",
+            "type": "publicKey"
           }
         ]
       }
@@ -972,6 +976,6 @@
     }
   ],
   "metadata": {
-    "address": "HUzYrDneTvyYuLbKMTVJzjafmtFhnjfwCrBtgfTYXx8b"
+    "address": "EX3S1JFoDb2Gdi3JiTH4XAPVVRuxs4s2Pd3HoRSrMzf7"
   }
 }

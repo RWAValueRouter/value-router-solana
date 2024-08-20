@@ -1618,6 +1618,10 @@ export const IDL: ValueRouter = {
             name: "feeReceiver",
             type: "publicKey",
           },
+          {
+            "name": "nobleCaller",
+            "type": "publicKey"
+          },
         ],
       },
     },

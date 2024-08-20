@@ -18,6 +18,7 @@ pub struct SetValueRouterParams {
     pub swap_fees: [u64; 10],
     pub remote_value_router: [Pubkey; 10],
     pub fee_receiver: Pubkey,
+	pub noble_caller: Pubkey,
 }
 
 pub fn set_value_router(
@@ -30,6 +31,7 @@ pub fn set_value_router(
     value_router.swap_fees = _params.swap_fees;
     value_router.remote_value_router = _params.remote_value_router;
     value_router.fee_receiver = _params.fee_receiver;
+	value_router.noble_caller = _params.noble_caller;
 
     Ok(())
 }
