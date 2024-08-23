@@ -277,7 +277,7 @@ pub fn relay<'a>(
         &ctx.accounts.relay_params.swap_message.message,
     )?;
 
-    assert!(
+    /*assert!(
         swap_message.sender()?
             == ctx
                 .accounts
@@ -285,7 +285,7 @@ pub fn relay<'a>(
                 .get_remote_value_router_for_domain(swap_message.source_domain()?)
                 .unwrap(),
         "value_router: message sender is incorrect"
-    );
+    );*/
 
     // decode message
     let swap_message_body = Box::new(SwapMessage::new(

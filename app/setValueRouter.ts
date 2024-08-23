@@ -1,3 +1,4 @@
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes/index.js";
 import * as anchor from "@coral-xyz/anchor";
 import { PublicKey, Keypair, SystemProgram, Authorized } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
@@ -7,9 +8,25 @@ const feeReceiver = new PublicKey(
   "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt"
 );
 
-const nobleCaller = new PublicKey(
-  "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt"
+function parseHexString(str) { 
+    var result = [];
+    while (str.length >= 2) { 
+        result.push(parseInt(str.substring(0, 2), 16));
+        str = str.substring(2, str.length);
+    }
+
+    return result;
+}
+
+const nobleUsdc = new PublicKey(
+  bs58.encode(parseHexString("487039debedbf32d260137b0a6f66b90962bec777250910d253781de326a716d"))
 );
+console.log("nobleUsdc: ", nobleUsdc);
+
+const nobleCaller = new PublicKey(
+  bs58.encode(parseHexString("000000000000000000000000bbc905eb987498003c94d64bba25ee5efe84b51e"))
+);
+console.log("nobleCaller: ", nobleCaller);
 
 const main = async () => {
   const provider = getAnchorConnection();
@@ -93,7 +110,7 @@ const main = async () => {
       swapFees: swapFees,
       remoteValueRouter: remoteValueRouter,
       feeReceiver: feeReceiver,
-	  //nobleCaller: nobleCaller,
+	  nobleCaller: nobleCaller,
     })
     .accounts(accounts)
     .rpc();
