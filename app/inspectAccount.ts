@@ -36,8 +36,9 @@ async function getAccountInfo(publicKeyString: string) {
 // Replace with the public key of the account you want to query
 //const publicKeyString = "CVo3cWWdQF8Lfc7ECV2fChFgPcza1nHvRzjiHMYY7UkU";
 //const publicKeyString = "AdufTJ7BbuWRx5679UdY4YmYNApdLV1MDqJJ91tLE8m2";
-const publicKeyString = "9nnXjZ2wsPdDsf9P4ehvftYMk2s5RHubhitssCARCWh7";
+//const publicKeyString = "9nnXjZ2wsPdDsf9P4ehvftYMk2s5RHubhitssCARCWh7";
 //const publicKeyString = "2Tv4PGKfd2utRuCbHeNJ6WjzwrMvZUwcm3xrE2hJqJnx";
+const publicKeyString = "G1cSYrysBAKPoKJjunNbRzo1MCJggTUBWBfMdAnFqVEC";
 
 // Call the function
 getAccountInfo(publicKeyString).catch((err) => {

@@ -59,20 +59,26 @@ const main = async () => {
       )
   );
 
-  bridgeFees[0] = new anchor.BN(100); // domain = 0, bridge fee = 0.000100
-  bridgeFees[1] = new anchor.BN(100); // domain = 1, bridge fee = 0.000100
-  bridgeFees[2] = new anchor.BN(100); // domain = 2, bridge fee = 0.000100
-  bridgeFees[3] = new anchor.BN(100); // domain = 3, bridge fee = 0.000100
-  bridgeFees[6] = new anchor.BN(100); // domain = 6, bridge fee = 0.000100
-  bridgeFees[7] = new anchor.BN(100); // domain = 7, bridge fee = 0.000100
+  bridgeFees[0] = new anchor.BN(68027211); // domain = 0, bridge fee = 0.000100
+  bridgeFees[1] = new anchor.BN(3401361); // domain = 1, bridge fee = 0.000100
+  bridgeFees[2] = new anchor.BN(3401361); // domain = 2, bridge fee = 0.000100
+  bridgeFees[3] = new anchor.BN(3401361); // domain = 3, bridge fee = 0.000100
+  bridgeFees[6] = new anchor.BN(3401361); // domain = 6, bridge fee = 0.000100
+  bridgeFees[7] = new anchor.BN(3401361); // domain = 7, bridge fee = 0.000100
 
-  swapFees[0] = new anchor.BN(100); // domain = 0, swap fee = 0.000100
-  swapFees[1] = new anchor.BN(100); // domain = 1, swap fee = 0.000100
-  swapFees[2] = new anchor.BN(100); // domain = 2, swap fee = 0.000100
-  swapFees[3] = new anchor.BN(100); // domain = 3, swap fee = 0.000100
-  swapFees[6] = new anchor.BN(100); // domain = 6, swap fee = 0.000100
-  swapFees[7] = new anchor.BN(100); // domain = 7, swap fee = 0.000100
+  swapFees[0] = new anchor.BN(102040816); // domain = 0, swap fee = 0.000100
+  swapFees[1] = new anchor.BN(5102041); // domain = 1, swap fee = 0.000100
+  swapFees[2] = new anchor.BN(5102041); // domain = 2, swap fee = 0.000100
+  swapFees[3] = new anchor.BN(5102041); // domain = 3, swap fee = 0.000100
+  swapFees[6] = new anchor.BN(5102041); // domain = 6, swap fee = 0.000100
+  swapFees[7] = new anchor.BN(5102041); // domain = 7, swap fee = 0.000100
 
+  remoteValueRouter[0] = new PublicKey(
+    Buffer.from(
+      "00000000000000000000000006bCcac1D96Ec89c1Dd62F715e0487b8c6B9FC92",
+	  "hex"
+	)
+  );
   remoteValueRouter[1] = new PublicKey(
     Buffer.from(
       "000000000000000000000000c36D05Fa1e5649bd3e29CA521da39FD4660914BF",

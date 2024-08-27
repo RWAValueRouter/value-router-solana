@@ -305,7 +305,7 @@ pub fn relay<'a>(
     )?;
 
     // check nonce
-    {
+	if bridge_message.source_domain()? != 4 {
         let mut encoded_data = Box::new(vec![0; 12]);
         encoded_data[..4].copy_from_slice(&bridge_message.source_domain()?.to_be_bytes()); // source domain id
         encoded_data[4..].copy_from_slice(&bridge_message.nonce()?.to_be_bytes());
@@ -316,7 +316,7 @@ pub fn relay<'a>(
             swap_message_body.get_bridge_nonce_hash()? == bridge_nonce_hash,
             "value_router: nonce binding incorrect"
         );
-    }
+	}
 
     // swap_message.get_recipient() is recipient's wallet address
     assert!(

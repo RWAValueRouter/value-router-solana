@@ -48,6 +48,7 @@ export const solanaAddressToArray = (solanaAddress) =>
     valueRouter: valueRouterProgram.programId.toBase58(),
     caller: "",
     programUsdcAccount: "",
+    programUsdcInAccount: "",
     programAuthority: "",
     receiver: cctpMessageReceiverProgram.programId.toBase58(),
   };
@@ -98,8 +99,13 @@ export const solanaAddressToArray = (solanaAddress) =>
     new PublicKey(addresses.valueRouter)
   )[0].toBase58();
 
-  addresses.programUsdcAccount = PublicKey.findProgramAddressSync(
+  addresses.programUsdcInAccount = PublicKey.findProgramAddressSync(
     [Buffer.from("usdc_in")],
+    new PublicKey(addresses.valueRouter)
+  )[0].toBase58();
+
+  addresses.programUsdcAccount = PublicKey.findProgramAddressSync(
+    [Buffer.from("usdc")],
     new PublicKey(addresses.valueRouter)
   )[0].toBase58();
 
