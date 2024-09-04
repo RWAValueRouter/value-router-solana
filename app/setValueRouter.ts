@@ -5,7 +5,7 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { getAnchorConnection, getPrograms, getInitializePdas } from "./utils";
 
 const feeReceiver = new PublicKey(
-  "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt"
+  "6m9RuGeKMYcJwY7YPCFecQECwfy3JKfDbN4HgR91sFpZ"
 );
 
 function parseHexString(str) { 
@@ -63,6 +63,7 @@ const main = async () => {
   bridgeFees[1] = new anchor.BN(3401361); // domain = 1, bridge fee = 0.000100
   bridgeFees[2] = new anchor.BN(3401361); // domain = 2, bridge fee = 0.000100
   bridgeFees[3] = new anchor.BN(3401361); // domain = 3, bridge fee = 0.000100
+  bridgeFees[4] = new anchor.BN(3401361); // domain = 3, bridge fee = 0.000100
   bridgeFees[6] = new anchor.BN(3401361); // domain = 6, bridge fee = 0.000100
   bridgeFees[7] = new anchor.BN(3401361); // domain = 7, bridge fee = 0.000100
 
@@ -70,6 +71,7 @@ const main = async () => {
   swapFees[1] = new anchor.BN(5102041); // domain = 1, swap fee = 0.000100
   swapFees[2] = new anchor.BN(5102041); // domain = 2, swap fee = 0.000100
   swapFees[3] = new anchor.BN(5102041); // domain = 3, swap fee = 0.000100
+  swapFees[4] = new anchor.BN(5102041); // domain = 3, swap fee = 0.000100
   swapFees[6] = new anchor.BN(5102041); // domain = 6, swap fee = 0.000100
   swapFees[7] = new anchor.BN(5102041); // domain = 7, swap fee = 0.000100
 

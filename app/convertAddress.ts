@@ -32,6 +32,7 @@ export const solanaAddressToArray = (solanaAddress) =>
     mobile: "mb1eu7TzEc71KxDpsmsKoucSSuuoGLv1drys1oP2jh6",
     paypal: "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo", // 2022
     jup: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN",
+	catwifhat: "7atgF8KQo4wJrD5ATGX7t1V2zVvykPJbFfNeVf1icFv1", // 2022
     wsol: "So11111111111111111111111111111111111111112",
     relayerWallet: "HfdkJ3LwKtUU56RJMjkXepGww4ZvhQ1bcKJG47w2UZUS",
     relayerWsol: "",
