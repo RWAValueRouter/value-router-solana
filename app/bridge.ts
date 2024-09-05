@@ -138,7 +138,6 @@ const sendBridgeTx = async () => {
 
   const accounts = {
     payer: provider.wallet.publicKey,
-    eventRentPayer: provider.wallet.publicKey,
 
     messageTransmitterProgram: messageTransmitterProgram.programId,
     tokenMessengerMinterProgram: tokenMessengerMinterProgram.programId,
@@ -225,7 +224,7 @@ const sendBridgeTx = async () => {
 
   /// 5. Call swapAndBridge
   const swapAndBridgeInstruction = await valueRouterProgram.methods
-    .swapAndBridge({
+    .swapAndBridgeShareEventAccounts({
       jupiterSwapData: new Buffer(""),
       buyArgs: {
         buyToken: buyToken,
@@ -243,7 +242,7 @@ const sendBridgeTx = async () => {
   });
 
   const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
-    microLamports: 1,
+    microLamports: 500000,
   });
 
   const instructions = [

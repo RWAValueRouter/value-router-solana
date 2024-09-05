@@ -4,7 +4,7 @@ use {
 };
 
 /*
-Instruction 7: post_swap_message
+Instruction 8: post_swap_message
  */
 #[derive(Accounts)]
 #[instruction(params: PostSwapDataParams)]

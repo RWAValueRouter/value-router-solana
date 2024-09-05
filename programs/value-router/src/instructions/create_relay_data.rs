@@ -1,7 +1,7 @@
 use {crate::state::RelayData, anchor_lang::prelude::*};
 
 /*
-Instruction 5: create_relay_data
+Instruction 6: create_relay_data
  */
 #[derive(Accounts)]
 pub struct CreateRelayData<'info> {

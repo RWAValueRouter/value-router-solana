@@ -4,6 +4,7 @@ use {
         jupiter::{swap_on_jupiter, Jupiter},
         program,
         state::{SwapAndBridgeEvent, ValueRouter},
+        swap_and_bridge::SwapAndBridgeParams,
         swap_message::SwapMessage,
         utils,
     },
@@ -26,18 +27,15 @@ use {
 };
 
 /*
-Instruction 4: swap_and_bridge
+Instruction 5: swap_and_bridge_share_event_accounts
 */
 // Instruction accounts
 #[derive(Accounts)]
 #[instruction(params: SwapAndBridgeParams)]
-pub struct SwapAndBridgeInstruction<'info> {
+pub struct SwapAndBridgeShareEventAccountsInstruction<'info> {
     // Signers
     #[account(mut)]
     pub payer: Signer<'info>,
-
-    #[account(mut)]
-    pub event_rent_payer: Signer<'info>,
 
     // Programs
     pub message_transmitter_program:
@@ -128,24 +126,8 @@ pub struct SwapAndBridgeInstruction<'info> {
     pub fee_receiver: UncheckedAccount<'info>,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct BuyArgs {
-    pub buy_token: Pubkey,
-    pub guaranteed_buy_amount: Vec<u8>,
-}
-
-// Instruction parameters
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct SwapAndBridgeParams {
-    pub jupiter_swap_data: Vec<u8>,
-    pub buy_args: BuyArgs,
-    pub bridge_usdc_amount: u64,
-    pub dest_domain: u32,
-    pub recipient: Pubkey,
-}
-
-pub fn swap_and_bridge(
-    ctx: Context<SwapAndBridgeInstruction>,
+pub fn swap_and_bridge_share_event_accounts(
+    ctx: Context<SwapAndBridgeShareEventAccountsInstruction>,
     params: SwapAndBridgeParams,
 ) -> Result<()> {
     assert!(
@@ -247,7 +229,7 @@ pub fn swap_and_bridge(
     // cpi depositForBurnWithCaller
     let deposit_for_burn_accounts = Box::new(DepositForBurnContext {
         owner: ctx.accounts.program_authority.to_account_info(),
-        event_rent_payer: ctx.accounts.event_rent_payer.clone().to_account_info(),
+        event_rent_payer: ctx.accounts.program_authority.clone().to_account_info(),
         sender_authority_pda: ctx.accounts.sender_authority_pda.to_account_info(),
         burn_token_account: ctx.accounts.program_usdc_account.clone().to_account_info(),
         message_transmitter: message_transmitter.clone().to_account_info(),
@@ -374,7 +356,7 @@ pub fn swap_and_bridge(
 
     // cpi sendMessageWithCaller
     let send_message_accounts = Box::new(SendMessageContext {
-        event_rent_payer: ctx.accounts.event_rent_payer.to_account_info(),
+        event_rent_payer: ctx.accounts.program_authority.to_account_info(),
         sender_authority_pda: ctx.accounts.sender_authority_pda_2.to_account_info(),
         message_transmitter: message_transmitter.clone().to_account_info(),
         message_sent_event_data: ctx.accounts.message_sent_event_data_2.to_account_info(),

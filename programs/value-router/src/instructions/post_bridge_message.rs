@@ -4,7 +4,7 @@ use {
 };
 
 /*
-Instruction 6: post_bridge_message
+Instruction 7: post_bridge_message
  */
 #[derive(Accounts)]
 #[instruction(params: PostBridgeDataParams)]

@@ -187,7 +187,6 @@ const sendSwapAndBridgeTx = async () => {
 
   const accounts = {
     payer: provider.wallet.publicKey,
-    eventRentPayer: provider.wallet.publicKey,
 
     messageTransmitterProgram: messageTransmitterProgram.programId,
     tokenMessengerMinterProgram: tokenMessengerMinterProgram.programId,
@@ -211,11 +210,7 @@ const sendSwapAndBridgeTx = async () => {
     messageSentEventData2: messageSentEventAccountKeypair2.publicKey,
     remoteValueRouter: remoteValueRouter,
 
-    //eventAuthority: pdas.eventAuthority.publicKey,
-    eventAuthority: eventAuthority,
-
-    //eventAuthority: messageSentEventAccountKeypair.publicKey,
-    //program: valueRouterProgram.programId,
+    eventAuthority: eventAuthority, // token messenger's eventAuthority
 
     programAuthority: PublicKey.findProgramAddressSync(
       [Buffer.from("authority")],
@@ -255,7 +250,7 @@ const sendSwapAndBridgeTx = async () => {
 
   /// 5. Call swapAndBridge
   const swapAndBridgeInstruction = await valueRouterProgram.methods
-    .swapAndBridge({
+    .swapAndBridgeShareEventAccounts({
       jupiterSwapData: swapInstruction.data,
       buyArgs: {
         buyToken: buyToken,

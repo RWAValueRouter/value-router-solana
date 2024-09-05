@@ -10,9 +10,11 @@ use instructions::*;
 
 use {anchor_lang::prelude::*, solana_program::pubkey::Pubkey};
 
+use message_transmitter::instructions::ReclaimEventAccountParams;
+
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("GQa9a7XynZBSTgDtLWADWe1k7baTzxaTSDZCQAQLjiWn");
+declare_id!("46qrmtDCpzX1sji8UupvHNEoWgy3QfrZUjY5KFd7AUE3");
 
 #[program]
 pub mod value_router {
@@ -44,12 +46,20 @@ pub mod value_router {
         swap_and_bridge::swap_and_bridge(ctx, params)
     }
 
-    // 5 create_relay_data
+    // 5 swap_and_bridge_share_event_account
+    pub fn swap_and_bridge_share_event_accounts(
+        ctx: Context<SwapAndBridgeShareEventAccountsInstruction>,
+        params: SwapAndBridgeParams,
+    ) -> Result<()> {
+        swap_and_bridge_share_event_accounts::swap_and_bridge_share_event_accounts(ctx, params)
+    }
+
+    // 6 create_relay_data
     pub fn create_relay_data(ctx: Context<CreateRelayData>) -> Result<()> {
         create_relay_data::create_relay_data(ctx)
     }
 
-    // 6 post_bridge_message
+    // 7 post_bridge_message
     pub fn post_bridge_message(
         ctx: Context<PostBridgeData>,
         params: PostBridgeDataParams,
@@ -57,12 +67,12 @@ pub mod value_router {
         post_bridge_message::post_bridge_message(ctx, params)
     }
 
-    // 7 post_swap_message
+    // 8 post_swap_message
     pub fn post_swap_message(ctx: Context<PostSwapData>, params: PostSwapDataParams) -> Result<()> {
         post_swap_message::post_swap_message(ctx, params)
     }
 
-    // 8 relay
+    // 9 relay
     pub fn relay<'a>(
         ctx: Context<'_, '_, '_, 'a, RelayInstruction<'a>>,
         params: RelayParams,
@@ -70,11 +80,19 @@ pub mod value_router {
         relay::relay(ctx, params)
     }
 
-    // 9 relay10_no_swap
+    // 10 relay_no_swap
     pub fn relay_no_swap<'a>(
         ctx: Context<'_, '_, '_, 'a, RelayNoSwapInstruction<'a>>,
         params: RelayNoSwapParams,
     ) -> Result<()> {
         relay_no_swap::relay_no_swap(ctx, params)
+    }
+
+    // 11 reclaim
+    pub fn reclaim<'a>(
+        ctx: Context<'_, '_, '_, 'a, ReclaimContext<'a>>,
+        params: ReclaimEventAccountParams,
+    ) -> Result<()> {
+        reclaim::reclaim(ctx, params)
     }
 }
