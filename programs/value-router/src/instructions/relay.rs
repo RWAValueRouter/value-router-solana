@@ -3,7 +3,7 @@ use {
         constants,
         jupiter::{swap_on_jupiter, Jupiter},
         program,
-        state::{RelayData, ValueRouter},
+        state::{RelayData},
         swap_message::SwapMessage,
         utils,
     },
@@ -65,9 +65,6 @@ pub struct RelayInstruction<'info> {
     pub token_messenger_minter_program: Program<'info, TokenMessengerMinter>,
 
     pub value_router_program: Program<'info, program::ValueRouter>,
-
-    #[account()]
-    pub value_router: Box<Account<'info, ValueRouter>>,
 
     pub token_program: Program<'info, Token>,
 
