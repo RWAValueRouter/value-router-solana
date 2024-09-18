@@ -484,11 +484,6 @@
           "isSigner": false
         },
         {
-          "name": "valueRouter",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -663,11 +658,6 @@
         },
         {
           "name": "valueRouterProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "valueRouter",
           "isMut": false,
           "isSigner": false
         },
@@ -1254,6 +1244,6 @@
     }
   ],
   "metadata": {
-    "address": "2ZssnwF4RGvKDCJu9G4rb2Ci9YvRpJZoZ8ogiyQEG2Mx"
+    "address": "DWqc4FiFtRPZD6GKen8HnzGS9RuHsKSsoqw8d6VJuoVp"
   }
 }

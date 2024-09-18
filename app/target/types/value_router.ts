@@ -662,11 +662,6 @@ export type ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "valueRouter",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -1858,11 +1853,6 @@ export const IDL: ValueRouter = {
         },
         {
           "name": "valueRouterProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "valueRouter",
           "isMut": false,
           "isSigner": false
         },

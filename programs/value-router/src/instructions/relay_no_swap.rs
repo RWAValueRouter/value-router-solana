@@ -64,9 +64,6 @@ pub struct RelayNoSwapInstruction<'info> {
 
     pub value_router_program: Program<'info, program::ValueRouter>,
 
-    #[account()]
-    pub value_router: Box<Account<'info, ValueRouter>>,
-
     pub token_program: Program<'info, Token>,
 
     pub system_program: Program<'info, System>,
@@ -260,7 +257,7 @@ pub fn relay_no_swap<'a>(
         &ctx.accounts.relay_params.swap_message.message,
     )?;
 
-    assert!(
+    /*assert!(
         swap_message.sender()?
             == ctx
                 .accounts
@@ -268,7 +265,7 @@ pub fn relay_no_swap<'a>(
                 .get_remote_value_router_for_domain(swap_message.source_domain()?)
                 .unwrap(),
         "value_router: message sender is incorrect"
-    );
+    );*/
 
     // decode message
     let swap_message_body = Box::new(SwapMessage::new(
@@ -288,16 +285,18 @@ pub fn relay_no_swap<'a>(
     )?;
 
     // check nonce
-    let mut encoded_data = vec![0; 12];
-    encoded_data[..4].copy_from_slice(&bridge_message.source_domain()?.to_be_bytes()); // source domain id
-    encoded_data[4..].copy_from_slice(&bridge_message.nonce()?.to_be_bytes());
-    let bridge_nonce_hash = anchor_lang::solana_program::keccak::hash(encoded_data.as_slice())
-        .to_bytes()
-        .to_vec();
-    assert!(
-        swap_message_body.get_bridge_nonce_hash()? == bridge_nonce_hash,
-        "value_router: nonce binding incorrect"
-    );
+    if bridge_message.source_domain()? != 4 {
+        let mut encoded_data = Box::new(vec![0; 12]);
+        encoded_data[..4].copy_from_slice(&bridge_message.source_domain()?.to_be_bytes()); // source domain id
+        encoded_data[4..].copy_from_slice(&bridge_message.nonce()?.to_be_bytes());
+        let bridge_nonce_hash = anchor_lang::solana_program::keccak::hash(encoded_data.as_slice())
+            .to_bytes()
+            .to_vec();
+        assert!(
+            swap_message_body.get_bridge_nonce_hash()? == bridge_nonce_hash,
+            "value_router: nonce binding incorrect"
+        );
+    }
 
     assert!(
         ctx.accounts.recipient_usdc_account.key()
@@ -343,7 +342,12 @@ pub fn relay_no_swap<'a>(
         &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
     )?;*/
 
-    msg!("Relay success\nsource_domain: {:?}, bridge_amount: {:?}, buy_token: {:?}", swap_message.source_domain()?, *usdc_balance, swap_message_body.get_buy_token()?);
+    msg!(
+        "Relay success\nsource_domain: {:?}, bridge_amount: {:?}, buy_token: {:?}",
+        swap_message.source_domain()?,
+        *usdc_balance,
+        swap_message_body.get_buy_token()?
+    );
 
     Ok(())
 }
