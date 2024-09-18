@@ -188,7 +188,9 @@
           "name": "programUsdcAccount",
           "isMut": true,
           "isSigner": false,
-          "docs": ["Program usdc token account"]
+          "docs": [
+            "Program usdc token account"
+          ]
         },
         {
           "name": "senderUsdcAccount",
@@ -327,7 +329,9 @@
           "name": "programUsdcAccount",
           "isMut": true,
           "isSigner": false,
-          "docs": ["Program usdc token account"]
+          "docs": [
+            "Program usdc token account"
+          ]
         },
         {
           "name": "senderUsdcAccount",
@@ -814,12 +818,47 @@
           }
         }
       ]
+    },
+    {
+      "name": "closeProgramAuthority",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "valueRouter",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "programAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": "CloseProgramAuthorityParams"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
     {
       "name": "ValueRouter",
-      "docs": ["Main state of the MessageTransmitter program"],
+      "docs": [
+        "Main state of the MessageTransmitter program"
+      ],
       "type": {
         "kind": "struct",
         "fields": [
@@ -830,25 +869,37 @@
           {
             "name": "domainIds",
             "type": {
-              "array": ["u32", 10]
+              "array": [
+                "u32",
+                10
+              ]
             }
           },
           {
             "name": "bridgeFees",
             "type": {
-              "array": ["u64", 10]
+              "array": [
+                "u64",
+                10
+              ]
             }
           },
           {
             "name": "swapFees",
             "type": {
-              "array": ["u64", 10]
+              "array": [
+                "u64",
+                10
+              ]
             }
           },
           {
             "name": "remoteValueRouter",
             "type": {
-              "array": ["publicKey", 10]
+              "array": [
+                "publicKey",
+                10
+              ]
             }
           },
           {
@@ -884,6 +935,13 @@
     }
   ],
   "types": [
+    {
+      "name": "CloseProgramAuthorityParams",
+      "type": {
+        "kind": "struct",
+        "fields": []
+      }
+    },
     {
       "name": "InitializeParams",
       "type": {
@@ -958,25 +1016,37 @@
           {
             "name": "domainIds",
             "type": {
-              "array": ["u32", 10]
+              "array": [
+                "u32",
+                10
+              ]
             }
           },
           {
             "name": "bridgeFees",
             "type": {
-              "array": ["u64", 10]
+              "array": [
+                "u64",
+                10
+              ]
             }
           },
           {
             "name": "swapFees",
             "type": {
-              "array": ["u64", 10]
+              "array": [
+                "u64",
+                10
+              ]
             }
           },
           {
             "name": "remoteValueRouter",
             "type": {
-              "array": ["publicKey", 10]
+              "array": [
+                "publicKey",
+                10
+              ]
             }
           },
           {
@@ -1032,6 +1102,10 @@
           {
             "name": "recipient",
             "type": "publicKey"
+          },
+          {
+            "name": "memo",
+            "type": "bytes"
           }
         ]
       }
@@ -1138,6 +1212,11 @@
           "name": "swapNonce",
           "type": "u64",
           "index": false
+        },
+        {
+          "name": "memo",
+          "type": "bytes",
+          "index": false
         }
       ]
     }
@@ -1175,6 +1254,6 @@
     }
   ],
   "metadata": {
-    "address": "46qrmtDCpzX1sji8UupvHNEoWgy3QfrZUjY5KFd7AUE3"
+    "address": "2ZssnwF4RGvKDCJu9G4rb2Ci9YvRpJZoZ8ogiyQEG2Mx"
   }
 }

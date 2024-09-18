@@ -31,7 +31,7 @@ import {
 const jito_url = process.env.JITO_URL;
 
 const feeReceiver = new PublicKey(
-  "By3mwon52HE68c9mAAwqxXEE9Wo1DnhzMzME8vMmecBt"
+	"6m9RuGeKMYcJwY7YPCFecQECwfy3JKfDbN4HgR91sFpZ"
 );
 const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
 const usdtAddress = new PublicKey(process.env.USDT_ADDRESS);
@@ -153,6 +153,7 @@ const sendSwapAndBridgeTx = async () => {
   );
 
   let computeBudgetInstructions = swapIx.computeBudgetInstructions;
+	console.log("computeBudgetInstructions: ", computeBudgetInstructions);
 
   const computeUnitPriceIx = ComputeBudgetProgram.setComputeUnitPrice({
     microLamports: 500000,
@@ -265,14 +266,9 @@ const sendSwapAndBridgeTx = async () => {
     .remainingAccounts(swapInstruction.keys)
     .instruction();
 
-  // 增加手续费
-  const addPriorityFee = ComputeBudgetProgram.setComputeUnitPrice({
-    microLamports: 1,
-  });
-
   const instructions = [
     ...computeBudgetInstructions.map(instructionDataToTransactionInstruction),
-    computeUnitPriceIx,
+    //computeUnitPriceIx,
     swapAndBridgeInstruction,
   ];
 

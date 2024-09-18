@@ -45,6 +45,7 @@ export const getSwapIx = async (
     destinationTokenAccount: outputAccount.toBase58(),
     useSharedAccounts: true,
     wrapAndUnwrapSol: true,
+		prioritizationFeeLamports: 30000,
   };
   return fetch(config.basePath + `/swap-instructions`, {
     method: "POST",

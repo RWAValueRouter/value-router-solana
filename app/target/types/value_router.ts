@@ -484,11 +484,6 @@ export type ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "valueRouter",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -802,7 +797,7 @@ export type ValueRouter = {
         {
           "name": "messageSentEventData",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "programAuthority",
@@ -815,6 +810,39 @@ export type ValueRouter = {
           "name": "params",
           "type": {
             "defined": "ReclaimEventAccountParams"
+          }
+        }
+      ]
+    },
+    {
+      "name": "closeProgramAuthority",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "valueRouter",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "programAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": "CloseProgramAuthorityParams"
           }
         }
       ]
@@ -902,6 +930,13 @@ export type ValueRouter = {
     }
   ],
   "types": [
+    {
+      "name": "CloseProgramAuthorityParams",
+      "type": {
+        "kind": "struct",
+        "fields": []
+      }
+    },
     {
       "name": "InitializeParams",
       "type": {
@@ -1062,6 +1097,10 @@ export type ValueRouter = {
           {
             "name": "recipient",
             "type": "publicKey"
+          },
+          {
+            "name": "memo",
+            "type": "bytes"
           }
         ]
       }
@@ -1115,6 +1154,11 @@ export type ValueRouter = {
         {
           "name": "swapNonce",
           "type": "u64",
+          "index": false
+        },
+        {
+          "name": "memo",
+          "type": "bytes",
           "index": false
         }
       ]
@@ -1640,11 +1684,6 @@ export const IDL: ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "valueRouter",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
@@ -1958,7 +1997,7 @@ export const IDL: ValueRouter = {
         {
           "name": "messageSentEventData",
           "isMut": true,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "programAuthority",
@@ -1971,6 +2010,39 @@ export const IDL: ValueRouter = {
           "name": "params",
           "type": {
             "defined": "ReclaimEventAccountParams"
+          }
+        }
+      ]
+    },
+    {
+      "name": "closeProgramAuthority",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "valueRouter",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "programAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": "CloseProgramAuthorityParams"
           }
         }
       ]
@@ -2058,6 +2130,13 @@ export const IDL: ValueRouter = {
     }
   ],
   "types": [
+    {
+      "name": "CloseProgramAuthorityParams",
+      "type": {
+        "kind": "struct",
+        "fields": []
+      }
+    },
     {
       "name": "InitializeParams",
       "type": {
@@ -2218,6 +2297,10 @@ export const IDL: ValueRouter = {
           {
             "name": "recipient",
             "type": "publicKey"
+          },
+          {
+            "name": "memo",
+            "type": "bytes"
           }
         ]
       }
@@ -2271,6 +2354,11 @@ export const IDL: ValueRouter = {
         {
           "name": "swapNonce",
           "type": "u64",
+          "index": false
+        },
+        {
+          "name": "memo",
+          "type": "bytes",
           "index": false
         }
       ]

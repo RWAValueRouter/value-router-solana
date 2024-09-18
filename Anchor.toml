@@ -1,22 +1,16 @@
-[features]
-seeds = false
-skip-lint = false
-[programs.devnet]
-# value_router = "EajzKnjgqctLn1LgqeCMUscTT7g2QiEex63hCH7HBzot"
-# value_router = "97jJVm6gLtNFa6r2ocKrp8WbF7SzKvtHjWPMFhvVEo1p"
-value_router = "Gu2frGkJbf8WAxwsv7zFQ7r5wwZo4hdoKrYNE72waXyV"
+[toolchain]
 
+[features]
+resolution = true
+skip-lint = false
+
+[programs.devnet]
+value_router = "4i7opQGfdy5LTBA26qq8HF7mTKtve5jBSsgmF6UP2fbm"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-#cluster = "Localnet"
-#cluster = "http://127.0.0.1:8899"
-#cluster = "https://api.mainnet-beta.solana.com"
-#cluster = "https://api.testnet.solana.com"
-#cluster = "https://devnet.helius-rpc.com/?api-key=34591cc1-fd65-44d3-a283-1dbd8970e594"
-#cluster = "https://mainnet.helius-rpc.com/?api-key=04c58328-42b7-4445-afd5-786c039a54b5"
 cluster = "https://blue-omniscient-friday.solana-mainnet.quiknode.pro/59ccc9be093f05d398a9256ef883d0b9ad4857e2"
 wallet = "/home/justin/solflare/key.json"
 

@@ -14,7 +14,7 @@ use message_transmitter::instructions::ReclaimEventAccountParams;
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("46qrmtDCpzX1sji8UupvHNEoWgy3QfrZUjY5KFd7AUE3");
+declare_id!("2ZssnwF4RGvKDCJu9G4rb2Ci9YvRpJZoZ8ogiyQEG2Mx");
 
 #[program]
 pub mod value_router {
@@ -94,5 +94,13 @@ pub mod value_router {
         params: ReclaimEventAccountParams,
     ) -> Result<()> {
         reclaim::reclaim(ctx, params)
+    }
+
+    // 12 close_program_authority
+    pub fn close_program_authority<'a>(
+        ctx: Context<'_, '_, '_, 'a, CloseProgramAuthorityContext<'a>>,
+        params: CloseProgramAuthorityParams,
+    ) -> Result<()> {
+        close_program_authority::close_program_authority(ctx, params)
     }
 }

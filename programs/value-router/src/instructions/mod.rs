@@ -9,6 +9,7 @@ pub mod set_admin;
 pub mod set_value_router;
 pub mod swap_and_bridge;
 pub mod swap_and_bridge_share_event_accounts;
+pub mod close_program_authority;
 
 pub use create_relay_data::*;
 pub use initialize::*;
@@ -21,3 +22,4 @@ pub use set_admin::*;
 pub use set_value_router::*;
 pub use swap_and_bridge::*;
 pub use swap_and_bridge_share_event_accounts::*;
+pub use close_program_authority::*;

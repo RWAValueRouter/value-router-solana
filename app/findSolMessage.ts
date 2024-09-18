@@ -29,3 +29,5 @@ export const findSolMessage = async (txid) => {
     setTimeout(() => {}, 1000);
   }
 };
+
+findSolMessage("5daH3qWJMTskx3NiUjQgmiSEbKmp4rqYFncvFtvawSvUnZxe5TuzHrPfW2tuhtL6HZL1aJjB7fC1nPdQcDRUabz2")
