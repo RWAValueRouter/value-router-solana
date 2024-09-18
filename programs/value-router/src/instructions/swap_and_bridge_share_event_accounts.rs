@@ -59,7 +59,10 @@ pub struct SwapAndBridgeShareEventAccountsInstruction<'info> {
     #[account(mut)]
     pub token_minter: Box<Account<'info, TokenMinter>>,
 
-    #[account()]
+    #[account(
+        seeds = [constants::VALUE_ROUTER],
+        bump
+    )]
     pub value_router: Box<Account<'info, ValueRouter>>,
 
     // Pdas
@@ -309,6 +312,7 @@ pub fn swap_and_bridge_share_event_accounts(
             recipient: params.recipient.clone(),
             bridge_nonce: nonce,
             swap_nonce: 0,
+            memo: params.memo,
         });
 
         return Ok(());
@@ -408,6 +412,7 @@ pub fn swap_and_bridge_share_event_accounts(
         recipient: params.recipient,
         bridge_nonce: nonce,
         swap_nonce: nonce2,
+        memo: params.memo,
     });
 
     Ok(())

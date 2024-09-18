@@ -74,4 +74,5 @@ pub struct SwapAndBridgeEvent {
     pub recipient: Pubkey,
     pub bridge_nonce: u64,
     pub swap_nonce: u64,
+    pub memo: Vec<u8>,
 }

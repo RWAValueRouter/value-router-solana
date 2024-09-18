@@ -61,7 +61,10 @@ pub struct SwapAndBridgeInstruction<'info> {
     #[account(mut)]
     pub token_minter: Box<Account<'info, TokenMinter>>,
 
-    #[account()]
+    #[account(
+        seeds = [constants::VALUE_ROUTER],
+        bump
+    )]
     pub value_router: Box<Account<'info, ValueRouter>>,
 
     // Pdas
@@ -142,6 +145,7 @@ pub struct SwapAndBridgeParams {
     pub bridge_usdc_amount: u64,
     pub dest_domain: u32,
     pub recipient: Pubkey,
+    pub memo: Vec<u8>,
 }
 
 pub fn swap_and_bridge(
@@ -327,6 +331,7 @@ pub fn swap_and_bridge(
             recipient: params.recipient.clone(),
             bridge_nonce: nonce,
             swap_nonce: 0,
+            memo: params.memo,
         });
 
         return Ok(());
@@ -426,6 +431,7 @@ pub fn swap_and_bridge(
         recipient: params.recipient,
         bridge_nonce: nonce,
         swap_nonce: nonce2,
+        memo: params.memo,
     });
 
     Ok(())

@@ -1,4 +1,7 @@
-use {crate::state::ValueRouter, anchor_lang::prelude::*};
+use {
+    crate::{constants, state::ValueRouter},
+    anchor_lang::prelude::*,
+};
 
 /*
 Instruction 1: initialize
@@ -14,7 +17,7 @@ pub struct InitializeContext<'info> {
             init_if_needed,
             payer = payer,
             space = 640,
-            seeds = [b"value_router"],
+            seeds = [constants::VALUE_ROUTER],
             bump,
             constraint = value_router.admin == Pubkey::default() @ InitializeErrorCode::AccountAlreadyInitialized
         )]
