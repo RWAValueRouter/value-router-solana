@@ -20,7 +20,8 @@
     "jupiterSwap": "tsx jupiterSwap.ts",
     "tryTx": "tsx tryTx.ts",
     "inspectAccount": "tsx inspectAccount.ts",
-    "reclaim": "tsx reclaim.ts"
+    "reclaim": "tsx reclaim.ts",
+    "closeAuthorityAccount": "tsx closeAuthorityAccount.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",

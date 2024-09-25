@@ -6,7 +6,6 @@ import {
   ComputeBudgetProgram,
   VersionedTransaction,
 } from "@solana/web3.js";
-import { getBytes } from "ethers";
 
 import {
   TOKEN_PROGRAM_ID,
@@ -15,7 +14,6 @@ import {
 
 import {
   SOLANA_USDC_ADDRESS,
-  evmAddressToBytes32,
   getAnchorConnection,
   getSwapAndBridgePdas,
   getPrograms,

@@ -260,6 +260,7 @@ const sendSwapAndBridgeTx = async () => {
       bridgeUsdcAmount: bridgeUsdcAmount,
       destDomain: destinationDomain,
       recipient: mintRecipient,
+      memo: Buffer.alloc(0),
     })
     // eventAuthority and program accounts are implicitly added by Anchor
     .accounts(accounts)

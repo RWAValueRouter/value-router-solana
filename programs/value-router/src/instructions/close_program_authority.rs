@@ -1,7 +1,7 @@
 use {
     crate::{constants, state::ValueRouter},
-    anchor_lang::prelude::*,
-    solana_program::system_program,
+    anchor_lang::{prelude::*, solana_program::program::invoke_signed},
+    solana_program::{system_instruction, system_program},
 };
 
 /*
@@ -40,12 +40,30 @@ pub fn close_program_authority(
     let program_authority = ctx.accounts.program_authority.to_account_info();
     let admin = ctx.accounts.admin.to_account_info();
 
-    let dest_starting_lamports = admin.lamports();
-    **admin.lamports.borrow_mut() = dest_starting_lamports
-        .checked_add(program_authority.lamports())
-        .unwrap();
-    **program_authority.lamports.borrow_mut() = 0;
+    let transfer_instruction = system_instruction::transfer(
+        &program_authority.key(),
+        &admin.key(),
+        program_authority.lamports(),
+    );
 
-    program_authority.assign(&system_program::ID);
-    Ok(program_authority.realloc(0, false)?)
+    let seeds: &[&[&[u8]]] = &[&[
+        constants::AUTHORITY_SEED,
+        &[*ctx.bumps.get("program_authority").unwrap()],
+    ]];
+
+    invoke_signed(
+        &transfer_instruction,
+        &[
+            program_authority.clone(),
+            admin.clone(),
+            ctx.accounts.system_program.to_account_info(),
+        ],
+        seeds,
+    )?;
+
+    program_authority.realloc(0, false)?;
+
+    program_authority.assign(&ctx.accounts.system_program.key());
+
+    Ok(())
 }
