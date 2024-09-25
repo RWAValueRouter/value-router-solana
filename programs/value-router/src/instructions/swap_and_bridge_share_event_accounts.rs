@@ -120,8 +120,6 @@ pub struct SwapAndBridgeShareEventAccountsInstruction<'info> {
     #[account(mut)]
     pub sender_usdc_account: Account<'info, TokenAccount>,
 
-    pub source_mint: Box<Account<'info, Mint>>,
-
     pub jupiter_program: Program<'info, Jupiter>,
 
     /// CHECK:
@@ -157,7 +155,7 @@ pub fn swap_and_bridge_share_event_accounts(
         )?;
 
         let initial_balance: u64 = initial_program_usdc_account.amount;
-        if ctx.accounts.source_mint.clone().key() != ctx.accounts.burn_token_mint.key() {
+        if params.jupiter_swap_data.len() > 0 {
             msg!("valuerouter: handling local swap");
 
             swap_on_jupiter(

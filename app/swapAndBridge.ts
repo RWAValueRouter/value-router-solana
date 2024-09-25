@@ -36,8 +36,6 @@ const feeReceiver = new PublicKey(
 const usdcAddress = new PublicKey(SOLANA_USDC_ADDRESS);
 const usdtAddress = new PublicKey(process.env.USDT_ADDRESS);
 const wsolAddress = new PublicKey(process.env.WSOL_ADDRESS);
-//const sourceMint = new PublicKey(process.env.USDT_ADDRESS);
-const sourceMint = new PublicKey(process.env.WSOL_ADDRESS);
 const jupiterProgramId = new PublicKey(process.env.JUPITER_ADDRESS);
 const remoteValueRouter = new PublicKey(
   getBytes(evmAddressToBytes32(process.env.REMOTE_VALUE_ROUTER!))
@@ -46,8 +44,9 @@ const LOOKUP_TABLE_2_ADDRESS = new PublicKey(
   "G6XcDmLhLDBDxeYpCiumt1KCRiNEDoFh3JEdTXu5H4kf"
 );
 
-const inputToken = usdtAddress;
+//const inputToken = usdtAddress;
 //const inputToken = wsolAddress;
+const inputToken = new PublicKey("2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo"); // PYUSD
 
 const sellTokenAmount = Number(process.env.SELL_AMOUNT ?? 1);
 const bridgeUsdcAmount = new anchor.BN(process.env.BRIDGE_USDC_AMOUNT ?? 1);
@@ -221,8 +220,6 @@ const sendSwapAndBridgeTx = async () => {
     programUsdcAccount: programUsdcAccount,
 
     senderUsdcAccount: userUsdcAccount,
-
-    sourceMint: sourceMint,
 
     jupiterProgram: jupiterProgramId,
 
