@@ -198,11 +198,6 @@
           "isSigner": false
         },
         {
-          "name": "sourceMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "jupiterProgram",
           "isMut": false,
           "isSigner": false
@@ -336,11 +331,6 @@
         {
           "name": "senderUsdcAccount",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "sourceMint",
-          "isMut": false,
           "isSigner": false
         },
         {

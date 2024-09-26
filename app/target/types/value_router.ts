@@ -198,11 +198,6 @@ export type ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "sourceMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "jupiterProgram",
           "isMut": false,
           "isSigner": false
@@ -336,11 +331,6 @@ export type ValueRouter = {
         {
           "name": "senderUsdcAccount",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "sourceMint",
-          "isMut": false,
           "isSigner": false
         },
         {
@@ -1393,11 +1383,6 @@ export const IDL: ValueRouter = {
           "isSigner": false
         },
         {
-          "name": "sourceMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "jupiterProgram",
           "isMut": false,
           "isSigner": false
@@ -1531,11 +1516,6 @@ export const IDL: ValueRouter = {
         {
           "name": "senderUsdcAccount",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "sourceMint",
-          "isMut": false,
           "isSigner": false
         },
         {
