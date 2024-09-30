@@ -1,0 +1,1 @@
+window.ALL_CRATES = ["value_router","cctp_message_receiver"];

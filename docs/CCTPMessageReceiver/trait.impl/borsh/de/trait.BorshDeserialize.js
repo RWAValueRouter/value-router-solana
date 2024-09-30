@@ -1,3 +1,0 @@
-(function() {var implementors = {
-"cctp_message_receiver":[["impl BorshDeserialize for <a class=\"struct\" href=\"cctp_message_receiver/instruction/struct.HandleReceiveMessage.html\" title=\"struct cctp_message_receiver::instruction::HandleReceiveMessage\">HandleReceiveMessage</a><div class=\"where\">where\n    HandleReceiveMessageParams: BorshDeserialize,</div>"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
