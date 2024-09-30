@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"cctp_message_receiver":[["impl Owner for <a class=\"struct\" href=\"cctp_message_receiver/instruction/struct.HandleReceiveMessage.html\" title=\"struct cctp_message_receiver::instruction::HandleReceiveMessage\">HandleReceiveMessage</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

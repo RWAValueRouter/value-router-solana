@@ -316,15 +316,6 @@ pub fn swap_and_bridge_share_event_accounts(
         return Ok(());
     }
 
-    /*msg!("closing program usdc account");
-    utils::close_program_usdc(
-        &ctx.accounts.program_authority,
-        &ctx.accounts.program_usdc_account,
-        &ctx.accounts.token_program,
-        &authority_bump,
-    )?;
-    msg!("program usdc account closed");*/
-
     // solidity: bytes32 bridgeNonceHash = keccak256(abi.encodePacked(5, bridgeNonce))
     let localdomain: u32 = 5;
     let localdomain_bytes = localdomain.to_be_bytes();
@@ -333,16 +324,12 @@ pub fn swap_and_bridge_share_event_accounts(
     let mut encoded_data = vec![0; 12];
     encoded_data[..4].copy_from_slice(&localdomain_bytes);
     encoded_data[4..].copy_from_slice(&nonce_bytes);
-    msg!("encoded_data: {:?}", encoded_data);
     // 00 00 00 05 00 00 00 00 00 00 00 01
     // [00, 00, 00, 05, 00, 00, 00, 00, 00, 00, 00, 01]
     let bridge_nonce_hash: [u8; 32] =
         anchor_lang::solana_program::keccak::hash(encoded_data.as_slice()).to_bytes();
-    msg!("bridge_nonce_hash: {:?}", bridge_nonce_hash);
 
     // build swap message
-    msg!("swap_and_bridge: build message_body");
-
     let message_body = Box::new(SwapMessage::format_message(
         1u32,
         bridge_nonce_hash.to_vec(),
@@ -351,10 +338,6 @@ pub fn swap_and_bridge_share_event_accounts(
         params.buy_args.guaranteed_buy_amount.clone(),
         &params.recipient.clone(),
     )?);
-
-    msg!("swap_and_bridge: message_body: {:?}", *message_body);
-
-    msg!("swap_and_bridge: build send_message_accounts");
 
     // cpi sendMessageWithCaller
     let send_message_accounts = Box::new(SendMessageContext {
@@ -365,8 +348,6 @@ pub fn swap_and_bridge_share_event_accounts(
         sender_program: ctx.accounts.value_router_program.to_account_info(),
         system_program: ctx.accounts.system_program.to_account_info(),
     });
-
-    msg!("swap_and_bridge: build send_message_params");
 
     let send_message_params = SendMessageWithCallerParams {
         destination_domain: params.dest_domain,
@@ -386,15 +367,11 @@ pub fn swap_and_bridge_share_event_accounts(
         ],
     ];
 
-    msg!("swap_and_bridge: build send_message_ctx");
-
     let send_message_ctx = CpiContext::new_with_signer(
         ctx.accounts.message_transmitter_program.to_account_info(),
         *send_message_accounts,
         authority_seeds,
     );
-
-    msg!("swap_and_bridge: cpi send_message_with_caller");
 
     let nonce2 =
         message_transmitter::cpi::send_message_with_caller(send_message_ctx, send_message_params)?

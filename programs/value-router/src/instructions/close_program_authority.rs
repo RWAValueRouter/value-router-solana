@@ -63,7 +63,5 @@ pub fn close_program_authority(
 
     program_authority.realloc(0, false)?;
 
-    program_authority.assign(&ctx.accounts.system_program.key());
-
     Ok(())
 }

@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"cctp_message_receiver":[["impl ToAccountMetas for <a class=\"struct\" href=\"cctp_message_receiver/accounts/struct.HandleReceiveMessageContext.html\" title=\"struct cctp_message_receiver::accounts::HandleReceiveMessageContext\">HandleReceiveMessageContext</a>"],["impl&lt;'info&gt; ToAccountMetas for <a class=\"struct\" href=\"cctp_message_receiver/cctp_message_receiver/struct.HandleReceiveMessageContext.html\" title=\"struct cctp_message_receiver::cctp_message_receiver::HandleReceiveMessageContext\">HandleReceiveMessageContext</a>&lt;'info&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"cctp_message_receiver":[["impl&lt;'info&gt; ToAccountInfos&lt;'info&gt; for <a class=\"struct\" href=\"cctp_message_receiver/cctp_message_receiver/struct.HandleReceiveMessageContext.html\" title=\"struct cctp_message_receiver::cctp_message_receiver::HandleReceiveMessageContext\">HandleReceiveMessageContext</a>&lt;'info&gt;<div class=\"where\">where\n    'info: 'info,</div>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

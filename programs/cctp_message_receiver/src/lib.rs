@@ -16,10 +16,6 @@ pub mod cctp_message_receiver {
             seeds::program = message_transmitter::ID
         )]
         pub authority_pda: Signer<'info>,
-        /*#[account(
-            constraint = params.remote_domain == remote_value_router.domain
-        )]
-        pub remote_value_router: Box<Account<'info, RemoteTokenMessenger>>,*/
     }
 
     // Instruction handler

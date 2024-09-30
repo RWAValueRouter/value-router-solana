@@ -285,16 +285,14 @@ pub fn relay_no_swap<'a>(
     )?;
 
     // check nonce
+    assert!(
+        bridge_message.nonce()? + 1 == swap_message.nonce()?,
+        "valueRouter: nonce no match"
+    );
     if bridge_message.source_domain()? != 4 {
-        let mut encoded_data = Box::new(vec![0; 12]);
-        encoded_data[..4].copy_from_slice(&bridge_message.source_domain()?.to_be_bytes()); // source domain id
-        encoded_data[4..].copy_from_slice(&bridge_message.nonce()?.to_be_bytes());
-        let bridge_nonce_hash = anchor_lang::solana_program::keccak::hash(encoded_data.as_slice())
-            .to_bytes()
-            .to_vec();
         assert!(
-            swap_message_body.get_bridge_nonce_hash()? == bridge_nonce_hash,
-            "value_router: nonce binding incorrect"
+            bridge_message.sender()? == swap_message.sender()?,
+            "valueRouter: message sender not match"
         );
     }
 

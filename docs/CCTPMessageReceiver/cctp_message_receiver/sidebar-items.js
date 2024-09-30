@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["check_id","entry","entrypoint","id"],"mod":["accounts","cctp_message_receiver","instruction","program"],"static":["ID"]};
