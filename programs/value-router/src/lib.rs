@@ -14,7 +14,7 @@ use message_transmitter::instructions::ReclaimEventAccountParams;
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("AezETJ8sn3nkHRTC1xwXjktFACCsgdSCQrC8zz5JmYam");
+declare_id!("CDwHLVqT22JvamH6NkVpZqCQ6eKCGbmeMtFPvoh5KQCJ");
 
 #[program]
 pub mod value_router {
