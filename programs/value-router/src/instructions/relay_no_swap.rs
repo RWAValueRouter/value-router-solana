@@ -1,7 +1,7 @@
 use {
     crate::{
         constants, program,
-        state::{RelayData, ValueRouter},
+        state::{RelayData},
         swap_message::SwapMessage,
         utils,
     },
@@ -338,13 +338,6 @@ pub fn relay_no_swap<'a>(
         ctx.accounts.token_program.clone(),
         *usdc_balance,
     );
-
-    /*utils::close_program_usdc(
-        &ctx.accounts.program_authority,
-        &ctx.accounts.program_usdc_account,
-        &ctx.accounts.token_program,
-        &ctx.bumps.get("program_authority").unwrap().to_le_bytes(),
-    )?;*/
 
     msg!(
         "Relay success\nsource_domain: {:?}, bridge_amount: {:?}, buy_token: {:?}",

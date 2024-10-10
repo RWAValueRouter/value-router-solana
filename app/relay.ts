@@ -14,7 +14,6 @@ import {
 import {
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  TOKEN_2022_PROGRAM_ID,
   createAssociatedTokenAccountIdempotentInstruction,
   getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
@@ -25,7 +24,6 @@ import {
   getAnchorConnection,
   getPrograms,
   getRelayPdas,
-  findProgramAddress,
 } from "./utils";
 import {
   getQuote,

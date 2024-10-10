@@ -9,7 +9,7 @@ use {
         utils,
     },
     anchor_lang::prelude::*,
-    anchor_spl::token::{transfer, Mint, Token, TokenAccount, Transfer},
+    anchor_spl::token::{transfer, Token, TokenAccount, Transfer},
     message_transmitter::{
         cpi::accounts::SendMessageContext, instructions::SendMessageWithCallerParams,
         state::MessageTransmitter,

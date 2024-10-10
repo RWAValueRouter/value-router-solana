@@ -38,7 +38,7 @@ async function getAccountInfo(publicKeyString: string) {
 //const publicKeyString = "AdufTJ7BbuWRx5679UdY4YmYNApdLV1MDqJJ91tLE8m2";
 //const publicKeyString = "9nnXjZ2wsPdDsf9P4ehvftYMk2s5RHubhitssCARCWh7";
 //const publicKeyString = "2Tv4PGKfd2utRuCbHeNJ6WjzwrMvZUwcm3xrE2hJqJnx";
-const publicKeyString = "G1cSYrysBAKPoKJjunNbRzo1MCJggTUBWBfMdAnFqVEC";
+const publicKeyString = "9dhM2t66AGUKkQRTUDLUM98xn9DhdHpKJA9QYe4gzHLy";
 
 // Call the function
 getAccountInfo(publicKeyString).catch((err) => {

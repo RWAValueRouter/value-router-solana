@@ -44,9 +44,9 @@ const LOOKUP_TABLE_2_ADDRESS = new PublicKey(
   "G6XcDmLhLDBDxeYpCiumt1KCRiNEDoFh3JEdTXu5H4kf"
 );
 
-//const inputToken = usdtAddress;
+const inputToken = usdtAddress;
 //const inputToken = wsolAddress;
-const inputToken = new PublicKey("2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo"); // PYUSD
+//const inputToken = new PublicKey("DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"); // PYUSD
 
 const sellTokenAmount = Number(process.env.SELL_AMOUNT ?? 1);
 const bridgeUsdcAmount = new anchor.BN(process.env.BRIDGE_USDC_AMOUNT ?? 1);
@@ -150,12 +150,14 @@ const sendSwapAndBridgeTx = async () => {
   let swapInstruction = instructionDataToTransactionInstruction(
     swapIx.swapInstruction
   );
+  console.log("swapIx: ", swapIx);
+
 
   let computeBudgetInstructions = swapIx.computeBudgetInstructions;
 	console.log("computeBudgetInstructions: ", computeBudgetInstructions);
 
   const computeUnitPriceIx = ComputeBudgetProgram.setComputeUnitPrice({
-    microLamports: 500000,
+    microLamports: 1000000,
   });
 
   /// 3. Get accounts
@@ -266,7 +268,7 @@ const sendSwapAndBridgeTx = async () => {
 
   const instructions = [
     ...computeBudgetInstructions.map(instructionDataToTransactionInstruction),
-    //computeUnitPriceIx,
+    computeUnitPriceIx,
     swapAndBridgeInstruction,
   ];
 

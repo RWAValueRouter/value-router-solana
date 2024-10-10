@@ -1,7 +1,7 @@
 | Address | BS58 | Hex |
 |---------|---------|---------|
-| VR program | ACu8dBuPFgVNEL5gCfeR48XnmEmxizi8cye9wdZ2F7rC | 0x88c5843634ff377ec9faa683c7036c0460d9f1350740335fc6e63b70cc41933d |
-| VR caller | CwbSZnrgMG4R4bD758FhX84Sdgj7hEapqh5EpXovtCPf | 0xb16cdcb8e5383d2442a51e9629e2a6466456b4588628ef1b631fb528816db0b6 |
-| VR program usdc account | 2MgUZrGM1b4wqJJ4KQqRJ6X8tMwt1GyqAqbMzMwUPkTb | 0x1427f01d9b3d7333fb1fb5f80613b0b156baded4c47dc4721c0c3a5d68a6ee72 |
+| VR program | 7YAEcrQ1vBpLu5WRsREW6VgUUKztR3tKySwqwa1A9aum | 0x6121918652e8938fc6368d8bf609b938cee8c721417b3f8343aadde03029b9a8 |
+| VR caller | 9CgLq2RuZZwHjZ431JNyScsZ4RuLTnWXsnRSAJkE77PN | 0x79db5e48a78e688d03b59c86ebb33eeebc8561134ef46d5099da8235792e9249 |
+| VR program usdc account | AiQSwXmtQcMJkS4gGeBChW6oY7RfRS9aXA2ZRRA9wNfy | 0x905481e4848d10565e64f3a4894719967d145b23f46bf843e23ecd39ef0c1c58 |
 | VR message receiver | 5XoeLoER5SFFcGeFsvEa4a4QyEZXgCEWTFhESS43ExLX | 0x4352e98d0dfef2a95d0a81a56c960dec102111ac0ba732ab8858a5891dfb5df0 |
-| VR program authority | B4uebQ2WGjiNNPJDfSyKsXtTaSejeWNqw2WczXTZte6b | 0x9595242271fe5c00a551a854ab1a100b97504274277d713ee79a87aff9e80cb0 |
+| VR program authority | J4o4FmqMh8EudMnoTcF4t6gbUpzTwtqohs62TDCPvG5S | 0xfd8f7ef9473b3f3c40dcb0cc5724f95cb67c185bd326bdd1c85297bc4e9dc4a5 |

@@ -86,15 +86,6 @@ pub fn create_usdc_token_idempotent<'info>(
     usdc_bump: &[u8],
 ) -> Result<TokenAccount> {
     if program_usdc_account.data_is_empty() {
-        if program_usdc_account.lamports() != 0 {
-            // unexpectedly received SOL
-            close_program_usdc(
-                program_authority,
-                program_usdc_account,
-                token_program,
-                authority_bump,
-            );
-        }
         //msg!("program_usdc_account data is empty");
         let signer_seeds: &[&[&[u8]]] = &[
             &[constants::AUTHORITY_SEED, authority_bump.as_ref()],
@@ -144,24 +135,4 @@ pub fn create_usdc_token_idempotent<'info>(
 
         Ok(usdc_token_account)
     }
-}
-
-pub fn close_program_usdc<'info>(
-    program_authority: &UncheckedAccount<'info>,
-    program_usdc_account: &UncheckedAccount<'info>,
-    token_program: &Program<'info, Token>,
-    authority_bump: &[u8],
-) -> Result<()> {
-    let signer_seeds: &[&[&[u8]]] = &[&[constants::AUTHORITY_SEED, authority_bump.as_ref()]];
-
-    //msg!("Close program usdc token account");
-    token::close_account(CpiContext::new_with_signer(
-        token_program.to_account_info(),
-        token::CloseAccount {
-            account: program_usdc_account.to_account_info(),
-            destination: program_authority.to_account_info(),
-            authority: program_authority.to_account_info(),
-        },
-        signer_seeds,
-    ))
 }

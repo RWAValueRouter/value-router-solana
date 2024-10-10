@@ -16,8 +16,33 @@
           "isSigner": false
         },
         {
+          "name": "programAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "usdcMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "programUsdcAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "programUsdcInAccount",
+          "isMut": true,
           "isSigner": false
         }
       ],
@@ -1234,6 +1259,6 @@
     }
   ],
   "metadata": {
-    "address": "ACu8dBuPFgVNEL5gCfeR48XnmEmxizi8cye9wdZ2F7rC"
+    "address": "7YAEcrQ1vBpLu5WRsREW6VgUUKztR3tKySwqwa1A9aum"
   }
 }

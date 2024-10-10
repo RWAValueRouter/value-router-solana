@@ -16,8 +16,33 @@ export type ValueRouter = {
           "isSigner": false
         },
         {
+          "name": "programAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "usdcMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "programUsdcAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "programUsdcInAccount",
+          "isMut": true,
           "isSigner": false
         }
       ],
@@ -1201,8 +1226,33 @@ export const IDL: ValueRouter = {
           "isSigner": false
         },
         {
+          "name": "programAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "usdcMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "programUsdcAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "programUsdcInAccount",
+          "isMut": true,
           "isSigner": false
         }
       ],
