@@ -290,12 +290,18 @@ pub fn relay<'a>(
         &ctx.accounts.relay_params.bridge_message.message,
     )?;
 
+    // check source domain
+    assert!(
+        bridge_message.source_domain()? == swap_message.source_domain()?,
+        "valueRouter: source domain not match"
+    );
+
     // check nonce
     assert!(
         bridge_message.nonce()? + 1 == swap_message.nonce()?,
         "valueRouter: nonce not match"
     );
-    if bridge_message.source_domain()? != 4 {
+    if bridge_message.source_domain()? == 4 {
         assert!(
             bridge_message.sender()? == swap_message.sender()?,
             "valueRouter: message sender not match"

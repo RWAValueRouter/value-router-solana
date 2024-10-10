@@ -86,6 +86,15 @@ pub fn create_usdc_token_idempotent<'info>(
     usdc_bump: &[u8],
 ) -> Result<TokenAccount> {
     if program_usdc_account.data_is_empty() {
+        if program_usdc_account.lamports() != 0 {
+            // unexpectedly received SOL
+            close_program_usdc(
+                program_authority,
+                program_usdc_account,
+                token_program,
+                authority_bump,
+            );
+        }
         //msg!("program_usdc_account data is empty");
         let signer_seeds: &[&[&[u8]]] = &[
             &[constants::AUTHORITY_SEED, authority_bump.as_ref()],
