@@ -205,7 +205,7 @@ pub fn swap_and_bridge(
         .amount;
 
         msg!("valuerouter: swap output {:?}", final_balance);
-        increased_usdc_amount = final_balance - initial_balance;
+        increased_usdc_amount = final_balance.checked_sub(initial_balance).unwrap();
         assert!(
             increased_usdc_amount >= params.bridge_usdc_amount,
             "value_router: no enough swap output"

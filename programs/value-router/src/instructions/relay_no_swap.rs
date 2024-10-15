@@ -295,12 +295,6 @@ pub fn relay_no_swap<'a>(
         bridge_message.nonce()? + 1 == swap_message.nonce()?,
         "valueRouter: nonce no match"
     );
-    if bridge_message.source_domain()? == 4 {
-        assert!(
-            bridge_message.sender()? == swap_message.sender()?,
-            "valueRouter: message sender not match"
-        );
-    }
 
     assert!(
         ctx.accounts.recipient_usdc_account.key()

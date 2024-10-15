@@ -301,12 +301,6 @@ pub fn relay<'a>(
         bridge_message.nonce()? + 1 == swap_message.nonce()?,
         "valueRouter: nonce not match"
     );
-    if bridge_message.source_domain()? == 4 {
-        assert!(
-            bridge_message.sender()? == swap_message.sender()?,
-            "valueRouter: message sender not match"
-        );
-    }
 
     // swap_message.get_recipient() is recipient's wallet address
     assert!(

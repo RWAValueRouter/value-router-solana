@@ -83,7 +83,7 @@ const main = async () => {
   );
   remoteValueRouter[1] = new PublicKey(
     Buffer.from(
-      "00000000000000000000000047faeB3d444b9361FdB8a04Ce6b4B496B1f17Da5",
+      "00000000000000000000000043Dc3A0abc0148b2Cc9E76699Aa9e8f5edf69B36",
       "hex"
     )
   );
