@@ -59,25 +59,27 @@ const main = async () => {
       )
   );
 
-  bridgeFees[0] = new anchor.BN(68027211); // domain = 0, bridge fee = 0.000100
-  bridgeFees[1] = new anchor.BN(3401361); // domain = 1, bridge fee = 0.000100
-  bridgeFees[2] = new anchor.BN(3401361); // domain = 2, bridge fee = 0.000100
-  bridgeFees[3] = new anchor.BN(3401361); // domain = 3, bridge fee = 0.000100
-  bridgeFees[4] = new anchor.BN(3401361); // domain = 3, bridge fee = 0.000100
-  bridgeFees[6] = new anchor.BN(3401361); // domain = 6, bridge fee = 0.000100
-  bridgeFees[7] = new anchor.BN(3401361); // domain = 7, bridge fee = 0.000100
+  //[[32051282,64102564],[1923077,2564103],[1923077,2564103],[1923077,2564103],[1923077,2564103],[0,0],[1923077,2564103],[1923077,2564103]]
 
-  swapFees[0] = new anchor.BN(102040816); // domain = 0, swap fee = 0.000100
-  swapFees[1] = new anchor.BN(5102041); // domain = 1, swap fee = 0.000100
-  swapFees[2] = new anchor.BN(5102041); // domain = 2, swap fee = 0.000100
-  swapFees[3] = new anchor.BN(5102041); // domain = 3, swap fee = 0.000100
-  swapFees[4] = new anchor.BN(5102041); // domain = 3, swap fee = 0.000100
-  swapFees[6] = new anchor.BN(5102041); // domain = 6, swap fee = 0.000100
-  swapFees[7] = new anchor.BN(5102041); // domain = 7, swap fee = 0.000100
+  bridgeFees[0] = new anchor.BN(32051282); // domain = 0, bridge fee = 0.000100
+  bridgeFees[1] = new anchor.BN(1923077); // domain = 1, bridge fee = 0.000100
+  bridgeFees[2] = new anchor.BN(1923077); // domain = 2, bridge fee = 0.000100
+  bridgeFees[3] = new anchor.BN(1923077); // domain = 3, bridge fee = 0.000100
+  bridgeFees[4] = new anchor.BN(1923077); // domain = 3, bridge fee = 0.000100
+  bridgeFees[6] = new anchor.BN(1923077); // domain = 6, bridge fee = 0.000100
+  bridgeFees[7] = new anchor.BN(1923077); // domain = 7, bridge fee = 0.000100
+
+  swapFees[0] = new anchor.BN(64102564); // domain = 0, swap fee = 0.000100
+  swapFees[1] = new anchor.BN(2564103); // domain = 1, swap fee = 0.000100
+  swapFees[2] = new anchor.BN(2564103); // domain = 2, swap fee = 0.000100
+  swapFees[3] = new anchor.BN(2564103); // domain = 3, swap fee = 0.000100
+  swapFees[4] = new anchor.BN(2564103); // domain = 3, swap fee = 0.000100
+  swapFees[6] = new anchor.BN(2564103); // domain = 6, swap fee = 0.000100
+  swapFees[7] = new anchor.BN(2564103); // domain = 7, swap fee = 0.000100
 
   remoteValueRouter[0] = new PublicKey(
     Buffer.from(
-      "0000000000000000000000000000000000000000000000000000000000000000",
+      "00000000000000000000000066F011F9F4ab937b47f51a8da5542c897D12E3Cb",
 	  "hex"
 	)
   );
@@ -89,25 +91,25 @@ const main = async () => {
   );
   remoteValueRouter[2] = new PublicKey(
     Buffer.from(
-      "0000000000000000000000000000000000000000000000000000000000000000",
+      "000000000000000000000000c17cffDaA599A759d06EE2Eae88866055622d937",
       "hex"
     )
   );
   remoteValueRouter[3] = new PublicKey(
     Buffer.from(
-      "0000000000000000000000000000000000000000000000000000000000000000",
+      "000000000000000000000000E438AADd3C34e444FF775F7d376ffE54d197673A",
       "hex"
     )
   );
   remoteValueRouter[6] = new PublicKey(
     Buffer.from(
-      "0000000000000000000000000000000000000000000000000000000000000000",
+      "0000000000000000000000007C5d3CF79f213F691637AB28b414eBCB41F4FfbB",
       "hex"
     )
   );
   remoteValueRouter[7] = new PublicKey(
     Buffer.from(
-      "0000000000000000000000000000000000000000000000000000000000000000",
+      "0000000000000000000000007C5d3CF79f213F691637AB28b414eBCB41F4FfbB",
       "hex"
     )
   );
