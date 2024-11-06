@@ -16,4 +16,6 @@ pub enum ErrorCode {
     USDCInAccountNotClosed,
     #[msg("CCTP receiver mismatch")]
     CctpReceiverMismatch,
+    #[msg("invalid bump seed provided")]
+    InvalidBump,
 }

@@ -116,7 +116,7 @@ pub struct RelayNoSwapInstruction<'info> {
     /// CHECK:
     #[account(
             mut,
-            constraint = usdc_mint.key() == solana_program::pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+            constraint = usdc_mint.key() == constants::USDC_MINT_ADDRESS
         )]
     pub usdc_mint: UncheckedAccount<'info>,
 

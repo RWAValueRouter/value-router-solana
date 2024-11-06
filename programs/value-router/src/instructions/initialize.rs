@@ -1,7 +1,7 @@
 use {
     crate::{constants, state::ValueRouter, utils},
     anchor_lang::prelude::*,
-    anchor_spl::token::{Token, TokenAccount},
+    anchor_spl::token::Token,
 };
 
 /*
@@ -35,7 +35,7 @@ pub struct InitializeContext<'info> {
     /// CHECK:
     #[account(
         mut,
-        constraint = usdc_mint.key() == solana_program::pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+        constraint = usdc_mint.key() == constants::USDC_MINT_ADDRESS
     )]
     pub usdc_mint: UncheckedAccount<'info>,
 
@@ -53,10 +53,10 @@ pub struct InitializeContext<'info> {
 
     /// CHECK:
     #[account(
-    mut,
-    seeds = [constants::USDC_IN_SEED],
-    bump
-)]
+        mut,
+        seeds = [constants::USDC_IN_SEED],
+        bump
+    )]
     pub program_usdc_in_account: UncheckedAccount<'info>,
 }
 
