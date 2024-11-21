@@ -4,6 +4,7 @@ use {
         state::{RelayData},
         swap_message::SwapMessage,
         utils,
+        errors::ErrorCode,
     },
     anchor_lang::prelude::*,
     anchor_spl::associated_token::{get_associated_token_address, AssociatedToken},
@@ -116,7 +117,7 @@ pub struct RelayNoSwapInstruction<'info> {
     /// CHECK:
     #[account(
             mut,
-            constraint = usdc_mint.key() == solana_program::pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+            constraint = usdc_mint.key() == constants::USDC_MINT_ADDRESS
         )]
     pub usdc_mint: UncheckedAccount<'info>,
 
@@ -274,9 +275,9 @@ pub fn relay_no_swap<'a>(
     )?);
 
     // check version
-    assert!(
+    require!(
         swap_message_body.get_version()? == 1,
-        "wrong swap message version"
+        ErrorCode::WrongSwapVersion
     );
 
     let bridge_message = &Message::new(
@@ -285,24 +286,24 @@ pub fn relay_no_swap<'a>(
     )?;
 
     // check source domain
-    assert!(
+    require!(
         bridge_message.source_domain()? == swap_message.source_domain()?,
-        "valueRouter: source domain not match"
+        ErrorCode::WrongSourceDomain
     );
 
     // check nonce
-    assert!(
+    require!(
         bridge_message.nonce()? + 1 == swap_message.nonce()?,
-        "valueRouter: nonce no match"
+        ErrorCode::WrongNonce
     );
 
-    assert!(
+    require!(
         ctx.accounts.recipient_usdc_account.key()
             == get_associated_token_address(
                 &swap_message_body.get_recipient()?,
                 ctx.accounts.usdc_mint.key,
             ),
-        "value_router: incorrect recipient's usdc account"
+        ErrorCode::WrongRecipientWallet
     );
 
     let usdc_balance = Box::new(

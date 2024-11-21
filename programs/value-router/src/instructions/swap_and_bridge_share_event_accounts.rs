@@ -7,6 +7,7 @@ use {
         swap_and_bridge::SwapAndBridgeParams,
         swap_message::SwapMessage,
         utils,
+        errors::ErrorCode,
     },
     anchor_lang::prelude::*,
     anchor_spl::token::{transfer, Token, TokenAccount, Transfer},
@@ -131,9 +132,9 @@ pub fn swap_and_bridge_share_event_accounts(
     ctx: Context<SwapAndBridgeShareEventAccountsInstruction>,
     params: SwapAndBridgeParams,
 ) -> Result<()> {
-    assert!(
+    require!(
         ctx.accounts.value_router.fee_receiver.key() == ctx.accounts.fee_receiver.key(),
-        "wrong fee receiver"
+        ErrorCode::WrongFeeReceiver
     );
 
     let message_transmitter = &ctx.accounts.message_transmitter;
@@ -187,9 +188,9 @@ pub fn swap_and_bridge_share_event_accounts(
 
         msg!("valuerouter: swap output {:?}", final_balance);
         increased_usdc_amount = final_balance.checked_sub(initial_balance).unwrap();
-        assert!(
+        require!(
             increased_usdc_amount >= params.bridge_usdc_amount,
-            "value_router: no enough swap output"
+            ErrorCode::NotEnoughBalance
         );
     }
 

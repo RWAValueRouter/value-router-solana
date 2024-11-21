@@ -6,6 +6,7 @@ use {
         state::RelayData,
         swap_message::SwapMessage,
         utils,
+        errors::ErrorCode,
     },
     anchor_lang::prelude::*,
     anchor_spl::associated_token::{get_associated_token_address, AssociatedToken},
@@ -122,7 +123,7 @@ pub struct RelayInstruction<'info> {
     /// CHECK:
     #[account(
             mut,
-            constraint = usdc_mint.key() == solana_program::pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
+            constraint = usdc_mint.key() == constants::USDC_MINT_ADDRESS
         )]
     pub usdc_mint: UncheckedAccount<'info>,
 
@@ -280,9 +281,9 @@ pub fn relay<'a>(
     )?);
 
     // check version
-    assert!(
+    require!(
         swap_message_body.get_version()? == 1,
-        "wrong swap message version"
+        ErrorCode::WrongSwapVersion
     );
 
     let bridge_message = &Message::new(
@@ -291,51 +292,51 @@ pub fn relay<'a>(
     )?;
 
     // check source domain
-    assert!(
+    require!(
         bridge_message.source_domain()? == swap_message.source_domain()?,
-        "valueRouter: source domain not match"
+        ErrorCode::WrongSourceDomain
     );
 
     // check nonce
-    assert!(
+    require!(
         bridge_message.nonce()? + 1 == swap_message.nonce()?,
-        "valueRouter: nonce not match"
+        ErrorCode::WrongNonce
     );
 
     // swap_message.get_recipient() is recipient's wallet address
-    assert!(
+    require!(
         *ctx.accounts.recipient_wallet_account.to_account_info().key
             == swap_message_body.get_recipient()?,
-        "value_router: incorrect recipient's wallet account"
+        ErrorCode::WrongRecipientWallet
     );
     if swap_message_body.get_buy_token()? != pubkey!("So11111111111111111111111111111111111111112")
     {
-        assert!(
+        require!(
             parse_owner(
                 &ctx.accounts
                     .recipient_output_token_account
                     .try_borrow_data()?,
             ) == swap_message_body.get_recipient()?,
-            "value_router: incorrect recipient's output token account"
+            ErrorCode::WrongRecipientTokenAccount
         );
     } else {
-        assert!(
+        require!(
             parse_owner(
                 &ctx.accounts
                     .recipient_output_token_account
                     .try_borrow_data()?,
             ) == *ctx.accounts.payer.to_account_info().key,
-            "value_router: incorrect recipient's output token account"
+            ErrorCode::WrongRecipientTokenAccount
         );
     }
 
-    assert!(
+    require!(
         ctx.accounts.recipient_usdc_account.key()
             == get_associated_token_address(
                 &swap_message_body.get_recipient()?,
                 ctx.accounts.usdc_mint.key,
             ),
-        "value_router: incorrect recipient's usdc account"
+        ErrorCode::WrongRecipientUSDCAccount
     );
 
     // check usdc balance change of usdc_vault;
@@ -351,9 +352,9 @@ pub fn relay<'a>(
     let mut output_amount: u64 = 0;
 
     if swap_message_body.get_buy_token()? != ctx.accounts.usdc_mint.key() {
-        assert!(
+        require!(
             usdc_bridge_amount >= swap_message_body.get_sell_amount()?,
-            "value_router: no enough usdc amount to swap"
+            ErrorCode::NotEnoughBalance
         );
         let token_balance_before = parse_amount(
             &ctx.accounts
@@ -417,11 +418,9 @@ pub fn relay<'a>(
         if swap_message_body.get_buy_token()?
             == pubkey!("So11111111111111111111111111111111111111112")
         {
-            assert!(
+            require!(
                 output_amount >= swap_message_body.get_guaranteed_buy_amount()?,
-                "value_router: swap output not enough, have {:?}, expect {:?}",
-                output_amount,
-                swap_message_body.get_guaranteed_buy_amount()?
+                ErrorCode::NotEnoughBalance
             );
             // unwrap
             {
@@ -446,11 +445,9 @@ pub fn relay<'a>(
                 output_amount,
             );
         } else {
-            assert!(
+            require!(
                 output_amount >= swap_message_body.get_guaranteed_buy_amount()?,
-                "value_router: swap output not enough, have {:?}, expect {:?}",
-                output_amount,
-                swap_message_body.get_guaranteed_buy_amount()?
+                ErrorCode::NotEnoughBalance
             );
         }
 
