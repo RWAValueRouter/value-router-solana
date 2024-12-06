@@ -214,7 +214,7 @@ pub fn swap_and_bridge(
 
     {
         let mut fee_amount: u64 = 0;
-        if params.buy_args.buy_token == Pubkey::new_from_array([0; 32]) {
+        if params.buy_args.buy_token == Pubkey::new_from_array([0; 32]) { // TODO
             // no dest swap
             fee_amount += ctx
                 .accounts
@@ -247,6 +247,9 @@ pub fn swap_and_bridge(
     }
 
     // cpi depositForBurnWithCaller
+    // TODO: if we need to pass all the accounts from frontend, some of the accounts such as
+    // token_messenger is a fixed account, we can use it directly in the cpi call, do not need to
+    // pass it from frontend
     let deposit_for_burn_accounts = Box::new(DepositForBurnContext {
         owner: ctx.accounts.program_authority.to_account_info(),
         event_rent_payer: ctx.accounts.event_rent_payer.clone().to_account_info(),

@@ -33,6 +33,7 @@ pub fn swap_on_jupiter<'info>(
         })
         .collect();
 
+        // TODO: use the remaining_accounts directly?
     let accounts_infos: Vec<AccountInfo> = remaining_accounts
         .iter()
         .map(|acc| AccountInfo { ..acc.clone() })
