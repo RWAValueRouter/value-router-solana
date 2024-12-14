@@ -21,7 +21,8 @@
     "tryTx": "tsx tryTx.ts",
     "inspectAccount": "tsx inspectAccount.ts",
     "reclaim": "tsx reclaim.ts",
-    "closeAuthorityAccount": "tsx closeAuthorityAccount.ts"
+    "closeAuthorityAccount": "tsx closeAuthorityAccount.ts",
+    "setAdmin": "tsx setAdmin.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.29.0",
